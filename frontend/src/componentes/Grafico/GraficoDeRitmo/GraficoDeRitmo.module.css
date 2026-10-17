@@ -1,0 +1,247 @@
+.grafico {
+  /* Cor da grade: um passo acima da superfície, recessiva */
+  --grade-do-ritmo: var(--cor-veludo);
+  --espessura-da-linha: 2px;
+  /* Série principal: Ametista (L 0,60), passa na faixa, no croma e no contraste do validador */
+  --serie-do-gasto: var(--cor-ametista);
+  display: flex;
+  flex-direction: column;
+  gap: var(--espaco-3);
+  min-width: 0;
+}
+
+.area {
+  position: relative;
+  width: 100%;
+}
+
+.svg {
+  display: block;
+  max-width: 100%;
+  overflow: visible;
+  touch-action: pan-y;
+  font-family: var(--fonte-corpo);
+}
+
+.svg:focus-visible {
+  outline: var(--anel-de-foco);
+  outline-offset: var(--afastamento-do-foco);
+}
+
+.grade {
+  stroke: var(--grade-do-ritmo);
+  stroke-width: 1;
+}
+
+.marca {
+  fill: var(--cor-bruma);
+  font-size: var(--texto-minimo);
+}
+
+.linhaDoGasto {
+  fill: none;
+  stroke: var(--serie-do-gasto);
+  stroke-width: var(--espessura-da-linha);
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.linhaIdeal {
+  fill: none;
+  stroke: var(--cor-bruma);
+  stroke-width: var(--espessura-da-linha);
+  stroke-dasharray: 6 4;
+}
+
+.areaDoGasto {
+  fill: var(--serie-do-gasto);
+  fill-opacity: 0.1;
+  stroke: none;
+}
+
+.final circle {
+  fill: var(--serie-do-gasto);
+  stroke: var(--cor-ameixa);
+  stroke-width: 2px;
+}
+
+.rotuloFinal {
+  fill: var(--cor-nevoa);
+  font-size: var(--texto-minimo);
+  font-weight: 600;
+  paint-order: stroke;
+  stroke: var(--cor-ameixa);
+  stroke-width: 3px;
+}
+
+.cursor line {
+  stroke: var(--cor-bruma);
+  stroke-width: 1;
+}
+
+.pontoDoGasto {
+  fill: var(--serie-do-gasto);
+  stroke: var(--cor-ameixa);
+  stroke-width: 2px;
+}
+
+.pontoIdeal {
+  fill: var(--cor-bruma);
+  stroke: var(--cor-ameixa);
+  stroke-width: 2px;
+}
+
+.tooltip {
+  position: absolute;
+  top: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--espaco-1);
+  padding: var(--espaco-2) var(--espaco-3);
+  border: var(--borda-de-camada);
+  border-radius: var(--raio-campo);
+  background: var(--cor-veludo);
+  box-shadow: var(--sombra-media);
+  color: var(--cor-nevoa);
+  font-size: var(--texto-minimo);
+  line-height: var(--texto-minimo-linha);
+  white-space: nowrap;
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+
+.somenteLeitor {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.legenda {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--espaco-2) var(--espaco-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  color: var(--cor-nevoa);
+  font-size: var(--texto-pequeno);
+}
+
+.legenda li {
+  display: flex;
+  align-items: center;
+  gap: var(--espaco-2);
+}
+
+.chaveDoGasto {
+  stroke: var(--serie-do-gasto);
+  stroke-width: var(--espessura-da-linha);
+  stroke-linecap: round;
+}
+
+.chaveIdeal {
+  stroke: var(--cor-bruma);
+  stroke-width: var(--espessura-da-linha);
+  stroke-dasharray: 6 4;
+}
+
+.estado {
+  display: flex;
+  align-items: center;
+  gap: var(--espaco-2);
+  margin: 0;
+  color: var(--cor-nevoa);
+  font-size: var(--texto-pequeno);
+  line-height: var(--texto-pequeno-linha);
+}
+
+.estado[data-estado="acima"] svg {
+  color: var(--cor-alerta);
+}
+
+.estado[data-estado="dentro"] svg {
+  color: var(--cor-dentro);
+}
+
+.detalhes summary {
+  min-height: var(--alvo-de-toque);
+  display: flex;
+  align-items: center;
+  color: var(--cor-lavanda);
+  font-size: var(--texto-pequeno);
+  cursor: pointer;
+}
+
+.detalhes summary:focus-visible {
+  outline: var(--anel-de-foco);
+  outline-offset: var(--afastamento-do-foco);
+}
+
+.tabela {
+  width: 100%;
+  border-collapse: collapse;
+  color: var(--cor-nevoa);
+  font-size: var(--texto-pequeno);
+  font-variant-numeric: tabular-nums;
+}
+
+.tabela th,
+.tabela td {
+  padding: var(--espaco-1) var(--espaco-2);
+  text-align: right;
+  border-bottom: 1px solid var(--grade-do-ritmo);
+}
+
+.tabela th:first-child {
+  text-align: left;
+}
+
+.legendaDaTabela {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+}
+
+/* Movimento: a linha se desenha, a área e o ponto final aparecem, o cursor desliza. */
+@media (prefers-reduced-motion: no-preference) {
+  .linhaDoGasto[data-animando="true"] {
+    stroke-dasharray: 1;
+    stroke-dashoffset: 1;
+    animation: desenhar var(--duracao-media) var(--curva-saida) forwards;
+  }
+
+  .areaDoGasto[data-animando="true"],
+  .final[data-animando="true"] {
+    opacity: 0;
+    animation: aparecer var(--duracao-media) var(--curva-saida) var(--duracao-curta) forwards;
+  }
+
+  .cursor,
+  .pontoDoGasto,
+  .pontoIdeal {
+    transition: transform var(--duracao-curta) var(--curva-saida);
+  }
+
+  .tooltip {
+    transition: left var(--duracao-curta) var(--curva-saida);
+  }
+}
+
+@keyframes desenhar {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes aparecer {
+  to {
+    opacity: 1;
+  }
+}

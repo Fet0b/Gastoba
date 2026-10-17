@@ -1,0 +1,73 @@
+/* Chips de filtro (conta, categoria e tag) das Transações: em Veludo, com a ativa em Lavanda.
+   Tags e contas são neutras; categorias têm um ponto colorido ao lado do nome. */
+
+/* Filtros */
+
+.filtro {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--espaco-2) var(--espaco-3);
+}
+
+.rotuloDoFiltro {
+  color: var(--cor-bruma);
+  font-size: 0.9375rem;
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--espaco-2);
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--espaco-2);
+  max-width: 100%;
+  min-height: 2rem;
+  padding: 2px var(--espaco-3);
+  border: 1px solid var(--cor-veludo);
+  border-radius: var(--raio-chip);
+  background: var(--cor-veludo);
+  font-size: 0.875rem;
+  overflow-wrap: anywhere;
+  text-align: start;
+  transition:
+    border-color var(--duracao-curta) var(--curva-saida),
+    color var(--duracao-curta) var(--curva-saida);
+}
+
+.chip:hover {
+  border-color: var(--cor-bruma);
+}
+
+.chip[aria-pressed="true"] {
+  border-color: var(--cor-lavanda);
+  color: var(--cor-lavanda);
+}
+
+.ponto {
+  flex: none;
+  width: 0.625rem;
+  height: 0.625rem;
+  border-radius: 50%;
+}
+
+.limpar {
+  padding: 2px var(--espaco-2);
+  border: 0;
+  border-radius: var(--raio-campo);
+  background: none;
+  color: var(--cor-lavanda);
+  font-size: 0.875rem;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.chip:focus-visible,
+.limpar:focus-visible {
+  outline: var(--anel-de-foco);
+  outline-offset: var(--afastamento-do-foco);
+}

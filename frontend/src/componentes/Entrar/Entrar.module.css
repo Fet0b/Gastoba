@@ -1,0 +1,160 @@
+/* Tela de entrar: um cartão em Ameixa no centro da página em Noite, com o
+   olho grande acima do formulário. Campos em Veludo, como nos outros formulários. */
+
+.pagina {
+  display: grid;
+  place-items: center;
+  min-height: 100vh;
+  padding: var(--espaco-5) var(--espaco-4);
+}
+
+.cartao {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espaco-4);
+  width: min(26rem, 100%);
+  padding: var(--espaco-6) var(--espaco-5);
+  border: 1px solid var(--cor-veludo);
+  border-radius: var(--raio-painel);
+  background: var(--cor-ameixa);
+  box-shadow: 0 24px 64px rgb(0 0 0 / 0.45);
+  animation: surgir var(--duracao-media) var(--curva-saida);
+}
+
+.marca {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--espaco-3);
+}
+
+.olho {
+  --tamanho-do-olho: 72px;
+}
+
+.nome {
+  font-size: 2rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.chamada {
+  color: var(--cor-bruma);
+  text-align: center;
+}
+
+.aviso {
+  padding: var(--espaco-3) var(--espaco-4);
+  border: 1px solid var(--cor-ametista);
+  border-radius: var(--raio-campo);
+  background: var(--cor-veludo);
+  color: var(--cor-lavanda);
+}
+
+.formulario {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espaco-4);
+}
+
+.campo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espaco-1);
+}
+
+.campo > label {
+  color: var(--cor-bruma);
+  font-size: 0.9375rem;
+}
+
+.entrada {
+  width: 100%;
+  padding: var(--espaco-2) var(--espaco-3);
+  border: 1px solid var(--cor-veludo);
+  border-radius: var(--raio-campo);
+  background: var(--cor-veludo);
+}
+
+.entrada:hover {
+  border-color: var(--cor-bruma);
+}
+
+.entrada[aria-invalid="true"] {
+  border-color: var(--cor-brasa);
+}
+
+.erroDoCampo,
+.erroGeral {
+  color: var(--cor-brasa);
+  font-size: 0.9375rem;
+}
+
+/* Vazia, a região continua na árvore de acessibilidade (sem display: none),
+   mas não ocupa o espaço do gap. */
+.erroGeral:empty {
+  margin-top: calc(-1 * var(--espaco-4));
+}
+
+.entrar {
+  padding: var(--espaco-2) var(--espaco-4);
+  border: 0;
+  border-radius: var(--raio-campo);
+  background: var(--cor-ametista);
+  color: var(--cor-noite);
+  font-weight: 650;
+  transition:
+    transform var(--duracao-curta) var(--curva-saida),
+    filter var(--duracao-curta) var(--curva-saida);
+}
+
+.entrar:hover {
+  filter: brightness(1.1);
+}
+
+.entrar:active {
+  transform: translateY(1px);
+}
+
+.entrar:disabled {
+  cursor: progress;
+  opacity: 0.6;
+}
+
+.alternativa {
+  margin: var(--espaco-4) 0 0;
+  text-align: center;
+  font-size: 0.9rem;
+}
+
+.ligacao {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  font-weight: 650;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+@keyframes surgir {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cartao {
+    animation: none;
+  }
+
+  .entrar {
+    transition: none;
+  }
+}

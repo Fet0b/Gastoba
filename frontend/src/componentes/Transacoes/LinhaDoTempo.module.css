@@ -1,0 +1,83 @@
+/* A linha do tempo por dia. Cada dia entra com um leve fade e deslize, em escada; o movimento
+   some com prefers-reduced-motion. */
+
+.linhaDoTempo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espaco-4);
+}
+
+.dias {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espaco-5);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  --atraso: 0ms;
+}
+
+.dia {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espaco-1);
+  animation: entrada var(--duracao-media) var(--curva-saida) var(--atraso) both;
+}
+
+.rotuloDoDia {
+  padding-block-end: var(--espaco-2);
+  border-block-end: 1px solid var(--cor-veludo);
+  color: var(--cor-bruma);
+  font-family: var(--fonte-corpo);
+  font-size: var(--texto-pequeno);
+  line-height: var(--texto-pequeno-linha);
+  font-weight: 600;
+}
+
+.linhas {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.maisLinhas {
+  align-self: center;
+  min-height: var(--alvo-de-toque);
+  padding: 0 var(--espaco-5);
+  border: 1px solid var(--cor-veludo);
+  border-radius: var(--raio-campo);
+  background: transparent;
+  color: var(--cor-lavanda);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.maisLinhas:hover {
+  background: var(--cor-veludo);
+}
+
+.maisLinhas:focus-visible {
+  outline: var(--anel-de-foco);
+  outline-offset: var(--afastamento-do-foco);
+}
+
+@keyframes entrada {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dia {
+    animation: none;
+  }
+}

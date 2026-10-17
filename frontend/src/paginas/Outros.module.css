@@ -1,0 +1,54 @@
+/* Tela das recorrências: introdução no topo e, abaixo, o formulário ao lado da
+   lista (empilhados no celular). Mesma estrutura da tela das chaves de API. */
+
+.conteudo {
+  display: grid;
+  grid-template-columns: minmax(16rem, 24rem) minmax(0, 1fr);
+  align-items: start;
+  gap: var(--espaco-5);
+}
+
+.introducao {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--espaco-2);
+}
+
+.titulo {
+  font-size: 1.5rem;
+  font-weight: 650;
+}
+
+.texto {
+  max-width: 60ch;
+  color: var(--cor-bruma);
+}
+
+/* O total comprometido ocupa a largura toda; a agenda fica ao lado da lista. */
+.comprometido {
+  grid-column: 1 / -1;
+}
+
+.agenda {
+  grid-column: 1 / -1;
+}
+
+.colunaDoFormulario,
+.colunaDaLista {
+  padding: var(--espaco-5);
+  border-radius: var(--raio-painel);
+  background: var(--cor-ameixa);
+}
+
+@media (max-width: 48rem) {
+  .conteudo {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--espaco-4);
+  }
+
+  .colunaDoFormulario,
+  .colunaDaLista {
+    padding: var(--espaco-4);
+  }
+}

@@ -1,0 +1,57 @@
+/* Campo de valor: o número em destaque, alinhado à direita em algarismos
+   tabulares, com o "R$" fixo à esquerda. */
+
+.campo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espaco-1);
+}
+
+.rotulo {
+  color: var(--cor-bruma);
+  font-size: 0.9375rem;
+}
+
+.moldura {
+  position: relative;
+}
+
+.moeda {
+  position: absolute;
+  inset-block: 0;
+  inset-inline-start: var(--espaco-4);
+  display: flex;
+  align-items: center;
+  color: var(--cor-bruma);
+  font-size: 1.125rem;
+  pointer-events: none;
+}
+
+.entrada {
+  width: 100%;
+  padding: var(--espaco-3) var(--espaco-4);
+  padding-inline-start: 3.5rem;
+  border: 1px solid var(--cor-veludo);
+  border-radius: var(--raio-campo);
+  background: var(--cor-veludo);
+  font-family: var(--fonte-titulo);
+  font-size: 1.75rem;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+  text-align: end;
+  caret-color: var(--cor-ametista);
+  transition: border-color var(--duracao-curta) var(--curva-saida);
+}
+
+.entrada:hover {
+  border-color: var(--cor-bruma);
+}
+
+.entrada[aria-invalid="true"] {
+  border-color: var(--cor-brasa);
+}
+
+.erro {
+  color: var(--cor-brasa);
+  font-size: 0.9375rem;
+}

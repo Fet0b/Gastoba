@@ -1,0 +1,229 @@
+/* Gastos por tag: barras horizontais de uma matiz só (Ametista); "Outras" e "Sem tag" em cinza.
+   Cada barra é um botão maior que o desenho. Texto sempre nas cores de texto. */
+
+.cartao {
+  /* Cores locais do gráfico: a barra de dado (acento) e o cinza das barras agrupadas. */
+  --cor-da-barra: var(--cor-ametista);
+  --cor-da-barra-cinza: var(--cor-bruma);
+  --respiro-entre-barras: 2px;
+  --espessura-da-barra: 20px;
+  --raio-da-ponta: 4px;
+
+  display: flex;
+  flex-direction: column;
+  gap: var(--espaco-3);
+  padding: var(--espaco-4);
+  border: var(--borda-de-camada);
+  border-radius: var(--raio-cartao);
+  background: var(--cor-ameixa);
+  transition: opacity var(--duracao-media) var(--curva-saida);
+}
+
+.cartao[data-atualizando="true"] {
+  opacity: 0.6;
+}
+
+.titulo {
+  font-size: 1.125rem;
+  font-weight: 650;
+}
+
+.apoio,
+.estado {
+  color: var(--cor-bruma);
+  font-size: 0.9375rem;
+}
+
+.lista,
+.membros {
+  display: flex;
+  flex-direction: column;
+  gap: var(--respiro-entre-barras);
+  list-style: none;
+}
+
+.linha {
+  position: relative;
+}
+
+.botao {
+  display: grid;
+  grid-template-columns: minmax(5rem, 9rem) minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--espaco-3);
+  width: 100%;
+  min-height: var(--alvo-de-toque);
+  padding: var(--espaco-1) var(--espaco-2);
+  border-radius: var(--raio-campo);
+  background: transparent;
+  color: var(--cor-nevoa);
+  text-align: start;
+  cursor: pointer;
+  transition: background-color var(--duracao-curta) var(--curva-saida);
+}
+
+.botao:hover,
+.linha[data-selecionada="true"] .botao {
+  background: var(--cor-veludo);
+}
+
+.botao:focus-visible,
+.botaoDoMembro:focus-visible {
+  outline: var(--anel-de-foco);
+  outline-offset: var(--afastamento-do-foco);
+}
+
+.rotulo {
+  overflow-wrap: anywhere;
+  line-height: 1.25;
+}
+
+.trilha {
+  display: flex;
+  align-items: center;
+  block-size: var(--espessura-da-barra);
+}
+
+/* A largura anima dentro de uma trilha de tamanho fixo: nada ao redor se mexe. Só a ponta do
+   dado é arredondada; a base é reta. */
+.preenchimento {
+  display: block;
+  block-size: 100%;
+  min-inline-size: 2px;
+  border-start-end-radius: var(--raio-da-ponta);
+  border-end-end-radius: var(--raio-da-ponta);
+  background: var(--cor-da-barra);
+  transition:
+    inline-size var(--duracao-media) var(--curva-saida),
+    opacity var(--duracao-media) var(--curva-saida);
+}
+
+.preenchimento[data-tipo="outras"],
+.preenchimento[data-tipo="sem_tag"] {
+  background: var(--cor-da-barra-cinza);
+}
+
+.linha[data-esmaecida="true"] .preenchimento {
+  opacity: 0.3;
+}
+
+.botao:hover .preenchimento,
+.botao:focus-visible .preenchimento {
+  filter: brightness(1.15);
+}
+
+.numeros {
+  display: flex;
+  gap: var(--espaco-2);
+  justify-content: flex-end;
+  min-inline-size: 7.5rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.percentual {
+  color: var(--cor-bruma);
+}
+
+/* A dica enfeita; tudo o que ela diz está no nome do botão e no painel de detalhe. */
+.dica {
+  position: absolute;
+  inset-block-end: 100%;
+  inset-inline-end: var(--espaco-2);
+  z-index: 1;
+  padding: var(--espaco-1) var(--espaco-3);
+  border: var(--borda-de-camada);
+  border-radius: var(--raio-campo);
+  background: var(--cor-veludo);
+  box-shadow: var(--sombra-media);
+  font-size: 0.875rem;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.membros {
+  margin-block: var(--espaco-1) var(--espaco-2);
+  margin-inline-start: var(--espaco-5);
+}
+
+.botaoDoMembro {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--espaco-3);
+  width: 100%;
+  min-height: var(--alvo-de-toque);
+  padding: var(--espaco-1) var(--espaco-2);
+  border-radius: var(--raio-campo);
+  background: transparent;
+  color: var(--cor-nevoa);
+  text-align: start;
+  cursor: pointer;
+}
+
+.botaoDoMembro:hover,
+.botaoDoMembro[aria-pressed="true"] {
+  background: var(--cor-veludo);
+}
+
+.tabela summary {
+  cursor: pointer;
+  color: var(--cor-lavanda);
+}
+
+.tabela table {
+  width: 100%;
+  margin-top: var(--espaco-2);
+  border-collapse: collapse;
+  font-size: 0.9375rem;
+}
+
+.tabela th,
+.tabela td {
+  padding: var(--espaco-1) var(--espaco-2);
+  text-align: left;
+  font-weight: 400;
+}
+
+.tabela thead th,
+.tabela tfoot th,
+.tabela tfoot td {
+  font-weight: 600;
+}
+
+.tabela td:not(:first-child) {
+  text-align: right;
+}
+
+.tabela tfoot {
+  border-top: 1px solid var(--cor-veludo);
+}
+
+/* Tela estreita: o rótulo fica acima da barra; o valor vai para a ponta da linha de baixo. */
+@media (max-width: 30rem) {
+  .botao {
+    grid-template-columns: minmax(0, 1fr) auto;
+    row-gap: var(--espaco-1);
+  }
+
+  .rotulo {
+    grid-column: 1 / -1;
+  }
+
+  .numeros {
+    min-inline-size: 0;
+  }
+
+  .dica {
+    inset-inline-start: var(--espaco-2);
+    inset-inline-end: auto;
+    white-space: normal;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cartao,
+  .botao,
+  .preenchimento {
+    transition: none;
+  }
+}

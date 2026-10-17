@@ -1,0 +1,191 @@
+/* Recorrências: o formulário de criar e a lista. Campos em Veludo sobre Ameixa; o
+   valor de ganho em Lavanda e o de gasto em Brasa (sempre com sinal ou rótulo). */
+
+.formulario {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espaco-4);
+}
+
+.tipos {
+  display: inline-flex;
+  align-self: flex-start;
+  gap: var(--espaco-1);
+  padding: var(--espaco-1);
+  border: 1px solid var(--cor-veludo);
+  border-radius: var(--raio-chip);
+}
+
+.tipo {
+  padding: var(--espaco-1) var(--espaco-3);
+  border: 0;
+  border-radius: var(--raio-chip);
+  background: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.tipo[aria-pressed="true"] {
+  background: var(--cor-ametista);
+  color: var(--cor-noite);
+  font-weight: 650;
+}
+
+.campo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espaco-1);
+  min-width: 0;
+}
+
+.campo label {
+  color: var(--cor-bruma);
+  font-size: 0.9375rem;
+}
+
+.linha {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--espaco-3);
+}
+
+.entrada {
+  width: 100%;
+  min-height: 2.75rem;
+  padding: var(--espaco-2) var(--espaco-3);
+  border: 1px solid var(--cor-veludo);
+  border-radius: var(--raio-campo);
+  background: var(--cor-veludo);
+}
+
+.entrada[aria-invalid="true"] {
+  border-color: var(--cor-brasa);
+}
+
+.erro {
+  color: var(--cor-brasa);
+  font-size: 0.9375rem;
+}
+
+.dica {
+  color: var(--cor-bruma);
+  font-size: 0.9375rem;
+}
+
+.motivos {
+  padding-left: var(--espaco-4);
+  color: var(--cor-bruma);
+  font-size: 0.9375rem;
+  list-style: disc;
+}
+
+.primario {
+  min-height: 2.75rem;
+  padding: var(--espaco-2) var(--espaco-5);
+  border: 0;
+  border-radius: var(--raio-campo);
+  background: var(--cor-ametista);
+  color: var(--cor-noite);
+  font: inherit;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.primario:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+/* Lista */
+
+.lista {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espaco-3);
+}
+
+.item {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espaco-2);
+  padding: var(--espaco-4);
+  border-radius: var(--raio-cartao);
+  background: var(--cor-veludo);
+}
+
+.item[data-ativa="false"] {
+  opacity: 0.7;
+}
+
+.topoDoItem {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--espaco-1) var(--espaco-3);
+}
+
+.nome {
+  font-weight: 650;
+  overflow-wrap: anywhere;
+}
+
+.valor {
+  font-weight: 600;
+  color: var(--cor-brasa);
+}
+
+.item[data-tipo="ganho"] .valor {
+  color: var(--cor-lavanda);
+}
+
+.detalhe {
+  color: var(--cor-bruma);
+  font-size: 0.9375rem;
+}
+
+.situacao {
+  color: var(--cor-nevoa);
+}
+
+.estado {
+  color: var(--cor-bruma);
+}
+
+.acoes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--espaco-2);
+}
+
+.confirmacao {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espaco-2);
+}
+
+.encerrar,
+.secundario,
+.perigo {
+  align-self: flex-start;
+  min-height: 2.25rem;
+  padding: var(--espaco-1) var(--espaco-3);
+  border: 1px solid var(--cor-ameixa);
+  border-radius: var(--raio-campo);
+  background: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.perigo {
+  border-color: var(--cor-brasa);
+  color: var(--cor-brasa);
+}
+
+@media (max-width: 48rem) {
+  .linha {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

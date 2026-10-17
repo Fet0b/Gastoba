@@ -1,0 +1,19 @@
+.cartao {
+  padding: var(--espaco-4);
+  border: var(--borda-de-camada);
+  border-radius: var(--raio-cartao);
+  background: var(--cor-ameixa);
+  box-shadow: var(--sombra-baixa);
+}
+
+.cartao[data-variante="elevado"] {
+  background: var(--cor-veludo);
+  box-shadow: var(--sombra-media);
+}
+
+.cartao[data-variante="destaque"] {
+  padding: var(--espaco-5);
+  border-radius: var(--raio-painel);
+  background: linear-gradient(160deg, var(--cor-veludo), var(--cor-ameixa));
+  box-shadow: var(--sombra-alta);
+}

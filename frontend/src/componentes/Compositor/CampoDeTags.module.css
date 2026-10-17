@@ -1,0 +1,149 @@
+/* Campo de tags: chips neutros (Veludo) dentro da moldura do campo, sem cor
+   por tag; as sugestões aparecem logo abaixo. */
+
+.campo {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: var(--espaco-1);
+}
+
+.rotulo {
+  color: var(--cor-bruma);
+  font-size: 0.9375rem;
+}
+
+.moldura {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--espaco-2);
+  padding: var(--espaco-2) var(--espaco-3);
+  border: 1px solid var(--cor-veludo);
+  border-radius: var(--raio-campo);
+  background: var(--cor-noite);
+  transition: border-color var(--duracao-curta) var(--curva-saida);
+}
+
+.moldura:hover {
+  border-color: var(--cor-bruma);
+}
+
+/* O anel de foco fica na moldura inteira (o campo de texto é só uma parte dela). */
+.moldura:has(.entrada:focus-visible) {
+  outline: var(--anel-de-foco);
+  outline-offset: var(--afastamento-do-foco);
+}
+
+.moldura[data-invalido] {
+  border-color: var(--cor-brasa);
+}
+
+/* Flex e não `display: contents`, que em alguns navegadores tira a semântica de lista. */
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--espaco-2);
+  max-width: 100%;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--espaco-1);
+  max-width: 100%;
+  padding: 2px var(--espaco-1) 2px var(--espaco-3);
+  border-radius: var(--raio-chip);
+  background: var(--cor-veludo);
+  font-size: 0.9375rem;
+  overflow-wrap: anywhere;
+  animation: chegar var(--duracao-curta) var(--curva-saida);
+}
+
+.remover {
+  display: inline-grid;
+  place-items: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  border: 0;
+  border-radius: var(--raio-chip);
+  background: none;
+  color: var(--cor-bruma);
+  line-height: 1;
+}
+
+.remover:hover {
+  background: var(--cor-ameixa);
+  color: var(--cor-nevoa);
+}
+
+.entrada {
+  flex: 1 1 8rem;
+  min-width: 8rem;
+  padding: var(--espaco-1) 0;
+  border: 0;
+  background: none;
+  outline: none;
+}
+
+.entrada::placeholder {
+  color: var(--cor-bruma);
+  opacity: 0.7;
+}
+
+.lista {
+  position: absolute;
+  inset-inline: 0;
+  top: 100%;
+  z-index: 1;
+  max-height: 12rem;
+  margin-top: var(--espaco-1);
+  padding: var(--espaco-1);
+  overflow-y: auto;
+  border: 1px solid var(--cor-veludo);
+  border-radius: var(--raio-campo);
+  background: var(--cor-ameixa);
+  box-shadow: 0 12px 32px rgb(0 0 0 / 0.45);
+}
+
+.lista[hidden] {
+  display: none;
+}
+
+.opcao {
+  padding: var(--espaco-2) var(--espaco-3);
+  border-radius: calc(var(--raio-campo) - 4px);
+  cursor: pointer;
+}
+
+.opcao:hover {
+  background: var(--cor-veludo);
+}
+
+.opcao[aria-selected="true"] {
+  background: var(--cor-veludo);
+  color: var(--cor-lavanda);
+  box-shadow: inset 2px 0 0 var(--cor-ametista);
+}
+
+.dica {
+  color: var(--cor-bruma);
+  font-size: 0.875rem;
+}
+
+.aviso:empty {
+  display: none;
+}
+
+.aviso,
+.erro {
+  color: var(--cor-brasa);
+  font-size: 0.9375rem;
+}
+
+@keyframes chegar {
+  from {
+    opacity: 0;
+    transform: scale(0.85);
+  }
+}

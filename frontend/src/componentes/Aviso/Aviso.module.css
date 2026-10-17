@@ -1,0 +1,81 @@
+/* Aviso flutuante no rodapé. Sem mensagem, o contêiner some da tela, mas a
+   região aria-live dentro dele continua no DOM (e na árvore de acessibilidade).
+   A moldura (`Pagina`) sobe o aviso no celular, acima da barra de abas e do botão flutuante. */
+
+.aviso {
+  position: fixed;
+  inset-inline: var(--espaco-4);
+  bottom: var(--afastamento-do-aviso, var(--espaco-5));
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: var(--espaco-4);
+  width: fit-content;
+  max-width: min(36rem, calc(100% - 2 * var(--espaco-4)));
+  margin-inline: auto;
+  padding: var(--espaco-3) var(--espaco-4);
+  border: 1px solid var(--cor-veludo);
+  border-radius: var(--raio-cartao);
+  background: var(--cor-ameixa);
+  box-shadow: 0 12px 32px rgb(0 0 0 / 0.45);
+  animation: surgir var(--duracao-curta) var(--curva-saida);
+}
+
+.aviso:not([data-tipo]) {
+  padding: 0;
+  border: 0;
+  background: none;
+  box-shadow: none;
+  pointer-events: none;
+  animation: none;
+}
+
+.aviso[data-tipo="confirmacao"] {
+  border-color: var(--cor-ametista);
+}
+
+.aviso[data-tipo="confirmacao"] .texto {
+  color: var(--cor-lavanda);
+}
+
+.aviso[data-tipo="erro"] {
+  border-color: var(--cor-brasa);
+}
+
+.aviso[data-tipo="erro"] .texto {
+  color: var(--cor-brasa);
+}
+
+.texto {
+  max-width: 70ch;
+}
+
+.dispensar {
+  flex-shrink: 0;
+  padding: var(--espaco-1) var(--espaco-3);
+  border: 1px solid var(--cor-veludo);
+  border-radius: var(--raio-campo);
+  background: var(--cor-veludo);
+  color: var(--cor-nevoa);
+}
+
+.dispensar:hover {
+  border-color: var(--cor-bruma);
+}
+
+@keyframes surgir {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .aviso {
+    animation: none;
+  }
+}

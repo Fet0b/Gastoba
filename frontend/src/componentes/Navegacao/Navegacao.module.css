@@ -1,0 +1,212 @@
+/* Navegação: barra lateral (a partir de 48rem) e barra de abas com a folha "Mais" (abaixo). */
+
+.apenasLeitor {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* Barra lateral */
+
+.lateral {
+  position: sticky;
+  top: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--espaco-5);
+  width: var(--largura-da-barra-lateral);
+  height: 100vh;
+  flex-shrink: 0;
+  padding: var(--espaco-5) var(--espaco-4);
+  border-right: var(--borda-de-camada);
+  background: var(--cor-ameixa);
+  box-shadow: var(--sombra-baixa);
+  overflow-y: auto;
+}
+
+.marca {
+  display: flex;
+  align-items: center;
+  gap: var(--espaco-3);
+  padding: 0 var(--espaco-2);
+}
+
+.olho {
+  --tamanho-do-olho: 44px;
+  flex-shrink: 0;
+}
+
+.nomeDaMarca {
+  font-size: var(--texto-grande);
+  line-height: var(--texto-grande-linha);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.telasDaLateral {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espaco-1);
+}
+
+.itemDaLateral {
+  display: flex;
+  align-items: center;
+  gap: var(--espaco-3);
+  min-height: var(--alvo-de-toque);
+  padding: var(--espaco-2) var(--espaco-3);
+  border: 0;
+  border-radius: var(--raio-campo);
+  background: none;
+  color: var(--cor-bruma);
+  font-size: var(--texto-base);
+  line-height: var(--texto-base-linha);
+  text-align: left;
+  transition:
+    color var(--duracao-curta) var(--curva-saida),
+    background var(--duracao-curta) var(--curva-saida);
+}
+
+.itemDaLateral:hover {
+  color: var(--cor-nevoa);
+}
+
+.itemDaLateral[aria-current="page"] {
+  background: var(--cor-veludo);
+  color: var(--cor-lavanda);
+  font-weight: 700;
+}
+
+.pessoa {
+  margin-top: auto;
+  padding: var(--espaco-3);
+  border-top: var(--borda-de-camada);
+  color: var(--cor-bruma);
+  font-size: var(--texto-pequeno);
+  line-height: var(--texto-pequeno-linha);
+  overflow-wrap: anywhere;
+}
+
+/* Barra de abas */
+
+.abas {
+  position: fixed;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 10;
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  min-height: var(--altura-da-barra-de-abas);
+  padding-bottom: env(safe-area-inset-bottom);
+  border-top: var(--borda-de-camada);
+  background: var(--cor-ameixa);
+  box-shadow: var(--sombra-media);
+}
+
+.aba {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  min-width: var(--alvo-de-toque);
+  min-height: var(--alvo-de-toque);
+  padding: var(--espaco-1) 0;
+  border: 0;
+  background: none;
+  color: var(--cor-bruma);
+}
+
+.rotuloDaAba {
+  font-size: var(--texto-minimo);
+  line-height: var(--texto-minimo-linha);
+}
+
+.aba[aria-current="page"] {
+  color: var(--cor-lavanda);
+  font-weight: 700;
+}
+
+/* Folha "Mais" */
+
+.folha {
+  position: fixed;
+  inset: auto 0 0 0;
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  padding: 0;
+  border: var(--borda-de-camada);
+  border-radius: var(--raio-painel) var(--raio-painel) 0 0;
+  background: var(--cor-ameixa);
+  color: var(--cor-nevoa);
+  box-shadow: var(--sombra-alta);
+}
+
+.folha::backdrop {
+  background: rgb(12 8 20 / 0.7);
+}
+
+.conteudoDaFolha {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espaco-3);
+  padding: var(--espaco-4) var(--espaco-4) calc(var(--espaco-4) + env(safe-area-inset-bottom));
+}
+
+.cabecalhoDaFolha {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.tituloDaFolha {
+  font-size: var(--texto-grande);
+  line-height: var(--texto-grande-linha);
+}
+
+.fecharDaFolha {
+  display: grid;
+  place-items: center;
+  min-width: var(--alvo-de-toque);
+  min-height: var(--alvo-de-toque);
+  border: 0;
+  border-radius: var(--raio-chip);
+  background: none;
+  color: var(--cor-bruma);
+}
+
+.listaDaFolha {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espaco-1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.itemDaFolha {
+  display: flex;
+  align-items: center;
+  gap: var(--espaco-3);
+  width: 100%;
+  min-height: var(--alvo-de-toque);
+  padding: var(--espaco-2) var(--espaco-3);
+  border: 0;
+  border-radius: var(--raio-campo);
+  background: none;
+  color: var(--cor-bruma);
+  font-size: var(--texto-base);
+  line-height: var(--texto-base-linha);
+  text-align: left;
+}
+
+.itemDaFolha[aria-current="page"] {
+  background: var(--cor-veludo);
+  color: var(--cor-lavanda);
+  font-weight: 700;
+}

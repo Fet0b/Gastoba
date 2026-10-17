@@ -1,0 +1,107 @@
+/* Linha de transação (compartilhada pelo Início e pelas Transações): ícone redondo, texto e
+   valor com sinal. A cor do valor acompanha o sinal e o ícone, nunca está sozinha. */
+
+.linha {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--espaco-3);
+  padding: var(--espaco-3) 0;
+  list-style: none;
+}
+
+.icone {
+  display: grid;
+  place-items: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: var(--raio-chip);
+  background: color-mix(in srgb, var(--cor-da-categoria, var(--cor-lavanda)) 18%, transparent);
+  color: var(--cor-da-categoria, var(--cor-lavanda));
+}
+
+.principal {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espaco-1);
+  min-width: 0;
+}
+
+.descricao {
+  overflow-wrap: anywhere;
+  font-weight: 600;
+}
+
+.detalhe {
+  color: var(--cor-bruma);
+  font-size: var(--texto-pequeno);
+  line-height: var(--texto-pequeno-linha);
+}
+
+.recorrente {
+  margin-left: var(--espaco-2);
+  padding: 0 var(--espaco-2);
+  border-radius: var(--raio-chip);
+  background: var(--cor-veludo);
+  color: var(--cor-nevoa);
+  font-size: var(--texto-minimo);
+}
+
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--espaco-1) var(--espaco-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.tag {
+  color: var(--cor-bruma);
+  font-size: var(--texto-minimo);
+  line-height: var(--texto-minimo-linha);
+}
+
+.valor {
+  font-family: var(--fonte-titulo);
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.linha[data-sentido="saida"] .valor {
+  color: var(--cor-brasa);
+}
+
+.linha[data-sentido="entrada"] .valor {
+  color: var(--cor-lavanda);
+}
+
+/* Categoria e tag da linha como filtro (só nas Transações): parecem texto, com sublinhado, e a
+   ativa fica em Lavanda. */
+.filtro {
+  min-height: 2rem;
+  padding: 0 var(--espaco-1);
+  border: 0;
+  border-radius: var(--raio-campo);
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-decoration: underline dotted;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.filtro:hover {
+  color: var(--cor-nevoa);
+}
+
+.filtro[aria-pressed="true"] {
+  color: var(--cor-lavanda);
+  text-decoration-style: solid;
+}
+
+.filtro:focus-visible {
+  outline: var(--anel-de-foco);
+  outline-offset: var(--afastamento-do-foco);
+}

@@ -1,0 +1,33 @@
+# Gastoba em contêiner (hoje só o backend; o frontend entra aqui quando existir).
+#
+#   docker compose up --build     sobe a API em http://localhost:8000
+#   docker compose down           para (os dados ficam no volume "dados")
+#   docker compose down -v        para e APAGA o banco
+name: gastoba
+
+services:
+  api:
+    build:
+      context: ./backend
+    image: gastobs-api:local
+    # A API não fornece HTTPS próprio: a porta é publicada SOMENTE no 127.0.0.1 desta máquina.
+    # Nunca troque por "8000:8000" nem por "0.0.0.0:8000:8000" sem uma camada HTTPS e uma revisão de exposição.
+    ports:
+      - "127.0.0.1:8000:8000"
+    environment:
+      # Origens (frontends) que podem chamar a API pelo navegador, em JSON.
+      GASTOBA_ORIGENS_PERMITIDAS: '["http://localhost:5173"]'
+      GASTOBA_NOME_USUARIO_PADRAO: ${GASTOBA_NOME_USUARIO_PADRAO:-Usuário}
+    volumes:
+      - dados:/dados
+    restart: unless-stopped
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+
+volumes:
+  dados:

@@ -1,0 +1,49 @@
+/* Totais do que está na lista: três números lado a lado, o saldo em destaque. */
+
+.totais {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--espaco-3);
+  margin: 0;
+}
+
+.total {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espaco-1);
+  min-width: 0;
+  padding: var(--espaco-3) var(--espaco-4);
+  border-radius: var(--raio-cartao);
+  background: var(--cor-veludo);
+}
+
+.total dt {
+  color: var(--cor-bruma);
+  font-size: var(--texto-pequeno);
+  line-height: var(--texto-pequeno-linha);
+}
+
+.total dd {
+  margin: 0;
+  font-family: var(--fonte-titulo);
+  font-size: var(--texto-grande);
+  line-height: var(--texto-grande-linha);
+  font-weight: 650;
+  overflow-wrap: anywhere;
+}
+
+.saldo dd {
+  font-size: var(--texto-titulo);
+  line-height: var(--texto-titulo-linha);
+}
+
+@media (max-width: 48rem) {
+  .totais {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .saldo {
+    grid-column: 1 / -1;
+    order: -1;
+  }
+}

@@ -1,0 +1,63 @@
+/* Campo de busca: lupa à esquerda, "Limpar" à direita, foco visível. */
+
+.busca {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.lupa {
+  position: absolute;
+  inset-inline-start: var(--espaco-3);
+  color: var(--cor-bruma);
+  pointer-events: none;
+}
+
+.campo {
+  width: 100%;
+  min-height: var(--alvo-de-toque);
+  padding-inline: calc(var(--espaco-3) + 20px + var(--espaco-2)) 5rem;
+  border: 1px solid var(--cor-veludo);
+  border-radius: var(--raio-campo);
+  background: var(--cor-ameixa);
+  color: inherit;
+  font: inherit;
+  transition: border-color var(--duracao-curta) var(--curva-saida);
+}
+
+.campo:hover {
+  border-color: var(--cor-bruma);
+}
+
+.campo:focus-visible {
+  outline: var(--anel-de-foco);
+  outline-offset: var(--afastamento-do-foco);
+}
+
+/* O "x" nativo do campo de busca duplicaria o botão. */
+.campo::-webkit-search-cancel-button {
+  appearance: none;
+}
+
+.limpar {
+  position: absolute;
+  inset-inline-end: var(--espaco-2);
+  min-height: 2rem;
+  padding: 0 var(--espaco-3);
+  border: 0;
+  border-radius: var(--raio-campo);
+  background: transparent;
+  color: var(--cor-lavanda);
+  font: inherit;
+  font-size: var(--texto-pequeno);
+  cursor: pointer;
+}
+
+.limpar:hover {
+  background: var(--cor-veludo);
+}
+
+.limpar:focus-visible {
+  outline: var(--anel-de-foco);
+  outline-offset: var(--afastamento-do-foco);
+}

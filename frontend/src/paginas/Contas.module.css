@@ -1,0 +1,7 @@
+/* Contas: o dinheiro total e as contas em página inteira. */
+
+.conteudo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espaco-5);
+}

@@ -1,0 +1,44 @@
+/* Faturas: página de exemplo, ainda sem dados. */
+
+.conteudo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espaco-5);
+}
+
+.titulo {
+  font-size: 1.125rem;
+  font-weight: 650;
+}
+
+.cartao {
+  width: 100%;
+  max-width: 24rem;
+  align-self: center;
+}
+
+.exemplo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espaco-3);
+}
+
+.marca {
+  align-self: flex-start;
+  padding: 0.125rem 0.5rem;
+  border-radius: 999px;
+  border: 1px solid currentColor;
+  font-size: 0.75rem;
+}
+
+.linha {
+  display: flex;
+  justify-content: space-between;
+}
+
+.barra {
+  width: 100%;
+  height: 0.5rem;
+  border-radius: 999px;
+  opacity: 0.6;
+}

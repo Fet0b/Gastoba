@@ -1,0 +1,85 @@
+/* Seletor de categoria: chips com o ponto da cor da categoria e o nome em
+   texto; a escolhida fica em Lavanda, como os filtros ativos. */
+
+.campo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espaco-1);
+}
+
+.rotulo {
+  color: var(--cor-bruma);
+  font-size: 0.9375rem;
+}
+
+.opcoes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--espaco-2);
+}
+
+.opcao {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--espaco-2);
+  padding: var(--espaco-1) var(--espaco-3);
+  border: 1px solid var(--cor-veludo);
+  border-radius: var(--raio-chip);
+  background: var(--cor-veludo);
+  cursor: pointer;
+  transition:
+    border-color var(--duracao-curta) var(--curva-saida),
+    color var(--duracao-curta) var(--curva-saida);
+}
+
+.opcao:hover {
+  border-color: var(--cor-bruma);
+}
+
+/* O radio nativo fica invisível, mas continua focável e no lugar do chip. */
+.radio {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.opcao:has(.radio:checked) {
+  border-color: var(--cor-lavanda);
+  color: var(--cor-lavanda);
+  box-shadow: inset 0 0 0 1px var(--cor-lavanda);
+}
+
+.opcao:has(.radio:focus-visible) {
+  outline: var(--anel-de-foco);
+  outline-offset: var(--afastamento-do-foco);
+}
+
+.opcoes[aria-invalid="true"] .opcao {
+  border-color: var(--cor-brasa);
+}
+
+.ponto {
+  flex: none;
+  width: 0.625rem;
+  height: 0.625rem;
+  border-radius: 50%;
+  transition: transform var(--duracao-curta) var(--curva-saida);
+}
+
+.opcao:has(.radio:checked) .ponto {
+  transform: scale(1.3);
+}
+
+.carregando {
+  color: var(--cor-bruma);
+}
+
+.erro {
+  color: var(--cor-brasa);
+  font-size: 0.9375rem;
+}

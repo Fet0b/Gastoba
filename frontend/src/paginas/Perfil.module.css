@@ -1,0 +1,73 @@
+/* Tela das chaves de API: introdução no topo e, abaixo, o formulário de criação
+   ao lado da lista (empilhados no celular). Mesma hierarquia do painel:
+   página em Noite, colunas em Ameixa, itens e campos em Veludo. */
+
+.conteudo {
+  display: grid;
+  grid-template-columns: minmax(15rem, 22rem) minmax(0, 1fr);
+  align-items: start;
+  gap: var(--espaco-5);
+}
+
+.introducao {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--espaco-2);
+}
+
+.titulo {
+  font-size: 1.5rem;
+  font-weight: 650;
+}
+
+.texto {
+  max-width: 60ch;
+  color: var(--cor-bruma);
+}
+
+.colunaDoFormulario,
+.colunaDaLista {
+  min-width: 0;
+}
+
+@media (max-width: 48rem) {
+  .conteudo {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--espaco-4);
+  }
+}
+/* Pessoa */
+
+.identidade {
+  margin-block: var(--espaco-3);
+}
+
+.pessoa {
+  display: flex;
+  align-items: center;
+  gap: var(--espaco-3);
+  min-width: 0;
+}
+
+.nomeDaPessoa {
+  min-width: 0;
+  flex: 1;
+  overflow-wrap: anywhere;
+  font-size: var(--texto-grande);
+}
+
+.sair {
+  min-height: var(--alvo-de-toque);
+  flex-shrink: 0;
+  padding: var(--espaco-1) var(--espaco-3);
+  border: 1px solid var(--cor-veludo);
+  border-radius: var(--raio-campo);
+  background: none;
+  transition: border-color var(--duracao-curta) var(--curva-saida);
+}
+
+.sair:hover {
+  border-color: var(--cor-bruma);
+}
+

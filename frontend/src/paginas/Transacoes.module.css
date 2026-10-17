@@ -1,0 +1,65 @@
+/* Transações: chips e busca no topo e, abaixo, o total e a linha do tempo do mês. */
+
+.conteudo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espaco-4);
+}
+
+.secao {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espaco-4);
+  padding: var(--espaco-5);
+  border-radius: var(--raio-painel);
+  background: var(--cor-ameixa);
+}
+
+.titulo {
+  font-size: var(--texto-grande);
+  line-height: var(--texto-grande-linha);
+  font-weight: 650;
+}
+
+.filtros {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espaco-3);
+}
+
+.nota,
+.estado {
+  color: var(--cor-bruma);
+  font-size: var(--texto-pequeno);
+  line-height: var(--texto-pequeno-linha);
+}
+
+.alternador {
+  display: flex;
+  gap: var(--espaco-2);
+}
+
+.opcao {
+  min-height: var(--alvo-de-toque);
+  padding: var(--espaco-2) var(--espaco-4);
+  border-radius: var(--raio-painel);
+  background: var(--cor-ameixa);
+  color: inherit;
+  cursor: pointer;
+}
+
+.opcao:focus-visible {
+  outline: var(--anel-de-foco);
+  outline-offset: var(--afastamento-do-foco);
+}
+
+.opcao[aria-pressed="true"] {
+  font-weight: 650;
+  outline: 2px solid currentColor;
+}
+
+@media (max-width: 48rem) {
+  .secao {
+    padding: var(--espaco-4);
+  }
+}

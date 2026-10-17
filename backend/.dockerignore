@@ -1,0 +1,16 @@
+# Nada disto deve entrar na imagem: ambiente local, caches, testes, segredos e bancos.
+.venv
+.pytest_cache
+.ruff_cache
+**/__pycache__
+**/*.pyc
+tests
+.env
+.env.*
+!.env.example
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+Dockerfile
+.dockerignore

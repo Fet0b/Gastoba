@@ -1,0 +1,263 @@
+/* Aba Importadas: a caixa de entrada das transações do banco. Cartões em Veludo sobre Ameixa;
+   avisos em texto (a cor nunca é a única pista). */
+
+.lista {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espaco-3);
+}
+
+.cartao {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espaco-2);
+  padding: var(--espaco-3) var(--espaco-4);
+  border-radius: var(--raio-cartao);
+  background: var(--cor-veludo);
+}
+
+.cartao[data-descarte="true"] {
+  opacity: 0.85;
+}
+
+.topo {
+  display: flex;
+  align-items: center;
+  gap: var(--espaco-3);
+}
+
+.sentido {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: var(--raio-chip);
+  background: var(--cor-ameixa);
+  color: var(--cor-brasa);
+}
+
+.cartao[data-sentido="entrada"] .sentido {
+  color: var(--cor-lavanda);
+}
+
+.identificacao {
+  flex: 1;
+  min-width: 0;
+}
+
+.nome {
+  font-weight: 650;
+  overflow-wrap: anywhere;
+}
+
+.valor {
+  flex: none;
+  font-weight: 600;
+  color: var(--cor-brasa);
+}
+
+.cartao[data-sentido="entrada"] .valor {
+  color: var(--cor-lavanda);
+}
+
+.detalhe {
+  color: var(--cor-bruma);
+  font-size: 0.9375rem;
+}
+
+.etiquetas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--espaco-2);
+}
+
+/* O alerta nunca é só cor: ícone e texto. */
+.etiqueta {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--espaco-1);
+  padding: var(--espaco-1) var(--espaco-3);
+  border: 1px solid var(--cor-alerta);
+  border-radius: var(--raio-chip);
+  color: var(--cor-nevoa);
+  font-size: var(--texto-pequeno);
+  line-height: var(--texto-pequeno-linha);
+}
+
+.etiqueta svg {
+  color: var(--cor-alerta);
+}
+
+.adicionarTags {
+  align-self: flex-start;
+  min-height: 2rem;
+  padding: var(--espaco-1) var(--espaco-3);
+  border: 1px dashed var(--cor-bruma);
+  border-radius: var(--raio-chip);
+  background: none;
+  color: var(--cor-bruma);
+  font: inherit;
+  font-size: var(--texto-pequeno);
+  cursor: pointer;
+}
+
+.adicionarTags:hover {
+  color: var(--cor-nevoa);
+}
+
+.adicionarTags:focus-visible,
+.primario:focus-visible,
+.secundario:focus-visible,
+.sincronizar:focus-visible,
+.titulo:focus-visible {
+  outline: var(--anel-de-foco);
+  outline-offset: var(--afastamento-do-foco);
+}
+
+.cabecalho {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--espaco-2) var(--espaco-4);
+}
+
+.titulo {
+  font-family: var(--fonte-titulo);
+  font-size: var(--texto-grande);
+  line-height: var(--texto-grande-linha);
+}
+
+.contagem {
+  color: var(--cor-bruma);
+  font-size: var(--texto-pequeno);
+}
+
+/* O cartão tratado sai da fila: desliza, some e recolhe a altura. Desligado com
+   prefers-reduced-motion (e então nem é renderizado). */
+.saindo {
+  --duracao-da-saida: 260ms;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--espaco-3);
+  padding: var(--espaco-3) var(--espaco-4);
+  overflow: hidden;
+  border-radius: var(--raio-cartao);
+  background: var(--cor-veludo);
+  pointer-events: none;
+  animation: sairDaFila var(--duracao-da-saida) var(--curva-saida) forwards;
+}
+
+@keyframes sairDaFila {
+  from {
+    max-height: 4rem;
+    opacity: 1;
+    transform: translateX(0);
+  }
+
+  to {
+    max-height: 0;
+    padding-block: 0;
+    opacity: 0;
+    transform: translateX(2rem);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .saindo {
+    animation: none;
+  }
+}
+
+.erro {
+  color: var(--cor-brasa);
+  font-size: 0.9375rem;
+}
+
+.motivos {
+  padding-left: var(--espaco-4);
+  color: var(--cor-bruma);
+  font-size: 0.9375rem;
+  list-style: disc;
+}
+
+.acoes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--espaco-2);
+}
+
+.primario,
+.secundario {
+  min-height: var(--alvo-de-toque);
+  padding: var(--espaco-1) var(--espaco-4);
+  border: 1px solid var(--cor-ameixa);
+  border-radius: var(--raio-campo);
+  background: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.primario {
+  border-color: transparent;
+  background: var(--cor-ametista);
+  color: var(--cor-noite);
+  font-weight: 650;
+}
+
+.primario:disabled,
+.secundario:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+/* Caixa de entrada: o botão de sincronizar e a coluna das transações. */
+.sincronizar {
+  min-height: var(--alvo-de-toque);
+  padding: var(--espaco-1) var(--espaco-4);
+  border: 1px solid var(--cor-veludo);
+  border-radius: var(--raio-campo);
+  background: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.sincronizar:disabled {
+  cursor: wait;
+  opacity: 0.6;
+}
+
+.coluna {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espaco-4);
+  padding: var(--espaco-5);
+  border-radius: var(--raio-painel);
+  background: var(--cor-ameixa);
+}
+
+.estado {
+  color: var(--cor-bruma);
+}
+
+@media (max-width: 48rem) {
+  .coluna {
+    padding: var(--espaco-4);
+  }
+}
+
+/* Texto só para leitor de tela: a explicação que o `title` não garante. */
+.somenteLeitor {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}

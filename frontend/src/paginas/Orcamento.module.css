@@ -1,0 +1,62 @@
+/* Aba Metas: introdução no topo e uma coluna com o mês, a renda e os cartões das
+   categorias. Mesma hierarquia das outras telas: página em Noite, coluna em
+   Ameixa, cartões em Veludo. */
+
+.conteudo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espaco-5);
+}
+
+.introducao {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espaco-2);
+}
+
+.titulo {
+  font-size: 1.5rem;
+  font-weight: 650;
+}
+
+.texto {
+  max-width: 60ch;
+  color: var(--cor-bruma);
+}
+
+.coluna {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espaco-4);
+  padding: var(--espaco-5);
+  border-radius: var(--raio-painel);
+  background: var(--cor-ameixa);
+}
+
+.faixa {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
+  align-items: start;
+  gap: var(--espaco-4) var(--espaco-5);
+}
+
+.soma {
+  color: var(--cor-bruma);
+  font-size: 0.9375rem;
+}
+
+.estado {
+  color: var(--cor-bruma);
+}
+
+.cartoes {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 16rem), 1fr));
+  gap: var(--espaco-4);
+}
+
+@media (max-width: 48rem) {
+  .coluna {
+    padding: var(--espaco-4);
+  }
+}

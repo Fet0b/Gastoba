@@ -1,0 +1,295 @@
+/* Coluna de contas: as contas são os únicos cartões da interface, porque são
+   objetos distintos. Painel em Ameixa, cartões e campos em Veludo. */
+
+.contas {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espaco-4);
+}
+
+.titulo {
+  font-size: 1.125rem;
+  font-weight: 650;
+}
+
+.estado {
+  color: var(--cor-bruma);
+}
+
+.lista {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 16rem), 1fr));
+  gap: var(--espaco-4);
+}
+
+/* Cartão de conta, estilo carteira: nome, saldo grande, selos e tom do saldo. */
+
+.cartao {
+  --faixa-da-carteira: var(--cor-ametista);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--espaco-2);
+  width: 100%;
+  padding: var(--espaco-4) var(--espaco-4) var(--espaco-4) var(--espaco-5);
+  overflow: hidden;
+  border: var(--borda-de-camada);
+  border-radius: var(--raio-painel);
+  background: linear-gradient(160deg, var(--cor-veludo), var(--cor-ameixa));
+  box-shadow: var(--sombra-media);
+  text-align: start;
+  transition:
+    border-color var(--duracao-curta) var(--curva-saida),
+    box-shadow var(--duracao-media) var(--curva-saida),
+    transform var(--duracao-curta) var(--curva-saida);
+}
+
+/* Faixa de cor na borda do cartão, como a lombada de uma carteira. */
+.cartao::before {
+  content: "";
+  position: absolute;
+  inset-block: 0;
+  inset-inline-start: 0;
+  width: var(--espaco-2);
+  background: var(--faixa-da-carteira);
+}
+
+.cartao[data-tom="negativo"] {
+  --faixa-da-carteira: var(--cor-brasa);
+}
+
+button.cartao:hover {
+  border-color: var(--cor-bruma);
+  transform: translateY(-2px);
+}
+
+button.cartao:active {
+  transform: translateY(1px);
+}
+
+.cartao[aria-pressed="true"] {
+  border-color: var(--cor-lavanda);
+  box-shadow: inset 0 0 0 1px var(--cor-lavanda);
+}
+
+/* Destaque breve enquanto o saldo conta até o novo valor (o ValorAnimado só
+   marca data-animando quando anima, então nada acontece com menos movimento). */
+.cartao:has([data-animando]) {
+  border-color: var(--cor-ametista);
+  box-shadow: 0 0 0 4px rgb(139 92 246 / 0.25);
+}
+
+.nomeDaConta {
+  max-width: 100%;
+  color: var(--cor-bruma);
+  font-size: var(--texto-pequeno);
+  line-height: var(--texto-pequeno-linha);
+  overflow-wrap: anywhere;
+}
+
+.cartao[aria-pressed="true"] .nomeDaConta {
+  color: var(--cor-lavanda);
+}
+
+.saldo {
+  font-family: var(--fonte-titulo);
+  font-size: var(--texto-titulo);
+  line-height: var(--texto-titulo-linha);
+  font-weight: 650;
+  letter-spacing: -0.01em;
+  font-variant-numeric: proportional-nums;
+}
+
+.saldoNegativo {
+  color: var(--cor-brasa);
+}
+
+.tomNegativo {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--espaco-1);
+  color: var(--cor-brasa);
+  font-size: var(--texto-minimo);
+  line-height: var(--texto-minimo-linha);
+  font-weight: 600;
+}
+
+.selos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--espaco-2);
+}
+
+.selo {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--espaco-1);
+  padding: 2px var(--espaco-2);
+  border: 1px solid var(--cor-bruma);
+  border-radius: var(--raio-chip);
+  color: var(--cor-nevoa);
+  font-size: var(--texto-minimo);
+  line-height: var(--texto-minimo-linha);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cartao,
+  button.cartao:hover,
+  button.cartao:active {
+    transition: none;
+    transform: none;
+  }
+}
+
+/* Nova conta */
+
+.novaConta {
+  align-self: flex-start;
+  padding: var(--espaco-2) var(--espaco-3);
+  border: 1px dashed var(--cor-veludo);
+  border-radius: var(--raio-campo);
+  background: none;
+  color: var(--cor-lavanda);
+  transition: border-color var(--duracao-curta) var(--curva-saida);
+}
+
+.novaConta:hover {
+  border-color: var(--cor-lavanda);
+}
+
+.formulario {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espaco-4);
+  padding: var(--espaco-4);
+  border: 1px solid var(--cor-veludo);
+  border-radius: var(--raio-cartao);
+}
+
+.campo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espaco-1);
+}
+
+.campo > label {
+  color: var(--cor-bruma);
+  font-size: 0.9375rem;
+}
+
+.entrada {
+  width: 100%;
+  padding: var(--espaco-2) var(--espaco-3);
+  border: 1px solid var(--cor-veludo);
+  border-radius: var(--raio-campo);
+  background: var(--cor-veludo);
+}
+
+.entrada:hover {
+  border-color: var(--cor-bruma);
+}
+
+.entrada[aria-invalid="true"] {
+  border-color: var(--cor-brasa);
+}
+
+.entradaDeValor {
+  position: relative;
+}
+
+.entradaDeValor .entrada {
+  padding-inline-start: 3.25rem;
+  text-align: end;
+}
+
+.moeda {
+  position: absolute;
+  inset-block: 0;
+  inset-inline-start: var(--espaco-3);
+  display: flex;
+  align-items: center;
+  color: var(--cor-bruma);
+  pointer-events: none;
+}
+
+.opcao {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  column-gap: var(--espaco-2);
+}
+
+.opcao input {
+  width: 1.125rem;
+  height: 1.125rem;
+  margin: 0;
+  accent-color: var(--cor-ametista);
+}
+
+.dica {
+  grid-column: 2;
+  color: var(--cor-bruma);
+  font-size: 0.875rem;
+}
+
+.erroDoCampo {
+  color: var(--cor-brasa);
+  font-size: 0.9375rem;
+}
+
+.acoes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--espaco-2);
+}
+
+.primario {
+  padding: var(--espaco-2) var(--espaco-4);
+  border: 0;
+  border-radius: var(--raio-campo);
+  background: var(--cor-ametista);
+  color: var(--cor-noite);
+  font-weight: 650;
+}
+
+.primario:hover {
+  filter: brightness(1.1);
+}
+
+.primario:disabled {
+  cursor: progress;
+  opacity: 0.6;
+}
+
+.secundario {
+  padding: var(--espaco-2) var(--espaco-4);
+  border: 1px solid var(--cor-veludo);
+  border-radius: var(--raio-campo);
+  background: none;
+}
+
+.secundario:hover {
+  border-color: var(--cor-bruma);
+}
+
+/* Seletor de conta (FiltroDeContas). */
+.filtroDeContas {
+  display: flex;
+  align-items: center;
+  gap: var(--espaco-2);
+}
+
+.rotuloDoFiltro {
+  color: var(--cor-bruma);
+}
+
+.seletor {
+  min-height: 2.5rem;
+  padding: var(--espaco-1) var(--espaco-3);
+  border: 1px solid var(--cor-veludo);
+  border-radius: var(--raio-campo);
+  background: var(--cor-veludo);
+  color: inherit;
+  font: inherit;
+}

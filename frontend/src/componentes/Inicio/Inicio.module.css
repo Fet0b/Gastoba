@@ -1,0 +1,112 @@
+/* Blocos do Início: resumo do mês, aviso contextual e últimos gastos. */
+
+.bloco {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espaco-3);
+}
+
+.cabecalho {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--espaco-3);
+}
+
+.titulo {
+  font-size: var(--texto-grande);
+  line-height: var(--texto-grande-linha);
+  font-weight: 650;
+}
+
+.estado {
+  color: var(--cor-bruma);
+}
+
+.link,
+.acao {
+  min-height: var(--alvo-de-toque);
+  padding: 0 var(--espaco-3);
+  border: none;
+  border-radius: var(--raio-campo);
+  background: transparent;
+  color: var(--cor-lavanda);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.link:hover,
+.acao:hover {
+  background: var(--cor-veludo);
+}
+
+.link:focus-visible,
+.acao:focus-visible {
+  outline: var(--anel-de-foco);
+  outline-offset: var(--afastamento-do-foco);
+}
+
+.ultimos {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* Descrição longa: uma linha com reticências, sem estourar a largura. */
+.ultimos > li [data-descricao] {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  overflow-wrap: normal;
+}
+
+.resumo {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--espaco-5);
+}
+
+.principal {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espaco-3);
+  min-width: 0;
+}
+
+.convite {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--espaco-2);
+  color: var(--cor-bruma);
+  font-size: var(--texto-pequeno);
+  line-height: var(--texto-pequeno-linha);
+}
+
+.aviso {
+  display: flex;
+  align-items: center;
+  gap: var(--espaco-2);
+  padding: var(--espaco-3) var(--espaco-4);
+  border: var(--borda-de-camada);
+  border-radius: var(--raio-cartao);
+  background: var(--cor-veludo);
+  font-weight: 600;
+}
+
+.aviso svg {
+  flex: none;
+  color: var(--cor-alerta);
+}
+
+.aviso[data-situacao="estourou"] svg {
+  color: var(--cor-brasa);
+}
+
+@media (max-width: 48rem) {
+  .resumo {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--espaco-4);
+  }
+}

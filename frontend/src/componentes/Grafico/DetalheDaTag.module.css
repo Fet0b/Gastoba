@@ -1,0 +1,118 @@
+/* Painel de detalhe da tag fixada: gastos do mês, sem sair da tela. */
+
+.painel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espaco-3);
+  padding: var(--espaco-4);
+  border: var(--borda-de-camada);
+  border-radius: var(--raio-cartao);
+  background: var(--cor-veludo);
+}
+
+.cabecalho {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--espaco-3);
+}
+
+.titulo {
+  font-size: 1.125rem;
+  font-weight: 650;
+  overflow-wrap: anywhere;
+}
+
+.resumo,
+.estado {
+  color: var(--cor-bruma);
+  font-size: 0.9375rem;
+}
+
+.fechar,
+.maisGastos {
+  min-height: var(--alvo-de-toque);
+  padding: var(--espaco-1) var(--espaco-4);
+  border: 1px solid var(--cor-bruma);
+  border-radius: var(--raio-campo);
+  background: transparent;
+  color: var(--cor-lavanda);
+  cursor: pointer;
+}
+
+.maisGastos {
+  align-self: flex-start;
+}
+
+.fechar:focus-visible,
+.maisGastos:focus-visible {
+  outline: var(--anel-de-foco);
+  outline-offset: var(--afastamento-do-foco);
+}
+
+.lista {
+  display: flex;
+  flex-direction: column;
+  list-style: none;
+}
+
+.gasto {
+  display: grid;
+  grid-template-columns: 5.5rem minmax(0, 1fr) auto auto;
+  align-items: baseline;
+  gap: var(--espaco-1) var(--espaco-3);
+  padding: var(--espaco-2) 0;
+  border-top: 1px solid var(--cor-ameixa);
+}
+
+.data {
+  color: var(--cor-bruma);
+  font-size: 0.875rem;
+}
+
+.descricao {
+  display: -webkit-box;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+}
+
+.categoria {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--espaco-1);
+  font-size: 0.875rem;
+}
+
+/* O nome da categoria sempre em texto claro; só o ícone leva a cor dela. */
+.nomeDaCategoria {
+  color: var(--cor-nevoa);
+}
+
+.valor {
+  color: var(--cor-brasa);
+  text-align: right;
+}
+
+.parte {
+  grid-column: 2 / -1;
+  color: var(--cor-bruma);
+  font-size: 0.8125rem;
+}
+
+@media (max-width: 30rem) {
+  .gasto {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .data {
+    grid-column: 1 / -1;
+  }
+
+  .parte {
+    grid-column: 1 / -1;
+  }
+}

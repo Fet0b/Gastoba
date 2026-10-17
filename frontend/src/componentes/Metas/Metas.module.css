@@ -1,0 +1,407 @@
+/* Metas: o medidor (anel de progresso com a situação em texto e símbolo), o bloco
+   "Metas do mês" da tela inicial e os cartões da aba Metas. A situação vem em
+   data-situacao; a cor nunca é a única pista. */
+
+.medidor {
+  --cor-da-situacao: var(--cor-ametista);
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--espaco-2);
+  min-width: 0;
+  text-align: center;
+}
+
+.medidor[data-situacao="alerta"] {
+  --cor-da-situacao: var(--cor-alerta);
+}
+
+.medidor[data-situacao="estourou"] {
+  --cor-da-situacao: var(--cor-brasa);
+}
+
+.medidor[data-situacao="sem_renda"] {
+  --cor-da-situacao: var(--cor-bruma);
+}
+
+/* O anel: a trilha é o mesmo tom do arco, mais claro (opacity), nunca um cinza. */
+.anel {
+  position: relative;
+  width: 7rem;
+  max-width: 100%;
+  aspect-ratio: 1;
+  color: var(--cor-da-situacao);
+}
+
+.anelSvg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.trilhaDoAnel,
+.arcoDoAnel {
+  stroke: currentColor;
+  stroke-width: 3.5;
+}
+
+.trilhaDoAnel {
+  opacity: 0.22;
+}
+
+.arcoDoAnel {
+  transition: stroke-dasharray var(--duracao-media) var(--curva-saida);
+}
+
+/* Vivo: o atraso cresce com a posição na grade (--indice), no máximo 400 ms. */
+.medidor {
+  --atraso: min(calc(var(--indice, 0) * 80ms), 400ms);
+}
+
+.anel {
+  transition:
+    transform var(--duracao-curta) var(--curva-saida),
+    filter var(--duracao-curta) var(--curva-saida);
+}
+
+.medidor:hover .anel,
+.medidor:focus-within .anel {
+  transform: scale(1.06);
+  filter: drop-shadow(0 0 0.5rem var(--cor-da-situacao));
+}
+
+@keyframes encherArco {
+  from {
+    stroke-dasharray: 0 100;
+  }
+}
+
+@keyframes aparecerCentro {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes pulsarAnel {
+  0%,
+  100% {
+    filter: drop-shadow(0 0 0 transparent);
+  }
+  40% {
+    filter: drop-shadow(0 0 0.75rem var(--cor-da-situacao));
+  }
+}
+
+.medidor[data-animando] .arcoDoAnel {
+  animation: encherArco calc(var(--duracao-media) * 2) var(--curva-saida) var(--atraso) backwards;
+}
+
+.medidor[data-animando] .centroDoAnel {
+  animation: aparecerCentro var(--duracao-media) ease-out var(--atraso) backwards;
+}
+
+.medidor[data-animando][data-pulso] .anel {
+  animation: pulsarAnel 900ms ease-in-out calc(var(--atraso) + var(--duracao-media) * 2) 1;
+}
+
+.centroDoAnel {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--cor-nevoa);
+  font-family: var(--fonte-titulo);
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+.identificacao {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--espaco-1);
+}
+
+.nomeDaCategoria {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--espaco-2);
+  font-weight: 600;
+}
+
+.ponto {
+  width: 0.625rem;
+  height: 0.625rem;
+  border-radius: 50%;
+  flex: none;
+}
+
+.percentualDaMeta {
+  color: var(--cor-bruma);
+  font-size: 0.9375rem;
+}
+
+.situacao {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: var(--espaco-1);
+  font-size: 0.9375rem;
+}
+
+.icone {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.25rem;
+  height: 1.25rem;
+  border-radius: 50%;
+  background: var(--cor-veludo);
+  color: var(--cor-da-situacao);
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.valores {
+  color: var(--cor-bruma);
+  font-size: 0.875rem;
+}
+
+/* Bloco da tela inicial */
+
+.metasDoMes {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espaco-4);
+}
+
+.cabecalhoDoBloco {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--espaco-2) var(--espaco-4);
+}
+
+.renda {
+  color: var(--cor-bruma);
+}
+
+.renda strong {
+  margin-left: var(--espaco-2);
+  color: var(--cor-lavanda);
+  font-family: var(--fonte-titulo);
+  font-size: 1.25rem;
+}
+
+.lista {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 8rem), 1fr));
+  gap: var(--espaco-4);
+}
+
+/* Em tela estreita a grade nunca cai abaixo de duas colunas. */
+@media (max-width: 30rem) {
+  .lista {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.itemDoPainel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--espaco-2);
+  padding: var(--espaco-3);
+  border-radius: var(--raio-cartao);
+  background: var(--cor-veludo);
+}
+
+.estado {
+  color: var(--cor-bruma);
+}
+
+.abrir,
+.filtrar,
+.botao,
+.botaoPrimario,
+.botaoPerigo {
+  min-height: 2.25rem;
+  padding: var(--espaco-1) var(--espaco-3);
+  border: 1px solid var(--cor-veludo);
+  border-radius: var(--raio-campo);
+  background: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.filtrar {
+  align-self: flex-start;
+  border-color: transparent;
+  color: var(--cor-lavanda);
+  text-decoration: underline;
+}
+
+.botaoPrimario {
+  border-color: transparent;
+  background: var(--cor-ametista);
+  color: var(--cor-noite);
+  font-weight: 650;
+}
+
+.botaoPerigo {
+  border-color: var(--cor-brasa);
+  color: var(--cor-brasa);
+}
+
+.botaoPrimario:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+/* Aba Metas */
+
+.cartoes {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espaco-3);
+}
+
+.cartao {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espaco-3);
+  padding: var(--espaco-4);
+  border-radius: var(--raio-cartao);
+  background: var(--cor-veludo);
+}
+
+.acoes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--espaco-2);
+}
+
+.formulario {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espaco-2);
+}
+
+.campo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espaco-1);
+}
+
+.entrada {
+  width: 8rem;
+  min-height: 2.5rem;
+  padding: var(--espaco-1) var(--espaco-3);
+  border: 1px solid var(--cor-ameixa);
+  border-radius: var(--raio-campo);
+  background: var(--cor-noite);
+}
+
+.entrada[aria-invalid="true"] {
+  border-color: var(--cor-brasa);
+}
+
+.equivale,
+.soma {
+  color: var(--cor-bruma);
+  font-size: 0.9375rem;
+}
+
+.erro {
+  color: var(--cor-brasa);
+  font-size: 0.9375rem;
+}
+
+.semMeta {
+  color: var(--cor-bruma);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .arcoDoAnel,
+  .anel {
+    transition: none;
+    animation: none;
+  }
+
+  .medidor[data-animando] .arcoDoAnel,
+  .medidor[data-animando] .centroDoAnel,
+  .medidor[data-animando][data-pulso] .anel {
+    animation: none;
+  }
+
+  .medidor:hover .anel,
+  .medidor:focus-within .anel {
+    transform: none;
+  }
+}
+
+/* Controle deslizante do percentual */
+
+.deslizante {
+  width: 100%;
+  max-width: 24rem;
+  height: 1.5rem;
+  accent-color: var(--cor-ametista);
+  cursor: pointer;
+}
+
+/* Gráfico da divisão da renda */
+
+.divisao {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espaco-2);
+  margin: 0;
+}
+
+.legendaDoGrafico {
+  font-weight: 600;
+}
+
+.faixa {
+  display: flex;
+  height: 1.25rem;
+  overflow: hidden;
+  border-radius: var(--raio-chip);
+  background: var(--cor-veludo);
+}
+
+.fatia {
+  height: 100%;
+  transition: width var(--duracao-media) var(--curva-saida);
+}
+
+.legenda {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--espaco-1) var(--espaco-4);
+  color: var(--cor-bruma);
+  font-size: 0.9375rem;
+  list-style: none;
+}
+
+.legenda li {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--espaco-2);
+}
+
+.pontoVazio {
+  border: 1px solid var(--cor-bruma);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fatia {
+    transition: none;
+  }
+}

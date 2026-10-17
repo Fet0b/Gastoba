@@ -1,0 +1,7 @@
+/* O valor fica no lugar enquanto conta: algarismos tabulares (classe global
+   .valor) e nenhuma quebra de linha. */
+
+.valorAnimado {
+  display: inline-block;
+  position: relative;
+}

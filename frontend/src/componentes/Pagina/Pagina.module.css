@@ -1,0 +1,186 @@
+/* Moldura de página: no celular uma coluna com folga para a barra de abas; a partir de 48rem,
+   barra lateral e conteúdo lado a lado. */
+
+.pagina {
+  min-height: 100vh;
+  /* O Aviso (fixo no rodapé) fica acima da barra de abas e do botão flutuante "Novo gasto". */
+  --afastamento-do-aviso: calc(
+    var(--altura-da-barra-de-abas) + env(safe-area-inset-bottom) + var(--alvo-de-toque) +
+      2 * var(--espaco-3)
+  );
+}
+
+.apenasLeitor {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* Visível só quando recebe o foco, como primeiro item da página. */
+.pular {
+  position: absolute;
+  top: var(--espaco-2);
+  left: var(--espaco-2);
+  z-index: 30;
+  padding: var(--espaco-2) var(--espaco-4);
+  border-radius: var(--raio-campo);
+  background: var(--cor-ametista);
+  color: var(--cor-noite);
+  font-weight: 650;
+  transform: translateY(-300%);
+}
+
+.pular:focus {
+  transform: none;
+}
+
+.principal {
+  min-width: 0;
+  padding: var(--espaco-4);
+  /* A barra de abas é fixa: o fim do conteúdo precisa de folga, mais o botão flutuante. */
+  padding-bottom: calc(
+    var(--altura-da-barra-de-abas) + env(safe-area-inset-bottom) + var(--alvo-de-toque) +
+      var(--espaco-5)
+  );
+}
+
+.principal:focus {
+  outline: none;
+}
+
+.conteudo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espaco-5);
+}
+
+/* Barra fina de controles */
+
+.controles {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--espaco-4);
+  margin-bottom: var(--espaco-4);
+  padding: var(--espaco-2) 0;
+  background: var(--cor-noite);
+}
+
+.periodo {
+  display: flex;
+  align-items: center;
+  gap: var(--espaco-2);
+}
+
+.rotulo {
+  min-width: 0;
+  font-family: var(--fonte-titulo);
+  font-size: var(--texto-grande);
+  line-height: var(--texto-grande-linha);
+  font-weight: 600;
+  text-align: center;
+}
+
+.seta {
+  display: grid;
+  place-items: center;
+  width: var(--alvo-de-toque);
+  height: var(--alvo-de-toque);
+  padding: 0;
+  border: 1px solid var(--cor-veludo);
+  border-radius: var(--raio-campo);
+  background: var(--cor-ameixa);
+  font-size: 1.25rem;
+  line-height: 1;
+  transition:
+    border-color var(--duracao-curta) var(--curva-saida),
+    background var(--duracao-curta) var(--curva-saida);
+}
+
+.seta:hover {
+  border-color: var(--cor-ametista);
+  background: var(--cor-veludo);
+}
+
+.novoGasto,
+.flutuante {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--espaco-3);
+  min-height: var(--alvo-de-toque);
+  padding: var(--espaco-2) var(--espaco-3) var(--espaco-2) var(--espaco-4);
+  border: 0;
+  border-radius: var(--raio-campo);
+  background: var(--cor-ametista);
+  color: var(--cor-noite);
+  font-weight: 650;
+  transition:
+    transform var(--duracao-curta) var(--curva-saida),
+    filter var(--duracao-curta) var(--curva-saida);
+}
+
+.novoGasto:hover,
+.flutuante:hover {
+  filter: brightness(1.1);
+}
+
+.novoGasto:active,
+.flutuante:active {
+  transform: translateY(1px);
+}
+
+/* No celular: botão flutuante acima da barra de abas e da área segura. */
+.flutuante {
+  position: fixed;
+  right: var(--espaco-4);
+  bottom: calc(var(--altura-da-barra-de-abas) + env(safe-area-inset-bottom) + var(--espaco-3));
+  z-index: 9;
+  min-width: var(--alvo-de-toque);
+  padding-inline: var(--espaco-5);
+  border-radius: var(--raio-chip);
+  box-shadow: var(--sombra-alta);
+}
+
+/* No toque não há teclado: a dica da tecla N só ocupa espaço. */
+.flutuante .tecla {
+  display: none;
+}
+
+.tecla {
+  padding: 0 var(--espaco-2);
+  border: 1px solid rgb(12 8 20 / 0.35);
+  border-radius: 6px;
+  font-family: var(--fonte-corpo);
+  font-size: var(--texto-pequeno);
+  line-height: 1.5;
+}
+
+@media (min-width: 48rem) {
+  .pagina {
+    --afastamento-do-aviso: var(--espaco-5);
+    display: flex;
+    align-items: flex-start;
+  }
+
+  .principal {
+    flex: 1;
+    max-width: 80rem;
+    padding: var(--espaco-5);
+    padding-bottom: var(--espaco-5);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pular,
+  .seta,
+  .novoGasto,
+  .flutuante {
+    transition: none;
+  }
+}

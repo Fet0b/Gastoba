@@ -1,0 +1,144 @@
+/* Total comprometido por mês e próximos lançamentos. A cor só marca (ícone e
+   barrinha); os textos usam os tokens de texto. O movimento é só de entrada e
+   fica desligado com prefers-reduced-motion. */
+
+.comprometido,
+.proximos {
+  --marca-de-ganho: var(--cor-lavanda);
+  --marca-de-gasto: var(--cor-brasa);
+
+  display: flex;
+  flex-direction: column;
+  gap: var(--espaco-3);
+  min-width: 0;
+}
+
+.titulo {
+  font-size: var(--texto-grande);
+  line-height: var(--texto-grande-linha);
+  font-weight: 650;
+}
+
+.nota {
+  color: var(--cor-bruma);
+  font-size: var(--texto-pequeno);
+  line-height: var(--texto-pequeno-linha);
+}
+
+.totais {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--espaco-4);
+}
+
+.total {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espaco-1);
+  min-width: 0;
+}
+
+.rotulo {
+  color: var(--cor-bruma);
+  font-size: var(--texto-pequeno);
+  line-height: var(--texto-pequeno-linha);
+}
+
+.valorDoTotal {
+  font-family: var(--fonte-titulo);
+  font-size: var(--texto-grande);
+  line-height: var(--texto-grande-linha);
+  font-variant-numeric: proportional-nums;
+  white-space: nowrap;
+}
+
+.situacao {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--espaco-1);
+  color: var(--cor-nevoa);
+  font-size: var(--texto-pequeno);
+  line-height: var(--texto-pequeno-linha);
+}
+
+.totais[data-tom="positivo"] .situacao svg {
+  color: var(--cor-dentro);
+}
+
+.totais[data-tom="negativo"] .situacao svg {
+  color: var(--cor-brasa);
+}
+
+.lista {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espaco-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.item {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--espaco-3);
+  padding: var(--espaco-3);
+  border-radius: var(--raio-cartao);
+  background: var(--cor-veludo);
+}
+
+.marca {
+  display: inline-flex;
+  color: var(--marca-de-gasto);
+}
+
+.item[data-tipo="ganho"] .marca {
+  color: var(--marca-de-ganho);
+}
+
+.descricao {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.nomeDoItem {
+  overflow-wrap: anywhere;
+}
+
+.detalhe {
+  color: var(--cor-bruma);
+  font-size: var(--texto-pequeno);
+  line-height: var(--texto-pequeno-linha);
+}
+
+.valorDoItem {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+@media (max-width: 48rem) {
+  .totais {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--espaco-3);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .item {
+    animation: entrada var(--duracao-media) var(--curva-saida) both;
+    animation-delay: var(--atraso, 0ms);
+  }
+
+  .totais {
+    animation: entrada var(--duracao-media) var(--curva-saida) both;
+  }
+}
+
+@keyframes entrada {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}

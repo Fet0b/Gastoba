@@ -1,0 +1,303 @@
+/* Chaves de API: formulário de criação, lista com revogação e o diálogo do
+   segredo. Campos e itens em Veludo sobre as colunas em Ameixa. */
+
+.subtitulo {
+  font-size: 1.125rem;
+  font-weight: 650;
+}
+
+/* Formulário */
+
+.formulario {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espaco-4);
+}
+
+.campo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espaco-1);
+}
+
+.campo > label {
+  color: var(--cor-bruma);
+  font-size: 0.9375rem;
+}
+
+.entrada {
+  width: 100%;
+  padding: var(--espaco-2) var(--espaco-3);
+  border: 1px solid var(--cor-veludo);
+  border-radius: var(--raio-campo);
+  background: var(--cor-veludo);
+}
+
+.entrada:hover {
+  border-color: var(--cor-bruma);
+}
+
+.entrada[aria-invalid="true"] {
+  border-color: var(--cor-brasa);
+}
+
+.escopos {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espaco-3);
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.escopos > legend {
+  margin-bottom: var(--espaco-2);
+  padding: 0;
+  color: var(--cor-bruma);
+  font-size: 0.9375rem;
+}
+
+.opcao {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  column-gap: var(--espaco-2);
+}
+
+.opcao input {
+  width: 1.125rem;
+  height: 1.125rem;
+  margin: 0;
+  accent-color: var(--cor-ametista);
+}
+
+.opcao .dica {
+  grid-column: 2;
+}
+
+.dica {
+  color: var(--cor-bruma);
+  font-size: 0.875rem;
+}
+
+.erroDoCampo {
+  color: var(--cor-brasa);
+  font-size: 0.9375rem;
+}
+
+.acoes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--espaco-2);
+}
+
+.primario,
+.perigo {
+  min-height: var(--alvo-de-toque);
+  padding: var(--espaco-2) var(--espaco-4);
+  border: 0;
+  border-radius: var(--raio-campo);
+  font-weight: 650;
+  transition: filter var(--duracao-curta) var(--curva-saida);
+}
+
+.primario {
+  align-self: flex-start;
+  background: var(--cor-ametista);
+  color: var(--cor-noite);
+}
+
+.perigo {
+  background: var(--cor-brasa);
+  color: var(--cor-noite);
+}
+
+.primario:hover,
+.perigo:hover {
+  filter: brightness(1.1);
+}
+
+.primario:disabled,
+.perigo:disabled,
+.secundario:disabled {
+  cursor: progress;
+  opacity: 0.6;
+}
+
+.secundario {
+  min-height: var(--alvo-de-toque);
+  padding: var(--espaco-2) var(--espaco-4);
+  border: 1px solid var(--cor-veludo);
+  border-radius: var(--raio-campo);
+  background: none;
+  transition: border-color var(--duracao-curta) var(--curva-saida);
+}
+
+.secundario:hover {
+  border-color: var(--cor-bruma);
+}
+
+/* Lista */
+
+.estado {
+  color: var(--cor-bruma);
+}
+
+.lista {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espaco-3);
+}
+
+.item {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--espaco-3);
+  min-width: 0;
+}
+
+.topoDoItem {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--espaco-2) var(--espaco-3);
+}
+
+.nomeDaChave {
+  font-size: 1.0625rem;
+  font-weight: 650;
+  overflow-wrap: anywhere;
+}
+
+.escopo {
+  padding: 0 var(--espaco-2);
+  border: 1px solid var(--cor-bruma);
+  border-radius: var(--raio-chip);
+  color: var(--cor-bruma);
+  font-size: 0.8125rem;
+}
+
+.escopo[data-escopo="escrita"] {
+  border-color: var(--cor-lavanda);
+  color: var(--cor-lavanda);
+}
+
+.expirada {
+  padding: 0 var(--espaco-2);
+  border: 1px solid var(--cor-alerta);
+  border-radius: var(--raio-chip);
+  font-size: 0.8125rem;
+}
+
+.dados {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(9rem, 100%), 1fr));
+  gap: var(--espaco-2) var(--espaco-4);
+  width: 100%;
+  margin: 0;
+}
+
+.dados dt {
+  color: var(--cor-bruma);
+  font-size: 0.8125rem;
+}
+
+.dados dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+  font-variant-numeric: tabular-nums;
+}
+
+.prefixo {
+  font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  font-size: 0.9375rem;
+}
+
+.revogar {
+  min-height: var(--alvo-de-toque);
+  padding: var(--espaco-1) var(--espaco-3);
+  border: 1px solid var(--cor-ameixa);
+  border-radius: var(--raio-campo);
+  background: none;
+  color: var(--cor-brasa);
+  transition: border-color var(--duracao-curta) var(--curva-saida);
+}
+
+.revogar:hover {
+  border-color: var(--cor-brasa);
+}
+
+.confirmacao {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espaco-3);
+  width: 100%;
+  padding: var(--espaco-3);
+  border: 1px solid var(--cor-brasa);
+  border-radius: var(--raio-campo);
+}
+
+/* Diálogo do segredo */
+
+.dialogo {
+  width: min(34rem, 100% - 2 * var(--espaco-4));
+  padding: 0;
+  border: 1px solid var(--cor-veludo);
+  border-radius: var(--raio-painel);
+  background: var(--cor-ameixa);
+  color: var(--cor-nevoa);
+  box-shadow: 0 24px 64px rgb(0 0 0 / 0.55);
+}
+
+.dialogo[open] {
+  animation: surgir var(--duracao-media) var(--curva-saida);
+}
+
+.dialogo::backdrop {
+  background: rgb(12 8 20 / 0.72);
+  backdrop-filter: blur(3px);
+}
+
+.conteudoDoDialogo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espaco-4);
+  padding: var(--espaco-5);
+}
+
+.segredo {
+  display: block;
+  padding: var(--espaco-3);
+  border: 1px dashed var(--cor-ametista);
+  border-radius: var(--raio-campo);
+  background: var(--cor-noite);
+  color: var(--cor-lavanda);
+  font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  font-size: 0.9375rem;
+  overflow-wrap: anywhere;
+  user-select: all;
+}
+
+.resultadoDaCopia {
+  min-height: 1.5em;
+  color: var(--cor-lavanda);
+  font-size: 0.9375rem;
+}
+
+@keyframes surgir {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dialogo[open] {
+    animation: none;
+  }
+}

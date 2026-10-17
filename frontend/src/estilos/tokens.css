@@ -1,0 +1,72 @@
+/* Tokens de design do Gastoba. O app é só escuro: não há tema claro. */
+
+:root {
+  /* Cores (ver "Direção visual" no plano do frontend) */
+  --cor-noite: #0c0814; /* fundo da página; texto sobre botões em Ametista */
+  --cor-ameixa: #171024; /* superfícies: painéis, cartões de conta */
+  --cor-veludo: #241a38; /* superfícies elevadas, bordas, campos */
+  --cor-ametista: #8b5cf6; /* acento não textual: botão primário, foco, íris */
+  --cor-lavanda: #c9b8ff; /* texto de destaque e estado ativo */
+  --cor-nevoa: #eee9fb; /* texto principal */
+  --cor-bruma: #9a8fb8; /* texto secundário */
+  --cor-brasa: #ff7a90; /* valores de gasto (saídas) e erros */
+  --cor-alerta: #f0b429; /* situação de alerta (perto do limite): só em marcas e ícones */
+
+  /* Raios: maiores nas superfícies de fora, menores nos elementos de dentro */
+  --raio-painel: 20px;
+  --raio-cartao: 14px;
+  --raio-campo: 10px;
+  --raio-chip: 999px;
+
+  /* Espaçamentos */
+  --espaco-1: 4px;
+  --espaco-2: 8px;
+  --espaco-3: 12px;
+  --espaco-4: 16px;
+  --espaco-5: 24px;
+  --espaco-6: 32px;
+  --espaco-7: 48px;
+
+  /* Fontes: só a dos títulos vem de pacote; o corpo usa a pilha do sistema */
+  --fonte-titulo: "Bricolage Grotesque Variable", system-ui, -apple-system, "Segoe UI", Roboto,
+    sans-serif;
+  --fonte-corpo: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+
+  /* Foco visível: anel Ametista (3,87:1 sobre Veludo) */
+  --anel-de-foco: 2px solid var(--cor-ametista);
+  --afastamento-do-foco: 2px;
+
+  /* Movimento */
+  --duracao-curta: 150ms;
+  --duracao-media: 400ms;
+  --curva-saida: cubic-bezier(0.2, 0.8, 0.2, 1);
+
+  /* Situação "dentro" (bom): verde de status do guia dataviz, 5,51:1 sobre a Ameixa e 4,89:1 sobre o Veludo.
+     Sempre acompanha ícone e texto, nunca a cor sozinha. */
+  --cor-dentro: #0ca30c;
+
+  /* Escala tipográfica: tamanho e altura de linha */
+  --texto-minimo: 0.75rem;
+  --texto-minimo-linha: 1rem;
+  --texto-pequeno: 0.875rem;
+  --texto-pequeno-linha: 1.25rem;
+  --texto-base: 1rem;
+  --texto-base-linha: 1.5rem;
+  --texto-grande: 1.25rem;
+  --texto-grande-linha: 1.75rem;
+  --texto-titulo: 1.75rem;
+  --texto-titulo-linha: 2.125rem;
+  --texto-destaque: 2.5rem;
+  --texto-destaque-linha: 2.75rem;
+
+  /* Elevação: sombras e a borda sutil das superfícies em camadas */
+  --sombra-baixa: 0 1px 2px rgb(0 0 0 / 0.35);
+  --sombra-media: 0 6px 16px rgb(0 0 0 / 0.4);
+  --sombra-alta: 0 12px 32px rgb(0 0 0 / 0.45);
+  --borda-de-camada: 1px solid rgb(201 184 255 / 0.08);
+
+  /* Navegação (o ponto de quebra do layout é 48rem, que media query não lê de variável) */
+  --largura-da-barra-lateral: 15rem;
+  --altura-da-barra-de-abas: 4rem;
+  --alvo-de-toque: 44px;
+}

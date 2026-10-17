@@ -1,0 +1,19 @@
+<svg viewBox="-32 -32 64 64" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <radialGradient id="iris" r="1">
+      <stop offset="0" stop-color="#C9B8FF"/>
+      <stop offset=".55" stop-color="#8B5CF6"/>
+      <stop offset="1" stop-color="#3B1F8F"/>
+    </radialGradient>
+    <path id="marca" d="M0,-18 a5,5 0 1 1 -4,8 c3,-1 4,-4 4,-8z"/>
+  </defs>
+  <circle r="30" fill="#171024" stroke="#8B5CF6" stroke-width="2"/>
+  <circle r="24" fill="url(#iris)"/>
+  <g fill="#0C0814">
+    <use href="#marca"/>
+    <use href="#marca" transform="rotate(120)"/>
+    <use href="#marca" transform="rotate(240)"/>
+  </g>
+  <circle r="7" fill="#0C0814"/>
+  <path d="M-1.2,-7 h2.4 v5 h-2.4z" fill="#8B5CF6"/>
+</svg>

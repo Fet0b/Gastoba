@@ -1,0 +1,58 @@
+/* A projeção do mês: o valor estimado e a frase da situação. A cor só marca (o ícone);
+   o texto fica nos tokens de texto. */
+
+.projecao {
+  --marca: var(--cor-bruma);
+
+  display: flex;
+  flex-direction: column;
+  gap: var(--espaco-1);
+  min-width: 0;
+}
+
+.projecao[data-situacao="cabe"] {
+  --marca: var(--cor-dentro);
+}
+
+.projecao[data-situacao="passa"] {
+  --marca: var(--cor-brasa);
+}
+
+.rotulo {
+  color: var(--cor-bruma);
+  font-size: var(--texto-pequeno);
+  line-height: var(--texto-pequeno-linha);
+}
+
+.valor {
+  font-family: var(--fonte-titulo);
+  font-size: var(--texto-destaque);
+  line-height: var(--texto-destaque-linha);
+  font-variant-numeric: proportional-nums;
+  white-space: nowrap;
+}
+
+.observacao {
+  color: var(--cor-bruma);
+  font-size: var(--texto-pequeno);
+  line-height: var(--texto-pequeno-linha);
+}
+
+.frase {
+  display: inline-flex;
+  align-items: flex-start;
+  gap: var(--espaco-2);
+  font-weight: 600;
+}
+
+.frase svg {
+  flex: none;
+  margin-top: 0.2rem;
+  color: var(--marca);
+}
+
+.nota {
+  color: var(--cor-bruma);
+  font-size: var(--texto-minimo);
+  line-height: var(--texto-minimo-linha);
+}

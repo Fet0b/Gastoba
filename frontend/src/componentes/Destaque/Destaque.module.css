@@ -1,0 +1,39 @@
+.destaque {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espaco-1);
+}
+
+.rotulo {
+  color: var(--cor-bruma);
+  font-size: var(--texto-pequeno);
+  line-height: var(--texto-pequeno-linha);
+}
+
+/* Número de destaque: algarismos proporcionais (não tabulares), como pede o guia dataviz */
+.valor {
+  font-family: var(--fonte-titulo);
+  font-size: var(--texto-destaque);
+  line-height: var(--texto-destaque-linha);
+  font-variant-numeric: proportional-nums;
+  white-space: nowrap;
+}
+
+.tom {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--espaco-1);
+  font-size: var(--texto-minimo);
+  line-height: var(--texto-minimo-linha);
+  font-weight: 600;
+}
+
+.destaque[data-tom="positivo"] .valor,
+.destaque[data-tom="positivo"] .tom {
+  color: var(--cor-dentro);
+}
+
+.destaque[data-tom="negativo"] .valor,
+.destaque[data-tom="negativo"] .tom {
+  color: var(--cor-brasa);
+}

@@ -1,0 +1,37 @@
+/* Tags: os gastos do mês por tag (barras) e o detalhe da tag fixada. */
+
+.conteudo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espaco-5);
+}
+
+.total {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--espaco-2) var(--espaco-3);
+}
+
+.rotuloDoTotal {
+  color: var(--cor-bruma);
+}
+
+.valorDoTotal {
+  font-family: var(--fonte-titulo);
+  font-size: var(--texto-titulo);
+  line-height: var(--texto-titulo-linha);
+  color: var(--cor-nevoa);
+}
+
+/* Só para o leitor de tela: a região que anuncia a tag fixada. */
+.somenteLeitor {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}

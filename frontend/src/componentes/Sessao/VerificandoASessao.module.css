@@ -1,0 +1,29 @@
+/* Carregamento da sessão: texto discreto no centro, que surge devagar para não
+   piscar quando a resposta chega rápido. */
+
+.pagina {
+  display: grid;
+  place-items: center;
+  min-height: 100vh;
+  padding: var(--espaco-5) var(--espaco-4);
+}
+
+.texto {
+  color: var(--cor-bruma);
+  animation: aparecer var(--duracao-media) var(--curva-saida) 300ms both;
+}
+
+@keyframes aparecer {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .texto {
+    animation: none;
+  }
+}

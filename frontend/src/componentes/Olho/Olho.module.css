@@ -1,0 +1,110 @@
+/*
+ * O olho. As transformações usam a origem (0, 0) do viewBox, que é o centro
+ * do olho; em SVG, `px` numa transformação CSS vale uma unidade do viewBox.
+ *
+ * Cada animação fica num elemento próprio, para a troca de estado não
+ * reiniciar a abertura: a pálpebra abre no <rect> e pisca no <g> em volta;
+ * as marcas assentam no grupo de dentro e giram no de fora.
+ */
+
+.olho {
+  display: block;
+  width: var(--tamanho-do-olho, 40px);
+  height: var(--tamanho-do-olho, 40px);
+  overflow: visible;
+}
+
+.olho * {
+  transform-box: view-box;
+  transform-origin: 0 0;
+}
+
+/* Íris e pupila seguem o cursor (variáveis escritas por useSeguirCursor) */
+
+.olhar {
+  transform: translate(calc(var(--olho-x, 0) * 1px), calc(var(--olho-y, 0) * 1px));
+  transition: transform 120ms var(--curva-saida);
+}
+
+.pupila {
+  transform: translate(calc(var(--olho-x, 0) * 0.5px), calc(var(--olho-y, 0) * 0.5px));
+  transition: transform 120ms var(--curva-saida);
+}
+
+/* Abertura: a pálpebra sobe uma vez e as marcas dão uma volta e assentam */
+
+.palpebra {
+  transform: translateY(-64px);
+  animation: abrir 700ms var(--curva-saida) 150ms both;
+}
+
+.marcas {
+  animation: assentar 1100ms var(--curva-saida) 150ms both;
+}
+
+@keyframes abrir {
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(-64px);
+  }
+}
+
+@keyframes assentar {
+  from {
+    transform: rotate(-360deg);
+  }
+  to {
+    transform: rotate(0deg);
+  }
+}
+
+/* Confirmação: as marcas giram rápido uma volta */
+
+.olho[data-estado="confirmando"] .giro {
+  animation: girar 600ms var(--curva-saida);
+}
+
+@keyframes girar {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Erro: o olho pisca uma vez (a pálpebra desce e volta) */
+
+.olho[data-estado="erro"] .piscada {
+  animation: piscar 320ms ease-in-out;
+}
+
+@keyframes piscar {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  45%,
+  55% {
+    transform: translateY(64px);
+  }
+}
+
+/* Menos movimento: olho aberto e parado, sem abertura, giro nem piscada */
+
+@media (prefers-reduced-motion: reduce) {
+  .olhar,
+  .pupila {
+    transform: none;
+    transition: none;
+  }
+
+  .palpebra,
+  .marcas,
+  .olho[data-estado="confirmando"] .giro,
+  .olho[data-estado="erro"] .piscada {
+    animation: none;
+  }
+}

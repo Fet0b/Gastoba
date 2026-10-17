@@ -1,0 +1,227 @@
+/* Compositor de gasto: diálogo modal centrado no desktop e folha que sobe de
+   baixo no celular. Superfície em Ameixa, campos em Veludo. */
+
+.dialogo {
+  width: min(36rem, 100% - 2 * var(--espaco-4));
+  max-height: calc(100dvh - 2 * var(--espaco-6));
+  padding: 0;
+  overflow-y: auto;
+  border: 1px solid var(--cor-veludo);
+  border-radius: var(--raio-painel);
+  background: var(--cor-ameixa);
+  color: var(--cor-nevoa);
+  box-shadow: 0 24px 64px rgb(0 0 0 / 0.55);
+}
+
+.dialogo[open] {
+  animation: surgir var(--duracao-media) var(--curva-saida);
+}
+
+.dialogo::backdrop {
+  background: rgb(12 8 20 / 0.72);
+  backdrop-filter: blur(3px);
+}
+
+.formulario {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espaco-5);
+  padding: var(--espaco-5);
+}
+
+.topo {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--espaco-3);
+}
+
+.titulo {
+  font-size: 1.375rem;
+  font-weight: 650;
+}
+
+.atalho {
+  color: var(--cor-bruma);
+  font-size: 0.875rem;
+}
+
+.atalho kbd {
+  padding: 1px 6px;
+  border: 1px solid var(--cor-veludo);
+  border-radius: 6px;
+  font-family: inherit;
+  font-size: 0.8125rem;
+}
+
+.linha {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+  gap: var(--espaco-4);
+}
+
+.tipos {
+  display: inline-flex;
+  align-self: flex-start;
+  gap: var(--espaco-1);
+  padding: var(--espaco-1);
+  border: 1px solid var(--cor-veludo);
+  border-radius: var(--raio-chip);
+}
+
+.tipo {
+  padding: var(--espaco-1) var(--espaco-3);
+  border: 0;
+  border-radius: var(--raio-chip);
+  background: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.tipo[aria-pressed="true"] {
+  background: var(--cor-ametista);
+  color: var(--cor-noite);
+  font-weight: 650;
+}
+
+.campo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espaco-1);
+  min-width: 0;
+}
+
+.rotulo {
+  color: var(--cor-bruma);
+  font-size: 0.9375rem;
+}
+
+.entrada {
+  width: 100%;
+  min-height: 2.75rem;
+  padding: var(--espaco-2) var(--espaco-3);
+  border: 1px solid var(--cor-veludo);
+  border-radius: var(--raio-campo);
+  background: var(--cor-veludo);
+  transition: border-color var(--duracao-curta) var(--curva-saida);
+}
+
+.entrada:hover {
+  border-color: var(--cor-bruma);
+}
+
+.entrada[aria-invalid="true"] {
+  border-color: var(--cor-brasa);
+}
+
+.entrada:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.erro {
+  color: var(--cor-brasa);
+  font-size: 0.9375rem;
+}
+
+.rodape {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--espaco-3);
+  padding-top: var(--espaco-4);
+  border-top: 1px solid var(--cor-veludo);
+}
+
+.motivos {
+  flex: 1 1 14rem;
+  color: var(--cor-bruma);
+  font-size: 0.875rem;
+}
+
+.acoes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--espaco-2);
+  margin-inline-start: auto;
+}
+
+.primario {
+  min-height: 2.75rem;
+  padding: var(--espaco-2) var(--espaco-5);
+  border: 0;
+  border-radius: var(--raio-campo);
+  background: var(--cor-ametista);
+  color: var(--cor-noite);
+  font-weight: 650;
+  transition: filter var(--duracao-curta) var(--curva-saida);
+}
+
+.primario:hover:not(:disabled) {
+  filter: brightness(1.1);
+}
+
+.primario:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.formulario[aria-busy="true"] .primario {
+  cursor: progress;
+}
+
+.secundario {
+  min-height: 2.75rem;
+  padding: var(--espaco-2) var(--espaco-4);
+  border: 1px solid var(--cor-veludo);
+  border-radius: var(--raio-campo);
+  background: none;
+}
+
+.secundario:hover {
+  border-color: var(--cor-bruma);
+}
+
+/* Celular: folha presa à base da tela, que sobe ao abrir. */
+@media (max-width: 40rem) {
+  .dialogo {
+    width: 100%;
+    max-width: 100%;
+    max-height: 92dvh;
+    margin: auto 0 0;
+    border-width: 1px 0 0;
+    border-radius: var(--raio-painel) var(--raio-painel) 0 0;
+  }
+
+  .dialogo[open] {
+    animation-name: subir;
+  }
+
+  .formulario {
+    padding: var(--espaco-4);
+    padding-bottom: calc(var(--espaco-4) + env(safe-area-inset-bottom));
+  }
+
+  .acoes {
+    width: 100%;
+  }
+
+  .acoes > button {
+    flex: 1;
+  }
+}
+
+@keyframes surgir {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+  }
+}
+
+@keyframes subir {
+  from {
+    transform: translateY(100%);
+  }
+}

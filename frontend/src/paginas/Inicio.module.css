@@ -1,0 +1,45 @@
+/* Início, na ordem do DOM: o número principal, as metas do mês (os anéis, em destaque), o ritmo,
+   os últimos gastos e o aviso do mês. No computador são duas colunas (a ordem de leitura continua
+   a do DOM); no celular, uma só. */
+
+.conteudo {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: var(--espaco-5);
+  align-items: start;
+}
+
+.conteudo > * {
+  min-width: 0;
+}
+
+.metas {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espaco-3);
+}
+
+.titulo {
+  font-size: var(--texto-grande);
+  line-height: var(--texto-grande-linha);
+  font-weight: 650;
+  margin-bottom: var(--espaco-3);
+}
+
+.metas .titulo {
+  margin-bottom: 0;
+}
+
+.estado {
+  color: var(--cor-bruma);
+}
+
+.aviso {
+  grid-column: 1 / -1;
+}
+
+@media (max-width: 48rem) {
+  .conteudo {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
