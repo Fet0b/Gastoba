@@ -1,6 +1,5 @@
-/* Início, na ordem do DOM: o número principal, as metas do mês (os anéis, em destaque), o ritmo,
-   os últimos gastos e o aviso do mês. No computador são duas colunas (a ordem de leitura continua
-   a do DOM); no celular, uma só. */
+/* Resumo e metas usam a largura disponível; ritmo e últimos gastos dividem
+   a linha seguinte no computador. No celular, a ordem do DOM continua em uma coluna. */
 
 .conteudo {
   display: grid;
@@ -11,6 +10,11 @@
 
 .conteudo > * {
   min-width: 0;
+}
+
+.conteudo > :first-child,
+.metas {
+  grid-column: 1 / -1;
 }
 
 .metas {

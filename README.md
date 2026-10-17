@@ -6,7 +6,7 @@ Controle de gastos pessoais com uma interface em português: contas, gastos, gan
 
 ![Painel do Gastoba com dados fictícios](Docs/imagens/painel.png)
 
-*A captura foi feita na simulação local. Todas as contas, transações e valores são fictícios.*
+*Tela Início, capturada na interface real em simulação local. Todas as contas, transações e valores são fictícios.*
 
 ## Recursos
 
