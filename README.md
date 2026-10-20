@@ -4,9 +4,19 @@
 
 Controle de gastos pessoais com uma interface em português: contas, gastos, ganhos, recorrências mensais, orçamento por categoria e distribuição por tags.
 
+## O que resolve e para quem
+
+Ajuda uma pessoa a entender para onde vai o seu dinheiro, registrando gastos e ganhos por conta, categoria e tag e acompanhando metas mensais. É voltado a quem quer controlar as próprias finanças em uma instalação própria (localhost ou rede privada), com os dados sob seu controle, sem depender de um serviço de terceiros para guardá-los.
+
 ![Painel do Gastoba com dados fictícios](Docs/imagens/painel.png)
 
 *Tela Início, capturada na interface real em simulação local. Todas as contas, transações e valores são fictícios.*
+
+A demonstração executável está em [Experimente a interface](#experimente-a-interface): `npm ci` e `npm run dev` abrem a mesma interface com dados fictícios em memória, sem backend.
+
+## Papel e escopo
+
+O Gastoba é um projeto individual, de uso pessoal. Este repositório é uma cópia pública do código e da documentação, para leitura e reprodução local. Não há serviço hospedado nem promessa de um: cada pessoa executa a sua própria instância.
 
 ## Recursos
 
@@ -16,6 +26,12 @@ Controle de gastos pessoais com uma interface em português: contas, gastos, gan
 - Isolamento entre usuários, proteção CSRF, limite de tentativas de login e cadastro fechado por padrão.
 - Importação opcional pela Pluggy, com caixa de entrada para aceitar ou ignorar transações. Requer configuração e conta compatível do provedor.
 - Interface responsiva, navegação por teclado e suporte a movimento reduzido.
+
+## Decisões técnicas
+
+- **Dinheiro em centavos inteiros.** O value object `Dinheiro` (`backend/src/gastoba/domain/dinheiro.py`) guarda centavos inteiros (colunas `*_centavos`), e a API troca valores como texto decimal. Alternativa descartada: `float`, que acumula erros de arredondamento (Constituição, Artigo III).
+- **Arquitetura em camadas com portas.** O backend segue `domain → application → infrastructure`, com a API como ponto de composição; integrações entram por portas `Protocol` em `domain/portas.py`. Um teste automatizado (`backend/tests/architecture`) verifica as dependências. Alternativa: acessar o ORM e a Pluggy direto dos casos de uso, que acoplaria as regras de negócio a bibliotecas externas (Artigo I).
+- **Simulação em memória no frontend.** Com `VITE_USAR_SIMULACAO=true`, o `npm run dev` funciona sem backend, e a simulação fica fora do build de produção. Alternativa: exigir sempre a API real, o que impediria experimentar a interface sem configurar o servidor.
 
 ## Experimente a interface
 
@@ -49,15 +65,17 @@ Para conectar o frontend, crie `frontend/.env.development.local` com `VITE_USAR_
 
 Na raiz, `docker compose up --build -d` inicia a API e aplica migrations; a porta é publicada somente em `127.0.0.1:8000`. O frontend pode rodar com o comando de desenvolvimento acima. `docker compose down` preserva o volume SQLite; **`docker compose down -v` apaga os dados**. A imagem usa usuário sem privilégios, filesystem somente leitura e sem capacidades extras.
 
-## Segurança e limitações
+## Limitações e segurança
 
 Esta cópia pública contém código e documentação reproduzíveis, sem configuração da instalação particular. O histórico começa nesta publicação. O [relatório de revisão](SECURITY.md) registra o escopo e as limitações.
 
-Use em localhost ou rede privada protegida. A aplicação não fornece HTTPS próprio; acesso remoto exige proxy HTTPS e cookies `Secure`. Não exponha diretamente a porta da API. O cadastro deve permanecer fechado em uma instalação pessoal. O limitador de login e tarefas periódicas foram desenhados para **uma réplica**.
+Use em localhost ou rede privada protegida. A aplicação não fornece HTTPS próprio; acesso remoto exige proxy HTTPS e cookies `Secure`. Não exponha diretamente a porta da API. O cadastro deve permanecer fechado em uma instalação pessoal. O limitador de login e tarefas periódicas foram desenhados para **uma réplica**. Os dados ficam em SQLite local, sem alta disponibilidade.
 
 A integração Pluggy é opcional e fica desligada sem credenciais configuradas no servidor. O Gastoba não recebe credenciais bancárias; a autorização acontece no provedor. Testes usam respostas simuladas e não validam conexão bancária real. Confira os termos e limites atuais do seu plano antes de ativá-la.
 
-## Desenvolvimento e verificação
+## Desenvolvimento, testes e verificação
+
+A suíte do backend (`pytest`) reúne testes de arquitetura, unitários (domínio, aplicação e infraestrutura) e de integração das rotas, com SQLite temporário. No frontend, `npm test` roda o Vitest. Execute cada bloco a partir da pasta indicada:
 
 ```bash
 # backend/

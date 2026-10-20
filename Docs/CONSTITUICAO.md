@@ -1,6 +1,6 @@
 # Constituição do Gastoba
 
-**Versão**: 1.0.2 · **Ratificada em**: 2026-10-07 · **Última emenda**: 2026-10-13
+**Versão**: 1.1.0 · **Ratificada em**: 2026-10-07 · **Última emenda**: 2026-10-20
 
 Este documento define os princípios inegociáveis do Gastoba. Todo plano (`plans/`), toda implementação e toda revisão de código devem respeitá-los. Em caso de conflito entre esta constituição e qualquer outro documento do projeto, a constituição prevalece; para mudá-la, siga a seção "Governança".
 
@@ -70,6 +70,18 @@ O Gastoba é uma plataforma web de controle de gastos pessoais. Permite registra
 1. Construir só o que o plano atual pede; nada de abstrações "para o futuro" sem uso concreto.
 2. Nova dependência só entra com justificativa no plano (o que resolve, por que não dá com o que já existe).
 3. Diante de duas soluções corretas, prefere-se a mais simples de entender.
+
+## Artigo X: O README é a porta de entrada
+
+Todo README do projeto, em português, deve conter:
+
+1. **O que resolve e para quem**: o problema e o público a que se destina.
+2. **Demonstração**: ao menos uma imagem real da interface (com dados fictícios) e um exemplo executável.
+3. **Papel e escopo**: o papel de quem mantém o projeto e o que ele cobre, incluindo se é de uso pessoal ou uma cópia pública de código, sem prometer serviço hospedado que não exista.
+4. **Decisões técnicas**: duas ou três decisões relevantes com as alternativas consideradas, sustentadas pelo código ou pelos documentos do repositório.
+5. **Execução, verificação e limitações**: como executar e verificar, como rodar os testes e quais são as limitações conhecidas, com comandos conferidos contra os arquivos do repositório.
+
+Nenhum README inclui segredos, dados reais, caminhos privados ou afirmações que o repositório não comprove.
 
 ## Governança
 
