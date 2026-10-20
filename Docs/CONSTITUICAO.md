@@ -1,6 +1,6 @@
 # Constituição do Gastoba
 
-**Versão**: 1.1.0 · **Ratificada em**: 2026-10-07 · **Última emenda**: 2026-10-20
+**Versão**: 1.1.1 · **Ratificada em**: 2026-10-07 · **Última emenda**: 2026-10-20
 
 Este documento define os princípios inegociáveis do Gastoba. Todo plano (`plans/`), toda implementação e toda revisão de código devem respeitá-los. Em caso de conflito entre esta constituição e qualquer outro documento do projeto, a constituição prevalece; para mudá-la, siga a seção "Governança".
 
