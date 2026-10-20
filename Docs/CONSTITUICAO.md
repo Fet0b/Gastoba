@@ -76,8 +76,8 @@ O Gastoba é uma plataforma web de controle de gastos pessoais. Permite registra
 Todo README do projeto, em português, deve conter:
 
 1. **O que resolve e para quem**: o problema e o público a que se destina.
-2. **Demonstração**: ao menos uma imagem real da interface (com dados fictícios) e um exemplo executável.
-3. **Papel e escopo**: o papel de quem mantém o projeto e o que ele cobre, incluindo se é de uso pessoal ou uma cópia pública de código, sem prometer serviço hospedado que não exista.
+2. **Demonstração**: ao menos uma destas opções: captura real da interface (com dados fictícios), vídeo curto ou exemplo executável.
+3. **Papel e escopo**: o papel de quem mantém o projeto e a natureza dele (individual, de colaboração, de estudo ou de uso pessoal), com seus limites: o que cobre, o que não cobre e, se for cópia pública de código, a ausência de promessa de serviço hospedado que não exista.
 4. **Decisões técnicas**: duas ou três decisões relevantes com as alternativas consideradas, sustentadas pelo código ou pelos documentos do repositório.
 5. **Execução, verificação e limitações**: como executar e verificar, como rodar os testes e quais são as limitações conhecidas, com comandos conferidos contra os arquivos do repositório.
 
