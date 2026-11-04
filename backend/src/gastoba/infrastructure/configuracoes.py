@@ -1,6 +1,7 @@
 from functools import lru_cache
+from typing import Any
 
-from pydantic import NonNegativeInt, PositiveInt, SecretStr
+from pydantic import NonNegativeInt, PositiveInt, SecretStr, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -30,6 +31,28 @@ class Configuracoes(BaseSettings):
     pluggy_intervalo_horas: NonNegativeInt = 6
     # Na primeira busca de uma conta, quantos dias para trás.
     pluggy_dias_iniciais: PositiveInt = 30
+
+    @field_validator("pluggy_client_id", "pluggy_email_do_dono", mode="before")
+    @classmethod
+    def _aparar_texto_da_pluggy(cls, valor: Any) -> Any:
+        # Segredo colado com quebra de linha ou espaço no fim é recusado pela Pluggy sem pista.
+        if isinstance(valor, str):
+            return valor.strip() or None
+        return valor
+
+    @field_validator("pluggy_client_secret", mode="before")
+    @classmethod
+    def _aparar_segredo_da_pluggy(cls, valor: Any) -> Any:
+        if isinstance(valor, str):
+            return valor.strip() or None
+        if isinstance(valor, SecretStr):
+            return valor.get_secret_value().strip() or None
+        return valor
+
+    @field_validator("pluggy_item_ids", mode="after")
+    @classmethod
+    def _aparar_itens_da_pluggy(cls, valores: list[str]) -> list[str]:
+        return [item for item in (valor.strip() for valor in valores) if item]
 
     @property
     def importacao_ativa(self) -> bool:

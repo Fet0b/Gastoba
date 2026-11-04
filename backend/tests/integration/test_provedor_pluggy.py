@@ -331,3 +331,58 @@ def test_erro_de_rede_vira_provedor_indisponivel_sem_vazar_url_nem_segredo():
     assert "item-secreto" not in str(erro.value)
     assert SEGREDO not in str(erro.value)
     assert erro.value.__cause__ is None
+
+
+# --- motivo da falha (diagnóstico seguro) ---
+
+
+def test_motivo_da_credencial_recusada_traz_a_etapa_e_o_status(servidor, provedor):
+    servidor.status_da_auth = 403
+
+    with pytest.raises(ProvedorIndisponivel) as erro:
+        provedor.listar_contas("item-1")
+
+    assert erro.value.motivo == "autenticacao http 403"
+
+
+def test_motivo_da_falha_nas_contas_traz_a_etapa_e_o_status(servidor, provedor):
+    servidor.status_forcado = 404
+
+    with pytest.raises(ProvedorIndisponivel) as erro:
+        provedor.listar_contas("item-1")
+
+    assert erro.value.motivo == "contas http 404"
+
+
+def test_motivo_da_falha_nas_transacoes_traz_a_etapa_e_o_status(servidor, provedor):
+    servidor.status_forcado = 500
+
+    with pytest.raises(ProvedorIndisponivel) as erro:
+        listar(provedor)
+
+    assert erro.value.motivo == "transacoes http 500"
+
+
+def test_motivo_da_resposta_malformada(servidor, provedor):
+    servidor.corpo_bruto = b"nao e json"
+
+    with pytest.raises(ProvedorIndisponivel) as erro:
+        provedor.listar_contas("item-1")
+
+    assert erro.value.motivo == "contas resposta invalida"
+
+
+def test_motivo_do_erro_de_rede_traz_so_o_nome_da_classe():
+    def cair(_pedido):
+        raise httpx.ConnectError("falhou em https://api.pluggy.ai/accounts?itemId=item-secreto")
+
+    provedor = ProvedorPluggy(
+        "id", SEGREDO, cliente=httpx.Client(transport=httpx.MockTransport(cair))
+    )
+
+    with pytest.raises(ProvedorIndisponivel) as erro:
+        provedor.listar_contas("item-secreto")
+
+    assert erro.value.motivo == "autenticacao rede ConnectError"
+    assert "item-secreto" not in erro.value.motivo
+    assert SEGREDO not in erro.value.motivo

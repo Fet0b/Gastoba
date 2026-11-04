@@ -22,6 +22,14 @@ TEMPO_LIMITE_EM_SEGUNDOS = 20.0
 
 MENSAGEM_DE_FALHA = "A Pluggy não respondeu como esperado."
 
+# Etapa de cada rota, para o motivo da falha (só estas palavras vão ao log).
+ETAPAS = {"/auth": "autenticacao", "/accounts": "contas", "/transactions": "transacoes"}
+
+
+def _falha(caminho: str, detalhe: str) -> ProvedorIndisponivel:
+    etapa = ETAPAS.get(caminho, "pluggy")
+    return ProvedorIndisponivel(MENSAGEM_DE_FALHA, motivo=f"{etapa} {detalhe}")
+
 
 class ProvedorPluggy:
     """Satisfaz a porta ProvedorOpenFinance falando com a API da Pluggy (conector MeuPluggy).
@@ -49,7 +57,7 @@ class ProvedorPluggy:
     def listar_contas(self, id_do_item: str) -> list[ContaExterna]:
         corpo = self._obter("/accounts", {"itemId": id_do_item})
         contas = []
-        for dado in _lista(corpo, "results"):
+        for dado in _lista(corpo, "results", "/accounts"):
             conta = _conta_de(dado)
             if conta is not None:
                 contas.append(conta)
@@ -68,7 +76,7 @@ class ProvedorPluggy:
                     "page": pagina,
                 },
             )
-            for dado in _lista(corpo, "results"):
+            for dado in _lista(corpo, "results", "/transactions"):
                 transacao = _transacao_de(dado)
                 if transacao is not None:
                     transacoes.append(transacao)
@@ -86,7 +94,7 @@ class ProvedorPluggy:
             # A chave pode ter sido revogada ou ter expirado antes do prazo: uma tentativa nova.
             self._chave = None
             resposta = self._pedir("GET", caminho, parametros=parametros)
-        return _corpo_de(resposta)
+        return _corpo_de(resposta, caminho)
 
     def _pedir(
         self,
@@ -104,9 +112,9 @@ class ProvedorPluggy:
                 json=corpo,
                 headers=cabecalhos,
             )
-        except httpx.HTTPError:
+        except httpx.HTTPError as erro:
             # Sem `from erro`: o texto do erro pode trazer a URL e os parâmetros.
-            raise ProvedorIndisponivel(MENSAGEM_DE_FALHA) from None
+            raise _falha(caminho, f"rede {type(erro).__name__}") from None
 
     def _obter_chave(self) -> str:
         if self._chave is not None and time.monotonic() < self._chave_vale_ate:
@@ -116,31 +124,31 @@ class ProvedorPluggy:
             "/auth",
             corpo={"clientId": self._id_do_cliente, "clientSecret": self._segredo_do_cliente},
         )
-        corpo = _corpo_de(resposta)
+        corpo = _corpo_de(resposta, "/auth")
         chave = corpo.get("apiKey")
         if not isinstance(chave, str) or not chave:
-            raise ProvedorIndisponivel(MENSAGEM_DE_FALHA)
+            raise _falha("/auth", "resposta invalida")
         self._chave = chave
         self._chave_vale_ate = time.monotonic() + VALIDADE_DA_CHAVE_EM_SEGUNDOS
         return chave
 
 
-def _corpo_de(resposta: httpx.Response) -> dict[str, Any]:
+def _corpo_de(resposta: httpx.Response, caminho: str) -> dict[str, Any]:
     if resposta.status_code != httpx.codes.OK:
-        raise ProvedorIndisponivel(MENSAGEM_DE_FALHA)
+        raise _falha(caminho, f"http {resposta.status_code}")
     try:
         corpo = resposta.json(parse_float=Decimal)
     except ValueError:
-        raise ProvedorIndisponivel(MENSAGEM_DE_FALHA) from None
+        raise _falha(caminho, "resposta invalida") from None
     if not isinstance(corpo, dict):
-        raise ProvedorIndisponivel(MENSAGEM_DE_FALHA)
+        raise _falha(caminho, "resposta invalida")
     return corpo
 
 
-def _lista(corpo: dict[str, Any], campo: str) -> list[dict[str, Any]]:
+def _lista(corpo: dict[str, Any], campo: str, caminho: str) -> list[dict[str, Any]]:
     itens = corpo.get(campo)
     if not isinstance(itens, list):
-        raise ProvedorIndisponivel(MENSAGEM_DE_FALHA)
+        raise _falha(caminho, "resposta invalida")
     return [item for item in itens if isinstance(item, dict)]
 
 
