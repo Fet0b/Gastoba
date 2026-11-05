@@ -63,15 +63,20 @@ class SincronizarContasBancarias:
         for id_do_item in self._ids_dos_itens:
             try:
                 externas = self._provedor.listar_contas(id_do_item)
-            except ProvedorIndisponivel:
-                _registro.warning("Provedor indisponível ao listar as contas de um item.")
+            except ProvedorIndisponivel as erro:
+                _registro.warning(
+                    "Provedor indisponível ao listar as contas de um item (%s).", erro.motivo
+                )
                 falhas += 1
                 continue
             for externa in externas:
                 try:
                     novas_da_conta, falhas_da_conta = self._sincronizar_conta(dono.id, externa)
-                except ProvedorIndisponivel:
-                    _registro.warning("Provedor indisponível ao listar as transações de uma conta.")
+                except ProvedorIndisponivel as erro:
+                    _registro.warning(
+                        "Provedor indisponível ao listar as transações de uma conta (%s).",
+                        erro.motivo,
+                    )
                     falhas += 1
                     continue
                 contas += 1

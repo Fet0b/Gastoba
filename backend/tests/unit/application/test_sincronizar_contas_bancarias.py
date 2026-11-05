@@ -30,7 +30,7 @@ class ProvedorFalso:
 
     def listar_contas(self, id_do_item):
         if id_do_item in self.falhar_item:
-            raise ProvedorIndisponivel("fora do ar")
+            raise ProvedorIndisponivel("fora do ar", motivo="contas http 404")
         return self.contas_por_item.get(id_do_item, [])
 
     def listar_transacoes(self, id_da_conta, desde):
@@ -240,3 +240,14 @@ def test_conta_existente_corrente_vira_cartao_na_rodada_seguinte(unidade_de_trab
     with unidade_de_trabalho as uow:
         [conta] = uow.contas.listar(dono.id)
     assert (conta.tipo, conta.saldo) == (TipoDaConta.CARTAO, Dinheiro(-500))
+
+
+def test_o_aviso_de_falha_traz_o_motivo_e_nenhum_identificador(unidade_de_trabalho, caplog):
+    criar_dono(unidade_de_trabalho)
+    provedor = ProvedorFalso(falhar_item={"item-secreto"})
+
+    with caplog.at_level("WARNING"):
+        sincronizador(unidade_de_trabalho, provedor, itens=("item-secreto",)).executar()
+
+    assert "contas http 404" in caplog.text
+    assert "item-secreto" not in caplog.text
