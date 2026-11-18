@@ -7,6 +7,7 @@ Formalizar um padrão mínimo para o README e deixar a documentação do Gastoba
 - Adicionar à Constituição um artigo com os cinco requisitos obrigatórios de README; atualizar a versão semântica para 1.1.0 e a data da emenda para 2026-10-20.
 - Reestruturar o README desta cópia pública usando apenas o conteúdo e a implementação deste repositório.
 - Manter intactas as referências e os arquivos de imagem já existentes (`Docs/imagens/painel.png` e `frontend/public/favicon.svg`).
+- Corrigir o Artigo X (emenda 1.1.1, 2026-10-20): a demonstração do README pode ser uma captura de tela, um vídeo curto ou um exemplo executável, e qualquer uma dessas opções basta; o escopo nomeia as categorias individual, de colaboração, de estudo ou de uso pessoal, com seus limites.
 - Explicitar propósito e público, demonstração, papel/escopo, duas ou três decisões técnicas com alternativas, execução/verificação/testes e limitações.
 - Descrever somente comportamento comprovável; identificar claramente qualquer limitação.
 

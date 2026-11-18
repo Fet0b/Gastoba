@@ -120,7 +120,14 @@ class SincronizacaoEmAndamento(ErroDeDominio):
 
 
 class ProvedorIndisponivel(ErroDeDominio):
-    """O provedor de Open Finance falhou (rede, credencial ou resposta inesperada)."""
+    """O provedor de Open Finance falhou (rede, credencial ou resposta inesperada).
+
+    ``motivo`` é um texto curto e seguro para log (etapa e status, nunca dados nem ids).
+    """
+
+    def __init__(self, mensagem: str, motivo: str = "") -> None:
+        super().__init__(mensagem)
+        self.motivo = motivo
 
 
 class RecorrenciaNaoEncontrada(ErroDeDominio):
