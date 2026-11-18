@@ -1,10 +1,15 @@
-import { render } from "@testing-library/react";
+import { fireEvent, render } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
 import { ProjecaoDoMes } from "./ProjecaoDoMes";
 
 const NBSP = "\u{a0}";
 const OUTUBRO = { ano: 2026, mes: 10 };
+
+/** Os ícones da frase (a Dica traz o seu próprio, que não conta). */
+function iconesDaFrase(bloco: HTMLElement): number {
+  return Array.from(bloco.querySelectorAll("svg")).filter((svg) => svg.closest("[data-dica]") === null).length;
+}
 
 function desenhar(
   extras: Partial<Parameters<typeof ProjecaoDoMes>[0]> & { hoje: string },
@@ -26,10 +31,19 @@ describe("ProjecaoDoMes", () => {
     const bloco = desenhar({ hoje: "2026-10-15" });
 
     expect(bloco.textContent).toContain(`R$${NBSP}620,00`);
-    expect(bloco.textContent).toContain(`Cabe na renda · sobram R$${NBSP}380,00`);
+    expect(bloco.textContent).toContain("Cabe na renda");
+    expect(bloco.textContent).toContain(`Sobram R$${NBSP}380,00`);
+    expect(bloco.textContent).not.toContain("·");
     expect(bloco.getAttribute("data-situacao")).toBe("cabe");
-    expect(bloco.querySelectorAll("svg")).toHaveLength(1);
-    expect(bloco.textContent).toContain("Estimativa simples, pelo ritmo dos gastos até hoje");
+    expect(iconesDaFrase(bloco)).toBe(1);
+    // A nota virou uma Dica "Sobre a projeção": o texto fica escondido até abrir.
+    const botao = bloco.querySelector("[data-dica] button") as HTMLButtonElement;
+    expect(botao.getAttribute("aria-label")).toBe("Sobre a projeção");
+    const nota = document.getElementById(botao.getAttribute("aria-controls") as string) as HTMLElement;
+    expect(nota.textContent).toBe("Estimativa simples, pelo ritmo dos gastos até hoje");
+    expect(nota.hidden).toBe(true);
+    fireEvent.click(botao);
+    expect(nota.hidden).toBe(false);
   });
 
   it("estimativa acima da renda: passa, com o ícone alerta e o texto", () => {
@@ -37,7 +51,8 @@ describe("ProjecaoDoMes", () => {
 
     expect(bloco.textContent).toContain(`Passa da renda em R$${NBSP}120,00`);
     expect(bloco.getAttribute("data-situacao")).toBe("passa");
-    expect(bloco.querySelectorAll("svg")).toHaveLength(1);
+    expect(iconesDaFrase(bloco)).toBe(1);
+    expect(bloco.textContent).not.toContain("Sobram");
   });
 
   it("sem renda: mostra a estimativa sem comparar e sem ícone", () => {
@@ -47,7 +62,7 @@ describe("ProjecaoDoMes", () => {
     expect(bloco.textContent).toContain("Sem renda registrada neste mês");
     expect(bloco.textContent).not.toContain("Cabe na renda");
     expect(bloco.textContent).not.toContain("Passa da renda");
-    expect(bloco.querySelector("svg")).toBeNull();
+    expect(iconesDaFrase(bloco)).toBe(0);
     expect(bloco.getAttribute("data-situacao")).toBe("sem_renda");
   });
 
@@ -81,6 +96,10 @@ describe("ProjecaoDoMes", () => {
 
     expect(bloco.textContent).toContain("O mês ainda não começou");
     expect(bloco.getAttribute("data-situacao")).toBe("futuro");
+  });
+
+  it("mês que não começou não tem a Dica da nota", () => {
+    expect(desenhar({ hoje: "2026-09-20" }).querySelector("[data-dica]")).toBeNull();
   });
 
   it("carregando: Calculando, sem estimativa de zero", () => {

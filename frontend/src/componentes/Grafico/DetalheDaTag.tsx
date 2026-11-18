@@ -1,3 +1,4 @@
+import {valorLiquido} from "../../transacoes/despesas";
 import { useId, useState } from "react";
 
 import { useCategorias } from "../../api/consultas";
@@ -9,6 +10,8 @@ import { dataParaExibicao } from "../../periodo/periodo";
 import { corDaCategoria } from "../../categorias/cores";
 import { Icone, type NomeDoIcone } from "../Icone/Icone";
 import estilos from "./DetalheDaTag.module.css";
+import { Botao } from "../Botao/Botao";
+import { rotuloDeExibicao } from "../../texto/rotulo";
 
 export const GASTOS_VISIVEIS_DE_INICIO = 10;
 
@@ -48,16 +51,21 @@ export function DetalheDaTag({ barra, gastos, aoFechar }: Propriedades) {
       <div className={estilos.cabecalho}>
         <div>
           <h3 id={idTitulo} className={estilos.titulo}>
-            {barra.rotulo}
+            {barra.tipo === "tag" ? rotuloDeExibicao(barra.rotulo) : barra.rotulo}
           </h3>
           <p className={estilos.resumo}>
-            <span className="valor">{formatar(barra.valor)}</span> · {barra.percentual} do total
-            {quantidade !== undefined && ` · ${quantidade} ${quantidade === 1 ? "gasto" : "gastos"}`}
+            <span className="valor">{formatar(barra.valor)}</span>
+            <span>{barra.percentual} do total</span>
+            {quantidade !== undefined && (
+              <span>
+                {quantidade} {quantidade === 1 ? "gasto" : "gastos"}
+              </span>
+            )}
           </p>
         </div>
-        <button type="button" className={estilos.fechar} onClick={aoFechar}>
+        <Botao variante="terciario" onClick={aoFechar}>
           Fechar detalhe
-        </button>
+        </Botao>
       </div>
 
       {visiveis === undefined ? (
@@ -77,7 +85,7 @@ export function DetalheDaTag({ barra, gastos, aoFechar }: Propriedades) {
                   )}
                   <span className={estilos.nomeDaCategoria}>{nomeDe(gasto.categoria)}</span>
                 </span>
-                <span className={`valor ${estilos.valor}`}>{formatar(gasto.valor)}</span>
+                <span className={`valor ${estilos.valor}`}>{formatar(valorLiquido(gasto))}</span>
                 {gasto.tags.length > 1 && (
                   <span className={estilos.parte}>{formatar(parte)} nesta tag</span>
                 )}
@@ -85,9 +93,9 @@ export function DetalheDaTag({ barra, gastos, aoFechar }: Propriedades) {
             ))}
           </ul>
           {itens && itens.length > visiveis.length && (
-            <button type="button" className={estilos.maisGastos} onClick={() => definirMostrarTodos(true)}>
+            <Botao variante="terciario" onClick={() => definirMostrarTodos(true)}>
               Mostrar mais
-            </button>
+            </Botao>
           )}
         </>
       )}

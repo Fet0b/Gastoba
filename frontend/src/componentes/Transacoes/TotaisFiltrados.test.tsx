@@ -10,7 +10,7 @@ const NBSP = "\u{a0}";
 function gasto(valor: string): TransacaoDaLinha {
   return {
     tipo: "gasto", id: `g${valor}${Math.random()}`, conta_id: "c1", valor, descricao: "Gasto",
-    data: "2026-10-10", categoria: "conforto", tags: [], origem: "manual", recorrencia_id: null,
+    data: "2026-10-10", categoria: "conforto", valor_coberto:"0.00",coberturas:[], tags: [], origem: "manual", recorrencia_id: null,
   };
 }
 

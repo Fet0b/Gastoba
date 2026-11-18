@@ -8,16 +8,11 @@
   gap: var(--espaco-5);
 }
 
-.introducao {
-  grid-column: 1 / -1;
-  display: flex;
-  flex-direction: column;
-  gap: var(--espaco-2);
-}
-
-.titulo {
-  font-size: 1.5rem;
-  font-weight: 650;
+.tituloDaSecao {
+  font-family: var(--fonte-titulo);
+  font-size: var(--texto-grande);
+  line-height: var(--texto-grande-linha);
+  font-weight: var(--peso-secao);
 }
 
 .texto {
@@ -36,7 +31,12 @@
 
 .colunaDoFormulario,
 .colunaDaLista {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espaco-3);
+  min-width: 0;
   padding: var(--espaco-5);
+  border: var(--borda-de-camada);
   border-radius: var(--raio-painel);
   background: var(--cor-ameixa);
 }

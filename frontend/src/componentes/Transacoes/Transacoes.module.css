@@ -3,11 +3,16 @@
 
 .linha {
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
-  align-items: center;
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
+  align-items: start;
   gap: var(--espaco-3);
   padding: var(--espaco-3) 0;
+  border-block-end: 1px solid var(--cor-veludo);
   list-style: none;
+}
+
+.linha:last-child {
+  border-block-end: 0;
 }
 
 .icone {
@@ -16,7 +21,7 @@
   width: 2.25rem;
   height: 2.25rem;
   border-radius: var(--raio-chip);
-  background: color-mix(in srgb, var(--cor-da-categoria, var(--cor-lavanda)) 18%, transparent);
+  background: var(--superficie-tonal);
   color: var(--cor-da-categoria, var(--cor-lavanda));
 }
 
@@ -29,22 +34,23 @@
 
 .descricao {
   overflow-wrap: anywhere;
-  font-weight: 600;
+  font-weight: var(--peso-secao);
 }
 
-.detalhe {
-  color: var(--cor-bruma);
-  font-size: var(--texto-pequeno);
-  line-height: var(--texto-pequeno-linha);
+/* Nível 2: conta, categoria, tags, marcas e coberturas, em selos que quebram de linha. */
+.nivel2 {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--espaco-1) var(--espaco-2);
+  min-width: 0;
 }
 
-.recorrente {
-  margin-left: var(--espaco-2);
-  padding: 0 var(--espaco-2);
-  border-radius: var(--raio-chip);
-  background: var(--cor-veludo);
-  color: var(--cor-nevoa);
-  font-size: var(--texto-minimo);
+.pontoDaCategoria {
+  width: 0.5rem;
+  height: 0.5rem;
+  flex: none;
+  border-radius: 50%;
 }
 
 .tags {
@@ -56,17 +62,23 @@
   list-style: none;
 }
 
-.tag {
-  color: var(--cor-bruma);
-  font-size: var(--texto-minimo);
-  line-height: var(--texto-minimo-linha);
-}
-
 .valor {
   font-family: var(--fonte-titulo);
-  font-weight: 650;
+  font-weight: var(--peso-secao);
   font-variant-numeric: tabular-nums;
+  text-align: right;
   white-space: nowrap;
+}
+
+/* 320 px: um valor enorme desce para baixo do texto em vez de espremê-lo. */
+@media (max-width: 30rem) {
+  .valor {
+    grid-column: 2 / -1;
+    grid-row: 2;
+    text-align: left;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
 }
 
 .linha[data-sentido="saida"] .valor {
@@ -74,34 +86,29 @@
 }
 
 .linha[data-sentido="entrada"] .valor {
-  color: var(--cor-lavanda);
+  color: var(--cor-positivo);
 }
 
-/* Categoria e tag da linha como filtro (só nas Transações): parecem texto, com sublinhado, e a
-   ativa fica em Lavanda. */
-.filtro {
-  min-height: 2rem;
-  padding: 0 var(--espaco-1);
-  border: 0;
-  border-radius: var(--raio-campo);
-  background: none;
-  color: inherit;
-  font: inherit;
-  text-decoration: underline dotted;
-  text-underline-offset: 3px;
-  cursor: pointer;
+/* Menu "Mais ações" no fim da linha. Com mouse, o gatilho só aparece no hover ou no foco da linha
+   (continua no Tab); no toque e em telas estreitas fica sempre visível. */
+.acoes {
+  align-self: start;
+  justify-self: end;
+  margin-block: calc(-1 * var(--espaco-2));
 }
 
-.filtro:hover {
-  color: var(--cor-nevoa);
+.acoes:empty {
+  display: none;
 }
 
-.filtro[aria-pressed="true"] {
-  color: var(--cor-lavanda);
-  text-decoration-style: solid;
-}
+@media (hover: hover) and (pointer: fine) and (min-width: 48rem) {
+  .acoes [data-menu-de-acoes] {
+    opacity: 0;
+  }
 
-.filtro:focus-visible {
-  outline: var(--anel-de-foco);
-  outline-offset: var(--afastamento-do-foco);
+  .linha:hover .acoes [data-menu-de-acoes],
+  .linha:focus-within .acoes [data-menu-de-acoes],
+  .acoes [data-menu-de-acoes][aria-expanded="true"] {
+    opacity: 1;
+  }
 }

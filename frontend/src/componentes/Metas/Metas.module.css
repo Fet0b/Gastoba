@@ -1,134 +1,11 @@
-/* Metas: o medidor (anel de progresso com a situação em texto e símbolo), o bloco
-   "Metas do mês" da tela inicial e os cartões da aba Metas. A situação vem em
-   data-situacao; a cor nunca é a única pista. */
-
-.medidor {
-  --cor-da-situacao: var(--cor-ametista);
-
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: var(--espaco-2);
-  min-width: 0;
-  text-align: center;
-}
-
-.medidor[data-situacao="alerta"] {
-  --cor-da-situacao: var(--cor-alerta);
-}
-
-.medidor[data-situacao="estourou"] {
-  --cor-da-situacao: var(--cor-brasa);
-}
-
-.medidor[data-situacao="sem_renda"] {
-  --cor-da-situacao: var(--cor-bruma);
-}
-
-/* O anel: a trilha é o mesmo tom do arco, mais claro (opacity), nunca um cinza. */
-.anel {
-  position: relative;
-  width: 7rem;
-  max-width: 100%;
-  aspect-ratio: 1;
-  color: var(--cor-da-situacao);
-}
-
-.anelSvg {
-  display: block;
-  width: 100%;
-  height: 100%;
-}
-
-.trilhaDoAnel,
-.arcoDoAnel {
-  stroke: currentColor;
-  stroke-width: 3.5;
-}
-
-.trilhaDoAnel {
-  opacity: 0.22;
-}
-
-.arcoDoAnel {
-  transition: stroke-dasharray var(--duracao-media) var(--curva-saida);
-}
-
-/* Vivo: o atraso cresce com a posição na grade (--indice), no máximo 400 ms. */
-.medidor {
-  --atraso: min(calc(var(--indice, 0) * 80ms), 400ms);
-}
-
-.anel {
-  transition:
-    transform var(--duracao-curta) var(--curva-saida),
-    filter var(--duracao-curta) var(--curva-saida);
-}
-
-.medidor:hover .anel,
-.medidor:focus-within .anel {
-  transform: scale(1.06);
-  filter: drop-shadow(0 0 0.5rem var(--cor-da-situacao));
-}
-
-@keyframes encherArco {
-  from {
-    stroke-dasharray: 0 100;
-  }
-}
-
-@keyframes aparecerCentro {
-  from {
-    opacity: 0;
-  }
-}
-
-@keyframes pulsarAnel {
-  0%,
-  100% {
-    filter: drop-shadow(0 0 0 transparent);
-  }
-  40% {
-    filter: drop-shadow(0 0 0.75rem var(--cor-da-situacao));
-  }
-}
-
-.medidor[data-animando] .arcoDoAnel {
-  animation: encherArco calc(var(--duracao-media) * 2) var(--curva-saida) var(--atraso) backwards;
-}
-
-.medidor[data-animando] .centroDoAnel {
-  animation: aparecerCentro var(--duracao-media) ease-out var(--atraso) backwards;
-}
-
-.medidor[data-animando][data-pulso] .anel {
-  animation: pulsarAnel 900ms ease-in-out calc(var(--atraso) + var(--duracao-media) * 2) 1;
-}
-
-.centroDoAnel {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--cor-nevoa);
-  font-family: var(--fonte-titulo);
-  font-size: 1.5rem;
-  font-weight: 700;
-}
+/* Metas: o bloco "Metas do mês" da tela inicial, a linha de meta e os editores da aba
+   Orçamento. A situação vem em data-situacao; a cor nunca é a única pista. */
 
 .identificacao {
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: var(--espaco-1);
-}
-
-.nomeDaCategoria {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--espaco-2);
-  font-weight: 600;
 }
 
 .ponto {
@@ -140,34 +17,7 @@
 
 .percentualDaMeta {
   color: var(--cor-bruma);
-  font-size: 0.9375rem;
-}
-
-.situacao {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: center;
-  gap: var(--espaco-1);
-  font-size: 0.9375rem;
-}
-
-.icone {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 1.25rem;
-  height: 1.25rem;
-  border-radius: 50%;
-  background: var(--cor-veludo);
-  color: var(--cor-da-situacao);
-  font-size: 0.75rem;
-  font-weight: 700;
-}
-
-.valores {
-  color: var(--cor-bruma);
-  font-size: 0.875rem;
+  font-size: var(--texto-corpo);
 }
 
 /* Bloco da tela inicial */
@@ -186,114 +36,32 @@
   gap: var(--espaco-2) var(--espaco-4);
 }
 
-.renda {
-  color: var(--cor-bruma);
-}
-
-.renda strong {
-  margin-left: var(--espaco-2);
-  color: var(--cor-lavanda);
-  font-family: var(--fonte-titulo);
-  font-size: 1.25rem;
-}
-
-.lista {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 8rem), 1fr));
-  gap: var(--espaco-4);
-}
-
-/* Em tela estreita a grade nunca cai abaixo de duas colunas. */
-@media (max-width: 30rem) {
-  .lista {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .lista > :last-child:nth-child(odd) {
-    grid-column: 1 / -1;
-  }
-}
-
-.itemDoPainel {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: var(--espaco-2);
-  padding: var(--espaco-3);
-  border-radius: var(--raio-cartao);
-  background: var(--cor-veludo);
-}
-
 .estado {
   color: var(--cor-bruma);
 }
 
-.abrir,
-.filtrar,
-.botao,
-.botaoPrimario,
-.botaoPerigo {
-  min-height: 2.25rem;
-  padding: var(--espaco-1) var(--espaco-3);
-  border: 1px solid var(--cor-veludo);
-  border-radius: var(--raio-campo);
-  background: none;
-  color: inherit;
-  font: inherit;
-  cursor: pointer;
+.tituloDoBloco {
+  font-size: var(--texto-grande);
+  line-height: var(--texto-grande-linha);
+  font-weight: var(--peso-secao);
 }
 
-.filtrar {
-  align-self: flex-start;
-  border-color: transparent;
-  color: var(--cor-lavanda);
-  text-decoration: underline;
-}
-
-.botaoPrimario {
-  border-color: transparent;
-  background: var(--cor-ametista);
-  color: var(--cor-noite);
-  font-weight: 650;
-}
-
-.botaoPerigo {
-  border-color: var(--cor-brasa);
-  color: var(--cor-brasa);
-}
-
-.botaoPrimario:disabled {
-  cursor: not-allowed;
-  opacity: 0.5;
+/* Início: linhas compactas, sem rolagem própria. */
+.linhasDoInicio {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espaco-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
 }
 
 /* Aba Metas */
 
-.cartoes {
-  display: flex;
-  flex-direction: column;
-  gap: var(--espaco-3);
-}
-
-.cartao {
-  display: flex;
-  flex-direction: column;
-  gap: var(--espaco-3);
-  padding: var(--espaco-4);
-  border-radius: var(--raio-cartao);
-  background: var(--cor-veludo);
-}
-
 .acoes {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--espaco-2);
-}
-
-.formulario {
-  display: flex;
-  flex-direction: column;
-  gap: var(--espaco-2);
+  gap: var(--espaco-3);
 }
 
 .campo {
@@ -315,38 +83,14 @@
   border-color: var(--cor-brasa);
 }
 
-.equivale,
-.soma {
+.equivale {
   color: var(--cor-bruma);
-  font-size: 0.9375rem;
+  font-size: var(--texto-corpo);
 }
 
 .erro {
   color: var(--cor-brasa);
-  font-size: 0.9375rem;
-}
-
-.semMeta {
-  color: var(--cor-bruma);
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .arcoDoAnel,
-  .anel {
-    transition: none;
-    animation: none;
-  }
-
-  .medidor[data-animando] .arcoDoAnel,
-  .medidor[data-animando] .centroDoAnel,
-  .medidor[data-animando][data-pulso] .anel {
-    animation: none;
-  }
-
-  .medidor:hover .anel,
-  .medidor:focus-within .anel {
-    transform: none;
-  }
+  font-size: var(--texto-corpo);
 }
 
 /* Controle deslizante do percentual */
@@ -369,13 +113,13 @@
 }
 
 .legendaDoGrafico {
-  font-weight: 600;
+  font-weight: var(--peso-secao);
 }
 
 .faixa {
+  position: relative;
   display: flex;
   height: 1.25rem;
-  overflow: hidden;
   border-radius: var(--raio-chip);
   background: var(--cor-veludo);
 }
@@ -390,7 +134,7 @@
   flex-wrap: wrap;
   gap: var(--espaco-1) var(--espaco-4);
   color: var(--cor-bruma);
-  font-size: 0.9375rem;
+  font-size: var(--texto-corpo);
   list-style: none;
 }
 
@@ -408,4 +152,260 @@
   .fatia {
     transition: none;
   }
+}
+
+/* LinhaDaMeta: anel, identificação, valores, restante e ações. O layout segue a largura da própria
+   linha (container query): estreita, anel e nome em cima e, embaixo, os valores à esquerda e o que
+   resta à direita; larga, tudo numa linha só. Valores em R$ nunca quebram; nomes podem. */
+
+.linha {
+  --cor-do-restante: var(--cor-positivo);
+
+  container-type: inline-size;
+  position: relative;
+  min-width: 0;
+  padding: var(--espaco-2) var(--espaco-4);
+  border-radius: var(--raio-cartao);
+  background: var(--cor-veludo);
+}
+
+.linha[data-situacao="alerta"] {
+  --cor-do-restante: var(--cor-atencao);
+}
+
+.linha[data-situacao="estourou"] {
+  --cor-do-restante: var(--cor-negativo);
+}
+
+.linha[data-situacao="sem_renda"] {
+  --cor-do-restante: var(--cor-neutra);
+}
+
+.grade {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-areas:
+    "anel identificacao acoes"
+    "rodape rodape rodape";
+  align-items: center;
+  gap: var(--espaco-2) var(--espaco-3);
+  min-width: 0;
+}
+
+/* Só o nome pode encolher e quebrar; anel, valores, restante e ações mantêm o próprio tamanho. */
+.grade > .identificacao {
+  min-width: 0;
+}
+
+/* Sem os valores (Início): o que resta fica sob o nome, ao lado do anel. */
+.linha[data-compacta] .grade {
+  grid-template-columns: auto minmax(0, 1fr);
+  grid-template-areas:
+    "anel identificacao"
+    "anel rodape";
+  row-gap: var(--espaco-1);
+}
+
+.rodapeDaMeta {
+  grid-area: rodape;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--espaco-1) var(--espaco-3);
+}
+
+.linha[data-compacta] .rodapeDaMeta {
+  justify-content: flex-start;
+}
+
+/* Larga: tudo numa linha só. O rodapé some da árvore de layout e seus itens ocupam as colunas. */
+@container (min-width: 38rem) {
+  .grade {
+    grid-template-columns: auto minmax(8rem, 1fr) auto auto auto;
+    grid-template-areas: "anel identificacao valores restante acoes";
+    column-gap: var(--espaco-4);
+  }
+
+  .rodapeDaMeta {
+    display: contents;
+  }
+}
+
+@container (min-width: 24rem) {
+  .linha[data-compacta] .grade {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    grid-template-areas: "anel identificacao restante";
+    column-gap: var(--espaco-4);
+  }
+
+  .linha[data-compacta] .rodapeDaMeta {
+    display: contents;
+  }
+}
+
+.anelDaMeta {
+  grid-area: anel;
+  display: flex;
+}
+
+.identificacao {
+  grid-area: identificacao;
+}
+
+.linha .identificacao {
+  align-items: flex-start;
+  text-align: start;
+  min-width: 0;
+}
+
+.nomeEDica {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--espaco-1);
+  min-width: 0;
+}
+
+.nomeDaMeta {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--espaco-2);
+  font-weight: var(--peso-secao);
+}
+
+/* O botão do nome: a área clicável se estende à linha toda por ::after. */
+.abrirMeta {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+
+.abrirMeta::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: var(--raio-cartao);
+}
+
+.abrirMeta:hover .nomeDaMeta {
+  text-decoration: underline;
+}
+
+.abrirMeta:focus-visible {
+  outline: var(--anel-de-foco);
+  outline-offset: var(--afastamento-do-foco);
+  border-radius: var(--raio-campo);
+}
+
+/* A Dica fica acima da área estendida do botão. */
+.dicaDaMeta {
+  position: relative;
+  z-index: 1;
+}
+
+.valoresDaMeta {
+  grid-area: valores;
+  color: var(--cor-bruma);
+  font-size: var(--texto-pequeno);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.restanteDaMeta {
+  grid-area: restante;
+  justify-self: end;
+  color: var(--cor-do-restante);
+  font-size: var(--texto-pequeno);
+  font-weight: var(--peso-secao);
+  font-variant-numeric: tabular-nums;
+  text-align: end;
+  white-space: nowrap;
+}
+
+.acoesDaMeta {
+  grid-area: acoes;
+  position: relative;
+  z-index: 1;
+  justify-self: end;
+}
+
+
+/* EditorDaMeta */
+
+.editor {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espaco-2);
+  min-width: 0;
+}
+
+/* Linha de uma categoria no modo de edição: nome, menu de ações e o editor */
+
+.linhaDeEdicao {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espaco-2);
+  padding: var(--espaco-3) var(--espaco-4);
+  border-radius: var(--raio-cartao);
+  background: var(--cor-veludo);
+}
+
+.cabecalhoDeEdicao {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--espaco-2);
+  min-width: 0;
+}
+
+/* Divisão da renda: balão com o valor ao passar o ponteiro (decorativo; o aria-label da faixa
+   já diz tudo ao leitor de tela). A faixa não corta o balão: as pontas arredondam sozinhas. */
+
+.fatia {
+  position: relative;
+}
+
+.fatia:first-child {
+  border-start-start-radius: var(--raio-chip);
+  border-end-start-radius: var(--raio-chip);
+}
+
+.fatia:last-child {
+  border-start-end-radius: var(--raio-chip);
+  border-end-end-radius: var(--raio-chip);
+}
+
+@media (hover: hover) {
+  .fatia:hover::after {
+    content: attr(data-rotulo);
+    position: absolute;
+    inset-block-end: calc(100% + var(--espaco-1));
+    inset-inline-start: 0;
+    z-index: 10;
+    padding: var(--espaco-1) var(--espaco-2);
+    border: var(--borda-de-camada);
+    border-radius: var(--raio-campo);
+    background: var(--cor-veludo);
+    color: var(--cor-nevoa);
+    font-size: var(--texto-pequeno);
+    white-space: nowrap;
+    pointer-events: none;
+  }
+}
+
+/* Caixinhas que pagaram compras e rentabilidade: texto que quebra, nunca alarga a linha. */
+.caixinhasDaMeta,
+.rentabilidadeDaMeta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--espaco-1) var(--espaco-2);
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  color: var(--cor-bruma);
+  font-size: var(--texto-pequeno);
+  font-variant-numeric: tabular-nums;
 }

@@ -1,10 +1,10 @@
-/* Tela das chaves de API: introdução no topo e, abaixo, o formulário de criação
-   ao lado da lista (empilhados no celular). Mesma hierarquia do painel:
+/* Perfil: a pessoa, a introdução das chaves, o formulário de criação
+   e a lista, empilhados. Mesma hierarquia do painel:
    página em Noite, colunas em Ameixa, itens e campos em Veludo. */
 
 .conteudo {
   display: grid;
-  grid-template-columns: minmax(15rem, 22rem) minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr);
   align-items: start;
   gap: var(--espaco-5);
 }
@@ -16,9 +16,11 @@
   gap: var(--espaco-2);
 }
 
-.titulo {
-  font-size: 1.5rem;
-  font-weight: 650;
+.tituloDaSecao {
+  font-family: var(--fonte-titulo);
+  font-size: var(--texto-grande);
+  line-height: var(--texto-grande-linha);
+  font-weight: var(--peso-secao);
 }
 
 .texto {
@@ -26,21 +28,46 @@
   color: var(--cor-bruma);
 }
 
+.identidade {
+  grid-column: 1 / -1;
+}
+
 .colunaDoFormulario,
 .colunaDaLista {
   min-width: 0;
 }
 
-@media (max-width: 48rem) {
-  .conteudo {
-    grid-template-columns: minmax(0, 1fr);
-    gap: var(--espaco-4);
-  }
+.colunaDoFormulario {
+  max-width: 40rem;
 }
+
 /* Pessoa */
 
-.identidade {
-  margin-block: var(--espaco-3);
+.avatar {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  inline-size: 3rem;
+  block-size: 3rem;
+  border-radius: 50%;
+  background: var(--cor-ametista);
+  color: var(--cor-noite);
+  font-family: var(--fonte-titulo);
+  font-weight: var(--peso-titulo);
+}
+
+.textoDaPessoa {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.rotuloDaPessoa {
+  color: var(--cor-bruma);
+  font-size: var(--texto-pequeno);
+  line-height: var(--texto-pequeno-linha);
 }
 
 .pessoa {
@@ -52,7 +79,6 @@
 
 .nomeDaPessoa {
   min-width: 0;
-  flex: 1;
   overflow-wrap: anywhere;
   font-size: var(--texto-grande);
 }

@@ -104,3 +104,38 @@ def test_ordena_por_valor_decrescente_e_desempata_pela_tag():
         "alfa",
         "zeta",
     ]
+
+
+@pytest.mark.parametrize(
+    "bruto,coberto,tags,esperado",
+    [
+        (8000, 3000, ["loja"], [("loja", 5000)]),
+        (8001, 3000, ["loja", "online"], [("loja", 2501), ("online", 2500)]),
+        (8000, 3000, [], [(None, 5000)]),
+        (8000, 5000, ["loja"], [("loja", 3000)]),
+        (8000, 8000, ["loja"], []),
+        (8000, 0, ["loja"], [("loja", 8000)]),
+        (8001, 8000, ["loja", "online"], [("loja", 1)]),
+    ],
+)
+def test_rateia_liquido_apos_descontar_coberturas_sem_mutar_gasto(bruto, coberto, tags, esperado):
+    from datetime import date
+    from uuid import uuid4
+
+    from gastoba.domain.categoria import CategoriaDoGasto
+    from gastoba.domain.gasto import Gasto
+
+    g = Gasto(
+        uuid4(),
+        Dinheiro(bruto),
+        "Compra fictícia",
+        date(2026, 10, 10),
+        CategoriaDoGasto.CONFORTO,
+        tuple(Tag.de_texto(t) for t in tags),
+    )
+    antes = (g.valor, g.tags, g.id, g.data, g.conta_id, g.descricao)
+    resumo = ResumoPorTags.de_gastos([g], {g.id: Dinheiro(coberto)})
+    assert [(str(f.tag) if f.tag else None, f.valor.centavos) for f in resumo.fatias] == esperado
+    assert resumo.total == Dinheiro(bruto - coberto)
+    assert sum(f.valor.centavos for f in resumo.fatias) == resumo.total.centavos
+    assert (g.valor, g.tags, g.id, g.data, g.conta_id, g.descricao) == antes

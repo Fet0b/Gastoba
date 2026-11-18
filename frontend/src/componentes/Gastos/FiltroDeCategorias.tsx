@@ -1,5 +1,7 @@
 import type { Categoria } from "../../api/tipos";
 import { corDaCategoria } from "../../categorias/cores";
+import { Botao } from "../Botao/Botao";
+import { Chip } from "../Chip/Chip";
 import estilos from "./Gastos.module.css";
 
 type Propriedades = {
@@ -14,7 +16,7 @@ type Propriedades = {
 
 /**
  * Chips das categorias: ponto colorido + nome em texto (a cor nunca aparece
- * sozinha), com a ativa em Lavanda. "Limpar" só aparece com uma categoria ativa.
+ * sozinha), com a ativa preenchida e com ✓. "Limpar" só aparece com uma categoria ativa.
  */
 export function FiltroDeCategorias({ categorias, ativa, aoAlternar, aoLimpar }: Propriedades) {
   if (!categorias?.length) return null;
@@ -25,33 +27,22 @@ export function FiltroDeCategorias({ categorias, ativa, aoAlternar, aoLimpar }: 
         Categorias
       </span>
       <ul className={estilos.chips}>
-        {categorias.map((categoria) => (
+        {categorias.filter(c => !c.legada).map((categoria) => (
           <li key={categoria.codigo}>
-            <button
-              type="button"
-              className={estilos.chip}
-              aria-pressed={categoria.codigo === ativa}
-              onClick={() => aoAlternar(categoria.codigo)}
+            <Chip
+              selecionado={categoria.codigo === ativa}
+              cor={corDaCategoria(categoria.codigo)}
+              aoAlternar={() => aoAlternar(categoria.codigo)}
             >
-              <span
-                className={estilos.ponto}
-                style={{ backgroundColor: corDaCategoria(categoria.codigo) }}
-                aria-hidden="true"
-              />
               {categoria.nome}
-            </button>
+            </Chip>
           </li>
         ))}
       </ul>
       {ativa !== null && (
-        <button
-          type="button"
-          className={estilos.limpar}
-          aria-label="Limpar filtro de categoria"
-          onClick={aoLimpar}
-        >
+        <Botao variante="terciario" aria-label="Limpar filtro de categoria" onClick={aoLimpar}>
           Limpar
-        </button>
+        </Botao>
       )}
     </div>
   );

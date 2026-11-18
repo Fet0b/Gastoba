@@ -7,7 +7,7 @@ import type { Navegacao } from "../componentes/Navegacao/telas";
 import { MENSAGEM_SEM_CONTAS } from "../componentes/Compositor/CompositorDeGasto";
 import { hojeLocal } from "../periodo/periodo";
 import { entrarNaSimulacao } from "../simulacao/fetchSimulado";
-import { definirMidia } from "../testes/preparar";
+import { definirLayoutEstreito, definirMidia } from "../testes/preparar";
 import { Transacoes } from "./Transacoes";
 
 beforeEach(() => {
@@ -32,6 +32,12 @@ async function criarConta(nome = "Nubank", saldo_inicial = "100.00"): Promise<Co
 
 function botaoNovoGasto(): HTMLButtonElement {
   return screen.getByRole("button", { name: /Novo gasto/ }) as HTMLButtonElement;
+}
+
+/** Abre o menu "Mais ações" da linha do ganho e escolhe Excluir (abre o diálogo de confirmação). */
+function abrirExclusao(lista: HTMLElement, descricao: string): void {
+  fireEvent.click(within(lista).getByRole("button", { name: `Mais ações de ${descricao}` }));
+  fireEvent.click(screen.getByRole("menuitem", { name: `Excluir o ganho ${descricao}` }));
 }
 
 function chipsDeConta(): HTMLElement {
@@ -69,6 +75,32 @@ async function ganhar(conta_id: string, descricao: string, extra: Record<string,
     corpo: { conta_id, valor: "20.00", descricao, data: hojeLocal(), tags: [], ...extra },
   });
 }
+
+describe("Transações: cabeçalho", () => {
+  it("traz o título e o subtítulo da tela pelo cabeçalho, com um só h2 Transações que nomeia a lista", async () => {
+    definirMidia(true);
+    const { container } = render(<Transacoes navegacao={navegacao()} />);
+
+    const titulos = screen.getAllByRole("heading", { level: 2, name: "Transações" });
+    expect(titulos).toHaveLength(1);
+    expect(screen.getByText("Tudo o que entrou e saiu, dia a dia.")).not.toBeNull();
+    expect(titulos[0]?.closest("[data-com-cabecalho]")).not.toBeNull();
+    expect(linhaDoTempo(container).getAttribute("aria-labelledby")).toBe(titulos[0]?.id);
+  });
+
+  it("limpar a busca devolve o foco ao título da tela", async () => {
+    definirMidia(true);
+    await criarConta();
+    render(<Transacoes navegacao={navegacao()} />);
+    await esperarConta("Nubank");
+
+    fireEvent.change(campoDeBusca(), { target: { value: "xyz" } });
+    await waitFor(() => expect(screen.getAllByRole("button", { name: "Limpar busca" }).length).toBe(2));
+    fireEvent.click(screen.getAllByRole("button", { name: "Limpar busca" }).at(-1) as HTMLElement);
+
+    expect(document.activeElement).toBe(screen.getByRole("heading", { level: 2, name: "Transações" }));
+  });
+});
 
 describe("Transações: compositor de gasto", () => {
   it("registrar um gasto atualiza a lista, anuncia e o olho confirma", async () => {
@@ -320,11 +352,11 @@ describe("Transações: linha do tempo, total e busca", () => {
     expect(screen.queryByRole("dialog")).toBeNull();
   });
 
-  it("mês sem nada mostra o estado vazio com a dica do N", async () => {
+  it("mês sem nada mostra o estado vazio com a ação de registrar o primeiro gasto", async () => {
     render(<Transacoes navegacao={navegacao()} />);
 
     expect(await screen.findByText("Nenhum gasto ou ganho neste mês")).not.toBeNull();
-    expect(screen.getByText(/Registre o primeiro com N/)).not.toBeNull();
+    expect(screen.getByRole("button", { name: "Registrar o primeiro gasto" })).not.toBeNull();
   });
 });
 
@@ -356,7 +388,7 @@ describe("Transações: resultado anunciado e foco", () => {
     const { container } = render(<Transacoes navegacao={navegacao()} />);
     const lista = linhaDoTempo(container);
     await waitFor(() => expect(lista.textContent).toContain("Cinema"));
-    const titulo = within(lista).getByRole("heading", { level: 2, name: "Transações" });
+    const titulo = screen.getByRole("heading", { level: 2, name: "Transações" });
 
     fireEvent.change(campoDeBusca(), { target: { value: "zzz" } });
     fireEvent.click(within(lista).getAllByRole("button", { name: "Limpar busca" }).at(-1) as HTMLElement);
@@ -397,11 +429,11 @@ describe("Transações: resultado anunciado e foco", () => {
     const lista = linhaDoTempo(container);
     await waitFor(() => expect(lista.textContent).toContain("Errado"));
 
-    fireEvent.click(within(lista).getByRole("button", { name: "Excluir o ganho Errado" }));
-    fireEvent.click(within(lista).getByRole("button", { name: "Confirmar exclusão" }));
+    abrirExclusao(lista, "Errado");
+    fireEvent.click(screen.getByRole("button", { name: "Confirmar exclusão" }));
 
     await waitFor(() => expect(lista.textContent).not.toContain("Errado"));
-    expect(document.activeElement).toBe(within(lista).getByRole("heading", { level: 2 }));
+    expect(document.activeElement).toBe(screen.getByRole("heading", { level: 2, name: "Transações" }));
   });
 });
 
@@ -414,8 +446,8 @@ describe("Transações: excluir um ganho", () => {
     const lista = linhaDoTempo(container);
     await waitFor(() => expect(lista.textContent).toContain("Errado"));
 
-    fireEvent.click(within(lista).getByRole("button", { name: "Excluir o ganho Errado" }));
-    fireEvent.click(within(lista).getByRole("button", { name: "Confirmar exclusão" }));
+    abrirExclusao(lista, "Errado");
+    fireEvent.click(screen.getByRole("button", { name: "Confirmar exclusão" }));
 
     expect(await screen.findByText("Ganho excluído.")).toBeTruthy();
     await waitFor(() => expect(lista.textContent).not.toContain("Errado"));
@@ -432,8 +464,8 @@ describe("Transações: excluir um ganho", () => {
     });
     await chamar(`/ganhos/${existente.id}`, { metodo: "DELETE" });
 
-    fireEvent.click(within(lista).getByRole("button", { name: "Excluir o ganho Sumiu" }));
-    fireEvent.click(within(lista).getByRole("button", { name: "Confirmar exclusão" }));
+    abrirExclusao(lista, "Sumiu");
+    fireEvent.click(screen.getByRole("button", { name: "Confirmar exclusão" }));
 
     expect(await screen.findByText("Ganho não encontrado.")).toBeTruthy();
   });
@@ -477,7 +509,7 @@ describe("Transações: caixa de entrada", () => {
     expect(within(container).getByRole("region", { name: "Transações" })).not.toBeNull();
   });
 
-  it("o atalho N fica desligado na caixa de entrada", async () => {
+  it("o atalho N, na caixa de entrada, volta aos gastos e abre o compositor", async () => {
     await criarConta();
     render(<Transacoes navegacao={navegacao({ importacaoBancaria: true })} />);
     // As contas já chegaram (senão o N não faria nada de qualquer jeito).
@@ -486,6 +518,54 @@ describe("Transações: caixa de entrada", () => {
 
     fireEvent.keyDown(document.body, { key: "n" });
 
-    expect(screen.queryByRole("dialog")).toBeNull();
+    expect(await screen.findByRole("dialog", { name: "Novo gasto" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Gastos e ganhos" }).getAttribute("aria-pressed")).toBe("true");
+  });
+});
+
+describe("Transações: aportes e resgates", () => {
+  it.each([{ importacaoBancaria: true }, { gestaoDeInvestimentos: true }])("abre a seção disponível por %j sem busca/categoria/tag e N volta aos gastos", async (permissoes) => {
+    await criarConta();
+    render(<Transacoes navegacao={navegacao(permissoes)} />);
+    await esperarConta("Nubank");
+    fireEvent.click(screen.getByRole("button", { name: "Aportes e resgates" }));
+    expect(screen.getByRole("button", { name: "Aportes e resgates" }).getAttribute("aria-pressed")).toBe("true");
+    expect(await screen.findByRole("region", { name: "Movimentos de investimento" })).toBeTruthy();
+    expect(screen.getByRole("group", { name: "Filtrar por conta" })).toBeTruthy();
+    expect(screen.queryByLabelText("Buscar transações")).toBeNull();
+    expect(Boolean(screen.queryByRole("button", { name: "Caixa de entrada" }))).toBe(permissoes.importacaoBancaria === true);
+    fireEvent.keyDown(document.body, { key: "n" });
+    expect(await screen.findByRole("dialog", { name: "Novo gasto" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Gastos e ganhos" }).getAttribute("aria-pressed")).toBe("true");
+  });
+  it("vista inicial abre aportes quando disponível e recua para gastos sem permissão", async () => {
+    const vista = render(<Transacoes navegacao={navegacao({ gestaoDeInvestimentos: true })} vistaInicial="aportes" />);
+    expect(await screen.findByRole("region", { name: "Movimentos de investimento" })).toBeTruthy(); vista.unmount();
+    render(<Transacoes navegacao={navegacao()} vistaInicial="aportes" />);
+    expect(screen.getByRole("region", { name: "Transações" })).toBeTruthy();
+    expect(screen.queryByRole("group", { name: "Conteúdo" })).toBeNull();
+  });
+});
+
+describe("Transações: filtros no celular", () => {
+  it("abaixo de 45rem mostra só a busca e o botão Filtros; escolher na folha vira chip removível", async () => {
+    definirMidia(true);
+    definirLayoutEstreito(true);
+    await criarConta();
+    render(<Transacoes navegacao={navegacao()} />);
+
+    expect(screen.queryByRole("group", { name: "Filtrar por conta" })).toBeNull();
+    expect(campoDeBusca()).toBeTruthy();
+    fireEvent.click(await screen.findByRole("button", { name: "Filtros" }));
+    const folha = screen.getByRole("dialog", { name: "Filtros" });
+    await waitFor(() => within(folha).getByRole("button", { name: "Nubank" }));
+    fireEvent.click(within(folha).getByRole("button", { name: "Nubank" }));
+    fireEvent.click(within(folha).getByRole("button", { name: "Concluir" }));
+
+    expect(screen.getByRole("button", { name: "Filtros (1)" })).toBeTruthy();
+    const ativos = screen.getByRole("list", { name: "Filtros ativos" });
+    fireEvent.click(within(ativos).getByRole("button", { name: "Remover filtro: Nubank" }));
+    expect(screen.getByRole("button", { name: "Filtros" })).toBeTruthy();
+    expect(screen.queryByRole("list", { name: "Filtros ativos" })).toBeNull();
   });
 });

@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useLayoutEffect, useRef } from "react";
 
 /** Elementos em que a tecla N é texto, não atalho. */
 const CAMPO_DE_TEXTO = 'input, textarea, select, [contenteditable]:not([contenteditable="false"])';
@@ -8,10 +8,23 @@ function ehAtalho(evento: KeyboardEvent): boolean {
   if (evento.key !== "n" && evento.key !== "N") return false;
   if (evento.ctrlKey || evento.metaKey || evento.altKey) return false;
   if (evento.repeat || evento.isComposing || evento.defaultPrevented) return false;
-  // Com qualquer diálogo aberto (o compositor, a folha "Mais"), N não abre outro por cima.
-  if (document.querySelector("dialog[open]") !== null) return false;
-  const alvo = evento.target;
-  return !(alvo instanceof Element && alvo.closest(CAMPO_DE_TEXTO) !== null);
+
+  const alvo = evento.target instanceof Element ? evento.target : null;
+  const foco = document.activeElement instanceof Element ? document.activeElement : null;
+
+  const dentroDeCampo =
+    (alvo !== null && alvo.closest(CAMPO_DE_TEXTO) !== null) ||
+    (foco !== null && foco.closest(CAMPO_DE_TEXTO) !== null);
+  if (dentroDeCampo) return false;
+
+  // Qualquer diálogo aberto (o compositor, a folha "Mais") não recebe outro N por cima.
+  const dentroDeDialogoAberto =
+    (alvo !== null && alvo.closest("dialog[open]") !== null) ||
+    (foco !== null && foco.closest("dialog[open]") !== null) ||
+    document.querySelector("dialog[open]") !== null;
+  if (dentroDeDialogoAberto) return false;
+
+  return true;
 }
 
 /**
@@ -22,9 +35,10 @@ function ehAtalho(evento: KeyboardEvent): boolean {
  * no campo que recebe o foco ao abrir.
  */
 export function useAtalhoDeNovoGasto(aoAcionar: () => void, ativo = true): void {
-  // A função mais recente numa ref: o ouvinte só muda quando `ativo` muda.
+  // Atualiza antes de receber eventos sobre o DOM recém-renderizado (contas carregadas).
+  // O ouvinte só muda quando `ativo` muda.
   const acionar = useRef(aoAcionar);
-  useEffect(() => {
+  useLayoutEffect(() => {
     acionar.current = aoAcionar;
   });
 

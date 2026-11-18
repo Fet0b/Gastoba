@@ -32,6 +32,7 @@ class Gasto:
     recorrencia_id: UUID | None = None
     competencia: str | None = None
     id: UUID = field(default_factory=uuid4)
+    transacao_importada_id: UUID | None = None
 
     def __post_init__(self) -> None:
         self.descricao = self.descricao.strip()

@@ -1,0 +1,2 @@
+.campo { display: grid; gap: var(--espaco-2); margin: var(--espaco-3) 0; min-width: 0; }
+.campo select { width: 100%; min-width: 0; min-height: var(--alvo-de-toque); background: var(--cor-veludo); color: var(--cor-nevoa); border: 1px solid var(--cor-bruma); border-radius: var(--raio-campo); padding: var(--espaco-2); }

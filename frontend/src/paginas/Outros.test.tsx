@@ -45,17 +45,73 @@ const botaoCriar = () => screen.getByRole("button", { name: "Criar recorrência"
 
 async function abrir(): Promise<void> {
   render(<Outros navegacao={navegacao()} />);
+  fireEvent.click(await screen.findByRole("button", { name: /Nova recorrência|Criar recorrência/ }));
   await screen.findByRole("option", { name: "Nubank" });
 }
 
-describe("Recorrências", () => {
-  it("sem recorrências, convida a criar a primeira", async () => {
-    await conta();
-    await abrir();
+/** Abre o menu "Mais ações" da recorrência e escolhe "Encerrar"; o diálogo de confirmação abre. */
+function pedirEncerramento(descricao: string): void {
+  fireEvent.click(screen.getByRole("button", { name: `Mais ações da recorrência ${descricao}` }));
+  fireEvent.click(screen.getByRole("menuitem", { name: `Encerrar a recorrência ${descricao}` }));
+}
 
-    expect(await screen.findByText(/Nenhuma recorrência ainda/)).toBeTruthy();
-    expect(screen.getByRole("heading", { level: 2, name: "Outros" })).toBeTruthy();
+describe("Recorrências", () => {
+  it("sem recorrências, mostra um só estado vazio que leva ao formulário", async () => {
+    await conta();
+    render(<Outros navegacao={navegacao()} />);
+
+    expect(await screen.findByText("Nenhuma recorrência ainda")).toBeTruthy();
     expect(screen.getByRole("heading", { level: 2, name: "Recorrências" })).toBeTruthy();
+    expect(screen.queryByRole("heading", { level: 2, name: "Suas recorrências" })).toBeNull();
+    expect(screen.queryByRole("form", { name: /Nova recorrência|Criar recorrência/ })).toBeNull();
+
+    fireEvent.click(screen.getByRole("button", { name: "Criar recorrência" }));
+
+    expect(await screen.findByRole("form", { name: /Nova recorrência|Criar recorrência/ })).toBeTruthy();
+    expect(screen.queryByText("Nenhuma recorrência ainda")).toBeNull();
+  });
+
+  it("a explicação vira uma Dica no cabeçalho e 'Cancelar' fecha o formulário devolvendo o foco", async () => {
+    await conta();
+    render(<Outros navegacao={navegacao()} />);
+    await screen.findByText("Nenhuma recorrência ainda");
+
+    const dica = screen.getByRole("button", { name: "Sobre as recorrências" });
+    const texto = document.getElementById(dica.getAttribute("aria-describedby") ?? "");
+    expect(texto?.textContent).toBe("O Gastoba cria o ganho ou o gasto de cada mês sozinho, no dia combinado.");
+
+    fireEvent.click(screen.getByRole("button", { name: /Nova recorrência|Criar recorrência/ }));
+    await screen.findByRole("form", { name: /Nova recorrência|Criar recorrência/ });
+    fireEvent.click(screen.getByRole("button", { name: "Cancelar" }));
+
+    await waitFor(() => expect(document.activeElement).toBe(screen.getByRole("button", { name: /Nova recorrência|Criar recorrência/ })));
+    expect(await screen.findByText("Nenhuma recorrência ainda")).toBeTruthy();
+  });
+
+  it("tem cabeçalho com subtítulo, um só h1 e a lista com cabeçalho visual aria-hidden", async () => {
+    const c = await conta();
+    await chamar("/recorrencias", {
+      metodo: "POST",
+      corpo: {
+        tipo: "gasto",
+        conta_id: c.id,
+        valor: "1500.00",
+        descricao: "Aluguel",
+        dia_do_mes: 5,
+        inicio: "2999-01-01",
+        categoria: "gasto_fixo",
+        tags: [],
+      },
+    });
+    render(<Outros navegacao={navegacao()} />);
+
+    const titulo = await screen.findByRole("heading", { level: 2, name: "Recorrências" });
+    expect(titulo.closest("header")?.querySelector("p")?.textContent).toBe("O que se repete todo mês.");
+    expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);
+    const lista = await screen.findByRole("list", { name: "Recorrências" });
+    const cabecalho = lista.previousElementSibling;
+    expect(cabecalho?.hasAttribute("data-cabecalho-da-lista")).toBe(true);
+    expect(cabecalho?.getAttribute("aria-hidden")).toBe("true");
   });
 
   it("o botão fica desabilitado, com os motivos, até o formulário estar completo", async () => {
@@ -73,6 +129,7 @@ describe("Recorrências", () => {
 
   it("sem contas explica que é preciso criar uma antes", async () => {
     render(<Outros navegacao={navegacao()} />);
+    fireEvent.click(await screen.findByRole("button", { name: /Nova recorrência|Criar recorrência/ }));
 
     expect(await screen.findByText("Crie uma conta antes de criar uma recorrência.")).toBeTruthy();
     expect(botaoCriar().disabled).toBe(true);
@@ -91,8 +148,8 @@ describe("Recorrências", () => {
     expect(item.textContent).toContain(`+R$${NBSP}5.000,00`);
     expect(item.textContent).toContain("todo dia 5");
     expect(item.textContent).toContain("Ativa");
-    // O formulário volta ao começo para a próxima.
-    expect((screen.getByLabelText("Descrição") as HTMLInputElement).value).toBe("");
+    // Criada a recorrência, o formulário se fecha.
+    expect(screen.queryByRole("form", { name: /Nova recorrência|Criar recorrência/ })).toBeNull();
   });
 
   it("início no passado gera os meses vencidos e a conta sobe", async () => {
@@ -125,7 +182,7 @@ describe("Recorrências", () => {
 
     await screen.findByText("Recorrência criada.");
     const item = within(await screen.findByRole("list", { name: "Recorrências" })).getByRole("listitem", { name: "Aluguel" });
-    expect(item.textContent).toContain("Gasto · Gasto fixo");
+    expect(item.textContent).toContain("Gasto fixo");
     expect(item.textContent).toContain(`${MENOS}R$${NBSP}1.500,00`);
     expect((await gastos()).every((g) => g.categoria === "gasto_fixo")).toBe(true);
   });
@@ -163,13 +220,13 @@ describe("Recorrências", () => {
     await abrir();
     const item = await screen.findByRole("listitem", { name: "Bolsa" });
 
-    fireEvent.click(within(item).getByRole("button", { name: "Encerrar a recorrência Bolsa" }));
-    expect(within(item).getByRole("group").textContent).toContain("o que já foi criado continua");
-    fireEvent.click(within(item).getByRole("button", { name: "Confirmar encerramento" }));
+    pedirEncerramento("Bolsa");
+    expect(screen.getByRole("dialog").textContent).toContain("o que já foi criado continua");
+    fireEvent.click(screen.getByRole("button", { name: "Confirmar encerramento" }));
 
     expect(await screen.findByText("Recorrência encerrada.")).toBeTruthy();
     await waitFor(() => expect(within(item).getByText("Encerrada")).toBeTruthy());
-    expect(within(item).queryByRole("button", { name: /Encerrar/ })).toBeNull();
+    expect(within(item).queryByRole("button", { name: /Mais ações/ })).toBeNull();
   });
 
   it("cancelar o encerramento não encerra", async () => {
@@ -181,8 +238,8 @@ describe("Recorrências", () => {
     await abrir();
     const item = await screen.findByRole("listitem", { name: "Bolsa" });
 
-    fireEvent.click(within(item).getByRole("button", { name: "Encerrar a recorrência Bolsa" }));
-    fireEvent.click(within(item).getByRole("button", { name: "Cancelar" }));
+    pedirEncerramento("Bolsa");
+    fireEvent.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Cancelar" }));
 
     expect(within(item).getByText("Ativa")).toBeTruthy();
     expect((await chamar<Recorrencia[]>("/recorrencias"))[0].ativa).toBe(true);
@@ -341,12 +398,13 @@ describe("Outros: total comprometido e próximos lançamentos", () => {
   const grupoDoTotal = () => screen.getByRole("group", { name: /^Comprometido por mês/ });
   const agenda = () => screen.queryByRole("list", { name: "Próximos lançamentos" });
 
-  it("sem recorrências, o total é zero e a agenda mostra o estado vazio", async () => {
+  it("sem recorrências, só o estado vazio: sem total nem agenda", async () => {
     await conta();
-    await abrir();
+    render(<Outros navegacao={navegacao()} />);
 
-    expect(grupoDoTotal().textContent).toContain(`R$${NBSP}0,00`);
-    expect(await screen.findByText("Nada agendado")).toBeTruthy();
+    expect(await screen.findByText("Nenhuma recorrência ainda")).toBeTruthy();
+    expect(screen.queryByRole("group", { name: /^Comprometido por mês/ })).toBeNull();
+    expect(screen.queryByText("Nada agendado para os próximos 30 dias")).toBeNull();
     expect(agenda()).toBeNull();
   });
 
@@ -377,12 +435,12 @@ describe("Outros: total comprometido e próximos lançamentos", () => {
     expect(grupoDoTotal().textContent).toContain(`+R$${NBSP}10,00`);
 
     const item = await screen.findByRole("listitem", { name: "Bolsa" });
-    fireEvent.click(within(item).getByRole("button", { name: "Encerrar a recorrência Bolsa" }));
-    fireEvent.click(within(item).getByRole("button", { name: "Confirmar encerramento" }));
+    pedirEncerramento("Bolsa");
+    fireEvent.click(screen.getByRole("button", { name: "Confirmar encerramento" }));
 
     expect(await screen.findByText("Recorrência encerrada.")).toBeTruthy();
     await waitFor(() => expect(agenda()).toBeNull());
-    expect(screen.getByText("Nada agendado")).toBeTruthy();
+    expect(screen.getByText("Nada agendado para os próximos 30 dias")).toBeTruthy();
     // O número visível conta até o novo valor; o nome do grupo já traz o final.
     expect(grupoDoTotal().getAttribute("aria-label")).not.toContain("10,00");
     expect(within(item).getByText("Encerrada")).toBeTruthy();

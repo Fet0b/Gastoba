@@ -1,0 +1,12 @@
+.resumo {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--espaco-3);
+}
+.valor {
+  text-align: right;
+  font-family: var(--fonte-titulo);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}

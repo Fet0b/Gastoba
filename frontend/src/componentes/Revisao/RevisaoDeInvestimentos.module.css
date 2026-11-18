@@ -1,0 +1,5 @@
+.painel { background: var(--cor-ameixa); padding: var(--espaco-5); border-radius: var(--raio-painel); min-width: 0; }
+.painel h2, .painel h3, .painel h4 { font-family: var(--fonte-titulo); }
+.painel ul { list-style: none; padding: 0; }
+.item { padding: var(--espaco-4) 0; border-top: 1px solid var(--cor-veludo); overflow-wrap: anywhere; }
+.item [role="alert"] { color: var(--cor-brasa); }

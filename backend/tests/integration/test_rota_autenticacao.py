@@ -343,10 +343,11 @@ def test_eu_devolve_o_usuario_da_sessao(cliente, autenticar):
 
     assert resposta.status_code == 200
     corpo = resposta.json()
-    assert set(corpo) == {"id", "email", "nome", "importacao_bancaria"}
+    assert set(corpo) == {"id", "email", "nome", "importacao_bancaria", "gestao_de_investimentos"}
     assert corpo["email"] == "ana@x.com"
     assert corpo["nome"] == "Ana"
     assert corpo["importacao_bancaria"] is False
+    assert corpo.get("gestao_de_investimentos") is False
 
 
 def test_eu_aceita_chave_de_leitura(cliente, autenticar):

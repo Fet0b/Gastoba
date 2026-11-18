@@ -1,10 +1,15 @@
-/* Totais do que está na lista: três números lado a lado, o saldo em destaque. */
+/* Totais do que está na lista (P2): uma linha de números sem caixas, algarismos tabulares. O saldo
+   é o único destaque; entradas e saídas são secundários. */
 
 .totais {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: var(--espaco-3);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--espaco-2) var(--espaco-6);
   margin: 0;
+  padding-block-end: var(--espaco-4);
+  border-block-end: 1px solid var(--cor-veludo);
+  font-variant-numeric: tabular-nums;
 }
 
 .total {
@@ -12,9 +17,6 @@
   flex-direction: column;
   gap: var(--espaco-1);
   min-width: 0;
-  padding: var(--espaco-3) var(--espaco-4);
-  border-radius: var(--raio-cartao);
-  background: var(--cor-veludo);
 }
 
 .total dt {
@@ -25,25 +27,28 @@
 
 .total dd {
   margin: 0;
-  font-family: var(--fonte-titulo);
-  font-size: var(--texto-grande);
-  line-height: var(--texto-grande-linha);
-  font-weight: 650;
+  font-family: var(--fonte-corpo);
+  font-size: var(--texto-corpo, 1rem);
+  font-weight: var(--peso-secao);
+  font-variant-numeric: tabular-nums;
   overflow-wrap: anywhere;
 }
 
-.saldo dd {
-  font-size: var(--texto-titulo);
-  line-height: var(--texto-titulo-linha);
+.entradas dd {
+  color: var(--cor-positivo);
 }
 
-@media (max-width: 48rem) {
-  .totais {
-    grid-template-columns: 1fr 1fr;
-  }
+.saldo dd {
+  font-family: var(--fonte-titulo);
+  font-size: var(--numero-medio);
+  line-height: var(--texto-grande-linha);
+  font-weight: var(--peso-titulo);
+}
 
+/* Celular: o saldo vem primeiro, em linha própria. */
+@media (max-width: 48rem) {
   .saldo {
-    grid-column: 1 / -1;
+    flex-basis: 100%;
     order: -1;
   }
 }

@@ -1,0 +1,22 @@
+.erro {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--espaco-3);
+  padding: var(--espaco-5);
+  background: var(--cor-ameixa);
+  border: 1px dashed var(--cor-negativo);
+  border-radius: var(--raio-painel);
+  text-align: center;
+  font-size: var(--texto-corpo);
+}
+
+.erro > svg {
+  color: var(--cor-negativo);
+}
+
+.erro p {
+  margin: 0;
+  color: var(--cor-bruma);
+  font-size: var(--texto-pequeno);
+}

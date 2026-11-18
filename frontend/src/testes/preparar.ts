@@ -14,12 +14,14 @@ type OuvinteDeMidia = (evento: MediaQueryListEvent) => void;
 
 let midiaCorresponde = false;
 let layoutEstreito = false;
+let layoutIntermediario = false;
 const listasDeMidia = new Set<MediaQueryList>();
 const ouvintesDeMidia = new Map<MediaQueryList, Set<OuvinteDeMidia>>();
 
 // Consultas de largura (`min-width`) valem para o layout de computador, a não ser que o teste
 // peça o de celular com `definirLayoutEstreito(true)`; as demais seguem `definirMidia`.
 function corresponde(consulta: string): boolean {
+  if (consulta.includes("64rem")) return !layoutEstreito && !layoutIntermediario;
   return consulta.includes("min-width") ? !layoutEstreito : midiaCorresponde;
 }
 
@@ -69,6 +71,16 @@ export function definirLayoutEstreito(estreito: boolean): void {
   avisarMudanca((consulta) => consulta.includes("min-width"));
 }
 
+/**
+ * Simula a largura intermediária (de 45rem a 64rem: barra lateral recolhida): a consulta de 45rem
+ * continua valendo e a de 64rem deixa de valer.
+ */
+export function definirLayoutIntermediario(intermediario: boolean): void {
+  if (layoutIntermediario === intermediario) return;
+  layoutIntermediario = intermediario;
+  avisarMudanca((consulta) => consulta.includes("64rem"));
+}
+
 function avisarMudanca(vale: (consulta: string) => boolean): void {
   for (const lista of listasDeMidia) {
     if (!vale(lista.media)) continue;
@@ -80,6 +92,7 @@ function avisarMudanca(vale: (consulta: string) => boolean): void {
 function instalarMatchMedia(): void {
   midiaCorresponde = false;
   layoutEstreito = false;
+  layoutIntermediario = false;
   listasDeMidia.clear();
   ouvintesDeMidia.clear();
   Object.defineProperty(window, "matchMedia", {

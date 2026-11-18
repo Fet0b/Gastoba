@@ -1,6 +1,7 @@
 import { type SyntheticEvent, useId, useLayoutEffect, useRef, useState } from "react";
 import type { KeyboardEvent } from "react";
 
+import { Badge } from "../Badge/Badge";
 import { Icone } from "../Icone/Icone";
 import estilos from "./Navegacao.module.css";
 import { dividirTelas, type Navegacao } from "./telas";
@@ -124,16 +125,23 @@ function FolhaMais({ navegacao, aoFechar }: PropriedadesDaFolha) {
           </button>
         </div>
         <ul className={estilos.listaDaFolha}>
-          {emMais.map(({ tela, nome, icone }) => (
+          {emMais.map(({ tela, nome, icone, emBreve }) => (
             <li key={tela}>
               <button
                 type="button"
                 className={estilos.itemDaFolha}
+                aria-label={emBreve ? nome : undefined}
+                aria-describedby={emBreve ? `em-breve-folha-${tela}` : undefined}
                 aria-current={navegacao.tela === tela ? "page" : undefined}
                 onClick={() => escolher(tela)}
               >
                 <Icone nome={icone} tamanho={22} />
                 {nome}
+                {emBreve && (
+                  <span id={`em-breve-folha-${tela}`} className={estilos.emBreve}>
+                    <Badge>em breve</Badge>
+                  </span>
+                )}
               </button>
             </li>
           ))}

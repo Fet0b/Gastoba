@@ -3,7 +3,7 @@ name = "gastoba"
 version = "0.1.0"
 description = "Plataforma web de controle de gastos pessoais"
 authors = [
-    { name = "Fet0b" }
+    { name = "Fet0b", email = "fetobalopez@gmail.com" }
 ]
 requires-python = ">=3.14"
 dependencies = [

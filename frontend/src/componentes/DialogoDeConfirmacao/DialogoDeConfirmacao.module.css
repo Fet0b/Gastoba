@@ -1,0 +1,2 @@
+.descricao { margin: 0; color: var(--cor-bruma); font-size: var(--texto-pequeno); line-height: var(--texto-pequeno-linha); }
+.erro { margin: var(--espaco-3) 0 0; color: var(--cor-negativo); font-size: var(--texto-pequeno); }

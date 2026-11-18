@@ -159,7 +159,6 @@ export function GraficoDeRitmo({ periodo, acumulado, ideal, mesFuturo, aoRegistr
       <EstadoVazio
         icone="inicio"
         titulo="Este mês ainda não começou"
-        texto="O ritmo aparece a partir do primeiro dia do mês."
       />
     );
   }
@@ -168,7 +167,6 @@ export function GraficoDeRitmo({ periodo, acumulado, ideal, mesFuturo, aoRegistr
       <EstadoVazio
         icone="transacoes"
         titulo="Nenhum gasto neste mês"
-        texto="Sem gastos nem ganhos, ainda não há ritmo para mostrar."
         acao={aoRegistrar && { rotulo: "Registrar um gasto", aoClicar: aoRegistrar }}
       />
     );

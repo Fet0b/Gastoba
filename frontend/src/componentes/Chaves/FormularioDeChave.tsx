@@ -3,6 +3,7 @@ import { type FormEvent, useEffect, useId, useRef, useState } from "react";
 import { ErroDaApiCliente } from "../../api/cliente";
 import { useCriarChaveDeApi } from "../../api/consultas";
 import type { ChaveDeApiCriada, EscopoDaChave } from "../../api/tipos";
+import { Botao } from "../Botao/Botao";
 import estilos from "./Chaves.module.css";
 
 type Propriedades = {
@@ -154,9 +155,9 @@ export function FormularioDeChave({ aoCriar, aoFalhar }: Propriedades) {
         </p>
       )}
 
-      <button type="submit" className={estilos.primario} disabled={criar.pendente}>
+      <Botao type="submit" variante="primario" disabled={criar.pendente}>
         Criar chave
-      </button>
+      </Botao>
     </form>
   );
 }

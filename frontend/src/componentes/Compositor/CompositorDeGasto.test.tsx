@@ -411,7 +411,7 @@ describe("CompositorDeGasto", () => {
     fireEvent.click(botaoRegistrar());
     const alerta = await screen.findByRole("alert");
     expect(alerta.textContent).toContain("Não foi possível falar com o servidor.");
-    expect(aoFalhar).toHaveBeenCalledTimes(1);
+    await waitFor(() => expect(aoFalhar).toHaveBeenCalledTimes(1));
     expect(screen.getByRole("dialog")).toBeTruthy();
   });
 

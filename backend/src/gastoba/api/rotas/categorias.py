@@ -17,6 +17,6 @@ roteador = APIRouter(tags=["categorias"])
 )
 def listar_categorias() -> list[CategoriaResposta]:
     return [
-        CategoriaResposta(codigo=categoria.value, nome=categoria.nome)
+        CategoriaResposta(codigo=categoria.value, nome=categoria.nome, legada=categoria.legada)
         for categoria in CategoriaDoGasto
     ]

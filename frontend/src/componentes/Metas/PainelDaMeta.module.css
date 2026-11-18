@@ -1,0 +1,97 @@
+/* PainelDaMeta: folha lateral (tela cheia abaixo de 48rem) */
+
+.painel {
+  position: fixed;
+  inset-block: 0;
+  inset-inline: auto 0;
+  width: min(28rem, 100vw);
+  max-width: 100vw;
+  height: 100dvh;
+  max-height: 100dvh;
+  margin: 0;
+  padding: 0;
+  border: var(--borda-de-camada);
+  border-radius: var(--raio-painel) 0 0 var(--raio-painel);
+  background: var(--cor-ameixa);
+  color: var(--cor-nevoa);
+  box-shadow: var(--sombra-alta);
+  overflow-y: auto;
+}
+
+.painel::backdrop {
+  background: var(--cor-noite);
+}
+
+@media (max-width: 48rem) {
+  .painel {
+    width: 100vw;
+    border-radius: 0;
+  }
+}
+
+.corpo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espaco-4);
+  padding: var(--espaco-5);
+}
+
+.cabecalho {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--espaco-3);
+}
+
+.titulo {
+  margin: 0;
+  font-family: var(--fonte-titulo);
+  font-size: var(--texto-grande);
+  line-height: var(--texto-grande-linha);
+}
+
+.resumo {
+  color: var(--cor-bruma);
+  font-variant-numeric: tabular-nums;
+}
+
+.estado {
+  color: var(--cor-bruma);
+}
+
+.lancamentos {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espaco-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.lancamento {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: var(--espaco-1) var(--espaco-3);
+  padding: var(--espaco-3);
+  border-radius: var(--raio-cartao);
+  background: var(--cor-veludo);
+}
+
+.descricao {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.valor {
+  font-variant-numeric: tabular-nums;
+  font-weight: var(--peso-secao);
+}
+
+.detalhe {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--espaco-1) var(--espaco-3);
+  color: var(--cor-bruma);
+  font-size: var(--texto-pequeno);
+}

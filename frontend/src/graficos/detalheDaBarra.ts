@@ -2,6 +2,7 @@
 // cada gasto repete a divisão do backend (`ResumoPorTags`): partes iguais entre
 // as tags do gasto, em centavos, com o resto de 1 em 1 centavo a partir da primeira tag.
 
+import {valorLiquido} from "../transacoes/despesas";
 import type { Gasto } from "../api/tipos";
 import { deCentavos, paraCentavos } from "../dinheiro/dinheiro";
 import { normalizarTag } from "../tags/tags";
@@ -23,7 +24,7 @@ export type GastoDaBarra = {
 };
 
 function parteDaTag(gasto: Gasto, indice: number): bigint {
-  const centavos = paraCentavos(gasto.valor);
+  const centavos = paraCentavos(valorLiquido(gasto));
   const quantidade = BigInt(gasto.tags.length);
   return centavos / quantidade + (BigInt(indice) < centavos % quantidade ? 1n : 0n);
 }
@@ -40,7 +41,7 @@ export function gastosDaBarra(alvo: AlvoDaBarra, gastos: readonly Gasto[]): Gast
   const itens: GastoDaBarra[] = [];
   for (const gasto of gastos) {
     if (procuradas === null) {
-      if (gasto.tags.length === 0) itens.push({ gasto, parte: gasto.valor });
+      if (gasto.tags.length === 0 && paraCentavos(valorLiquido(gasto)) > 0n) itens.push({ gasto, parte: valorLiquido(gasto) });
       continue;
     }
     let parte = 0n;
@@ -50,7 +51,7 @@ export function gastosDaBarra(alvo: AlvoDaBarra, gastos: readonly Gasto[]): Gast
       achou = true;
       parte += parteDaTag(gasto, indice);
     });
-    if (achou) itens.push({ gasto, parte: deCentavos(parte) });
+    if (achou && parte > 0n) itens.push({ gasto, parte: deCentavos(parte) });
   }
   return itens.sort((a, b) => (a.gasto.data < b.gasto.data ? 1 : a.gasto.data > b.gasto.data ? -1 : 0));
 }

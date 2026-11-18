@@ -13,7 +13,7 @@ import type {
 } from "../api/tipos";
 import { limites, periodoAtual } from "../periodo/periodo";
 import { entrarNaSimulacao, fetchSimulado } from "./fetchSimulado";
-import { reiniciarSimulacao } from "./manipuladores";
+import { definirCategoriaHistoricaSimulada, adicionarInvestimentoSimulado, prepararCenarioDeFaturas, reiniciarSimulacao } from "./manipuladores";
 
 // Os testes falam com a simulação só pelo fetchSimulado, como o cliente da API.
 // O preparar.ts reinicia a simulação (vazia e sem sessão) depois de cada teste;
@@ -109,7 +109,7 @@ describe("POST /contas", () => {
     expect(resposta.status).toBe(201);
     expect(resposta.tipo).toContain("application/json");
     const conta = resposta.corpo as Conta;
-    expect(conta).toEqual({ id: conta.id, nome: "Nubank", saldo: "0.00", origem: "manual", tipo: "corrente" });
+    expect(conta).toEqual({ id: conta.id, nome: "Nubank", saldo: "0.00", origem: "manual", tipo: "corrente", papel: null });
     expect(conta.id).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/);
     expect(await listarContas()).toEqual([conta]);
   });
@@ -215,6 +215,7 @@ describe("POST /gastos", () => {
 
     expect(gasto).toEqual({
       id: gasto.id,
+      transacao_importada_id: null,
       conta_id: conta.id,
       valor: "25.90",
       descricao: "Feira",
@@ -223,6 +224,7 @@ describe("POST /gastos", () => {
       tags: ["pix", "mercado livre"],
       origem: "manual",
       recorrencia_id: null,
+    valor_coberto: "0.00", coberturas: [],
     });
     await registrar(conta.id, { valor: "0.11" });
     expect((await listarContas())[0].saldo).toBe("73.99");
@@ -486,11 +488,11 @@ describe("GET /contas, /tags e /categorias", () => {
 
     expect(resposta.status).toBe(200);
     expect(resposta.corpo as Categoria[]).toEqual([
-      { codigo: "investimentos", nome: "Investimentos" },
-      { codigo: "lazer", nome: "Lazer" },
-      { codigo: "conhecimento", nome: "Conhecimento" },
-      { codigo: "conforto", nome: "Conforto" },
-      { codigo: "gasto_fixo", nome: "Gasto fixo" },
+      { codigo: "investimentos", nome: "Investimentos (antiga)", legada: true },
+      { codigo: "lazer", nome: "Lazer", legada: false },
+      { codigo: "conhecimento", nome: "Conhecimento", legada: false },
+      { codigo: "conforto", nome: "Conforto", legada: false },
+      { codigo: "gasto_fixo", nome: "Gasto fixo", legada: false },
     ]);
   });
 });
@@ -559,7 +561,13 @@ describe("reiniciarSimulacao", () => {
 
     expect((await pedir("GET", "/auth/eu")).status).toBe(401);
     expect((await pedir("POST", "/auth/entrar", { email: EMAIL_DE_EXEMPLO, senha: SENHA_DE_EXEMPLO })).status).toBe(200);
-    expect(await listarContas()).toHaveLength(2);
+    // Duas contas de exemplo e dois cartões inventados (com as faturas).
+    expect((await listarContas()).map((conta) => conta.nome)).toEqual([
+      "Carteira",
+      "Cartão Roxo",
+      "FREE VISA",
+      "Nubank",
+    ]);
     const { inicio, fim } = limites(periodoAtual());
     const gastos = await listarGastos(`inicio=${inicio}&fim=${fim}`);
     expect(new Set(gastos.map((gasto) => gasto.categoria)).size).toBeGreaterThanOrEqual(3);
@@ -639,6 +647,7 @@ describe("POST /auth/entrar", () => {
       email: EMAIL_DE_EXEMPLO,
       nome: "Você",
       importacao_bancaria: true,
+      gestao_de_investimentos: true,
     });
     expect(usuario.id).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/);
   });
@@ -999,6 +1008,7 @@ describe("POST /ganhos e GET /ganhos", () => {
     expect(resposta.status).toBe(201);
     expect(resposta.corpo).toEqual({
       id: (resposta.corpo as { id: string }).id,
+      transacao_importada_id: null,
       conta_id: conta.id,
       valor: "0.20",
       descricao: "Troco",
@@ -1198,11 +1208,11 @@ describe("metas na simulação", () => {
     await pedir("PUT", "/metas/lazer", { percentual: 25 });
 
     expect(primeira.status).toBe(200);
-    expect(primeira.corpo).toEqual({ categoria: "lazer", percentual: 20 });
+    expect(primeira.corpo).toEqual({ categoria: "lazer", nome: "Lazer", percentual: 20 });
     expect((await pedir("GET", "/metas")).corpo).toEqual([
-      { categoria: "investimentos", percentual: 10 },
-      { categoria: "lazer", percentual: 25 },
-      { categoria: "gasto_fixo", percentual: 30 },
+      { categoria: "liberdade_financeira", nome: "Liberdade financeira", percentual: 10 },
+      { categoria: "lazer", nome: "Lazer", percentual: 25 },
+      { categoria: "gasto_fixo", nome: "Gasto fixo", percentual: 30 },
     ]);
   });
 
@@ -1250,12 +1260,15 @@ describe("metas na simulação", () => {
 
     expect(resposta.status).toBe(200);
     expect(resposta.corpo).toEqual({
+      aportes_do_mes: "0.00",
       mes: "2026-10",
       renda: "5000.00",
+      renda_base: null,
+      renda_de_referencia: "5000.00",
       metas: [
-        { categoria: "lazer", percentual: 10, limite: "500.00", gasto: "450.00", restante: "50.00", percentual_usado: 90, situacao: "alerta" },
-        { categoria: "conforto", percentual: 5, limite: "250.00", gasto: "0.00", restante: "250.00", percentual_usado: 0, situacao: "dentro" },
-        { categoria: "gasto_fixo", percentual: 40, limite: "2000.00", gasto: "2100.00", restante: "-100.00", percentual_usado: 105, situacao: "estourou" },
+        { categoria: "lazer", nome:"Lazer", percentual: 10, limite: "500.00", gasto: "450.00", restante: "50.00", percentual_usado: 90, situacao: "alerta", gasto_bruto: "450.00", limite_adicional: "0.00", caixinhas: [], rentabilidade: null },
+        { categoria: "conforto", nome:"Conforto", percentual: 5, limite: "250.00", gasto: "0.00", restante: "250.00", percentual_usado: 0, situacao: "dentro", gasto_bruto: "0.00", limite_adicional: "0.00", caixinhas: [], rentabilidade: null },
+        { categoria: "gasto_fixo", nome:"Gasto fixo", percentual: 40, limite: "2000.00", gasto: "2100.00", restante: "-100.00", percentual_usado: 105, situacao: "estourou", gasto_bruto: "2100.00", limite_adicional: "0.00", caixinhas: [], rentabilidade: null },
       ],
     });
   });
@@ -1390,6 +1403,68 @@ describe("DELETE /ganhos/{id}", () => {
     expect(erroDe(resposta).codigo).toBe("ganho_de_recorrencia");
     expect((await listarContas())[0].saldo).toBe(saldoAntes);
   });
+
+  type NaCaixa = { id: string; descricao: string; estado: string };
+
+  async function salarioDaCaixa(): Promise<NaCaixa> {
+    expect((await pedir("POST", "/sincronizacoes")).status).toBe(200);
+    const pendentes = (await pedir("GET", "/transacoes-importadas")).corpo as NaCaixa[];
+    return pendentes.find((t) => t.descricao === "Salário") as NaCaixa;
+  }
+
+  async function idsNoEstado(estado: string): Promise<string[]> {
+    const lista = (await pedir("GET", `/transacoes-importadas?estado=${estado}`)).corpo as NaCaixa[];
+    return lista.map((t) => t.id).sort();
+  }
+
+  it("excluir o ganho aceito da caixa devolve a transação a pendente", async () => {
+    const salario = await salarioDaCaixa();
+    const aceite = await pedir("POST", `/transacoes-importadas/${salario.id}/aceitar`, { tags: [] });
+    expect(aceite.status).toBe(201);
+    const ganhoId = (aceite.corpo as { id: string }).id;
+    expect(await idsNoEstado("aceita")).toContain(salario.id);
+
+    const resposta = await pedir("DELETE", `/ganhos/${ganhoId}`);
+
+    expect(resposta.status).toBe(204);
+    expect(await idsNoEstado("pendente")).toContain(salario.id);
+    expect(await idsNoEstado("aceita")).not.toContain(salario.id);
+  });
+
+  it("com outra parte da divisão restante, a transação continua aceita", async () => {
+    const salario = await salarioDaCaixa();
+    const divisao = await pedir("POST", `/transacoes-importadas/${salario.id}/dividir`, {
+      partes: [{ percentual: 50 }, { percentual: 50 }],
+    });
+    expect(divisao.status).toBe(201);
+    const [primeiro] = (divisao.corpo as { criados: { id: string }[] }).criados;
+
+    const resposta = await pedir("DELETE", `/ganhos/${primeiro.id}`);
+
+    expect(resposta.status).toBe(204);
+    expect(await idsNoEstado("aceita")).toContain(salario.id);
+    expect(await idsNoEstado("pendente")).not.toContain(salario.id);
+  });
+
+  it("excluir um ganho manual não mexe na caixa de entrada", async () => {
+    await salarioDaCaixa();
+    const conta = await criarConta("Carteira", "0.00");
+    const ganho = await registrarGanho(conta.id, "20.00");
+    const antes = {
+      pendente: await idsNoEstado("pendente"),
+      aceita: await idsNoEstado("aceita"),
+      ignorada: await idsNoEstado("ignorada"),
+    };
+
+    const resposta = await pedir("DELETE", `/ganhos/${ganho.id}`);
+
+    expect(resposta.status).toBe(204);
+    expect({
+      pendente: await idsNoEstado("pendente"),
+      aceita: await idsNoEstado("aceita"),
+      ignorada: await idsNoEstado("ignorada"),
+    }).toEqual(antes);
+  });
 });
 
 describe("importação bancária simulada", () => {
@@ -1417,6 +1492,21 @@ describe("importação bancária simulada", () => {
   const da = (lista: Importada[], descricao: string) =>
     lista.find((t) => t.descricao === descricao) as Importada;
 
+  it("no começo do mês, em que as datas se igualam, a caixa mantém a ordem do banco", async () => {
+    // Dia 2: as seis transações simuladas "de dias atrás" caem todas no dia 1. O desempate não
+    // pode ser aleatório (o id é um UUID novo a cada rodada), ou a ordem e o foco do teclado
+    // mudam de uma execução para outra.
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date(2026, 10, 2, 12, 0, 0));
+    try {
+      await sincronizar();
+      const descricoes = (await caixa()).map((t) => t.descricao);
+      expect(descricoes).toEqual(["Mercado Extra", "Salário", "Farmácia", "Estorno de compra"]);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it("sincronizar cria a conta do banco com o saldo dele e enche a caixa, sem duplicar", async () => {
     expect(await sincronizar()).toEqual({ contas: 2, transacoes_novas: 4, falhas: 0 });
 
@@ -1428,6 +1518,7 @@ describe("importação bancária simulada", () => {
         saldo: "1500.00",
         origem: "open_finance",
         tipo: "corrente",
+        papel: null,
       },
       {
         id: expect.any(String),
@@ -1435,6 +1526,7 @@ describe("importação bancária simulada", () => {
         saldo: "-820.00",
         origem: "open_finance",
         tipo: "cartao",
+        papel: null,
       },
     ]);
     expect((await caixa()).length).toBe(4);
@@ -1532,6 +1624,37 @@ describe("importação bancária simulada", () => {
     expect((await caixa()).map((t) => t.descricao)).not.toContain("Estorno de compra");
   });
 
+  it("restaurar devolve a ignorada à caixa sem lançamento nem saldo; pendente e aceita dão 409", async () => {
+    await sincronizar();
+    const lista = await caixa();
+    const estorno = da(lista, "Estorno de compra");
+    const mercado = da(lista, "Mercado Extra");
+    const salario = da(lista, "Salário");
+    await pedir("POST", `/transacoes-importadas/${estorno.id}/ignorar`);
+    await pedir("POST", `/transacoes-importadas/${salario.id}/aceitar`, {});
+    const saldoAntes = (await listarContas())[0].saldo;
+    const ganhosAntes = await pedir("GET", "/ganhos?inicio=2000-01-01&fim=2999-12-31");
+
+    const restaurada = await pedir("POST", `/transacoes-importadas/${estorno.id}/restaurar`);
+    const daPendente = await pedir("POST", `/transacoes-importadas/${mercado.id}/restaurar`);
+    const daAceita = await pedir("POST", `/transacoes-importadas/${salario.id}/restaurar`);
+    const inexistente = await pedir("POST", `/transacoes-importadas/${ID_INEXISTENTE}/restaurar`);
+
+    expect(restaurada.status).toBe(204);
+    expect(daPendente.status).toBe(409);
+    expect(erroDe(daPendente).codigo).toBe("transacao_ja_tratada");
+    expect(daAceita.status).toBe(409);
+    expect(erroDe(daAceita).codigo).toBe("transacao_ja_tratada");
+    expect(inexistente.status).toBe(404);
+    const volta = da(await caixa(), "Estorno de compra");
+    expect(volta).toEqual({ ...estorno, estado: "pendente" });
+    expect((await caixa("?estado=ignorada")).map((t) => t.descricao)).not.toContain(
+      "Estorno de compra",
+    );
+    expect((await listarContas())[0].saldo).toBe(saldoAntes);
+    expect(await pedir("GET", "/ganhos?inicio=2000-01-01&fim=2999-12-31")).toEqual(ganhosAntes);
+  });
+
   it("lançar à mão numa conta do banco não mexe no saldo dela", async () => {
     await sincronizar();
     const conta = (await listarContas())[0];
@@ -1576,3 +1699,1030 @@ describe("importação bancária simulada", () => {
   });
 });
 
+
+describe("investimentos simulados", () => {
+  type Item = {
+    id: string;
+    descricao: string;
+    sentido: string;
+  };
+  type Posicao = {
+    id: string;
+    saldo: string;
+    destinacoes: { tag: string | null; principal: string; valor_atual: string }[];
+  };
+
+  async function preparar(saldo = "410.01") {
+    // Antes de sincronizar: a sincronização só cria um investimento de exemplo se não houver nenhum.
+    const investimento = adicionarInvestimentoSimulado(
+      { nome: "LCI", tipo: "FIXED_INCOME", subtipo: "LCI", saldo },
+      2,
+    );
+    await pedir("POST", "/sincronizacoes");
+    const lista = (await pedir("GET", "/transacoes-importadas")).corpo as Item[];
+    return { investimento, saidas: lista.filter((t) => t.sentido === "saida"), lista };
+  }
+
+  const posicoes = async () => (await pedir("GET", "/investimentos")).corpo as Posicao[];
+
+  it("sem destinação, o saldo todo é 'sem destinação'; o histórico tem um saldo por dia", async () => {
+    const { investimento } = await preparar();
+
+    const [posicao] = (await posicoes()).filter((p) => p.id === investimento);
+
+    expect(posicao.destinacoes).toEqual([
+      { tag: null, cor:null, principal: "0.00", valor_atual: "410.01", rendimento: "0.00", rentabilidade: null },
+    ]);
+    const periodo = limites(periodoAtual());
+    const historico = (await pedir("GET", "/investimentos/historico?inicio=2000-01-01&fim=2999-12-31"))
+      .corpo as { saldo: string }[];
+    expect(historico).toHaveLength(3);
+    expect(historico.at(-1)?.saldo).toBe("410.01");
+    expect(periodo.inicio).toBeTruthy();
+  });
+
+  it("aporte com destinações divide em centavos inteiros e ratear o saldo pelo principal", async () => {
+    const { investimento, saidas } = await preparar("410.01");
+    const [a, b] = saidas;
+
+    const primeiro = await pedir("POST", `/transacoes-importadas/${a.id}/aceitar`, {
+      como_investimento: true,
+      investimento_id: investimento,
+      destinacoes: [{ tag: "Casa", percentual: 100 }],
+    });
+    await pedir("POST", `/transacoes-importadas/${b.id}/aceitar`, {
+      como_investimento: true,
+      investimento_id: investimento,
+      destinacoes: [{ tag: "viagem", percentual: 100 }],
+    });
+
+    expect(primeiro.status).toBe(201);
+    expect((primeiro.corpo as { tipo: string }).tipo).toBe("aporte");
+    const [posicao] = (await posicoes()).filter((p) => p.id === investimento);
+    expect(posicao.destinacoes.map((d) => d.tag).sort()).toEqual(["casa", "viagem"]);
+    const soma = posicao.destinacoes.reduce((t, d) => t + Number(d.valor_atual.replace(".", "")), 0);
+    expect(soma).toBe(41001);
+  });
+
+  it("recusa destinações que não somam 100, investimento inexistente e categoria com aporte", async () => {
+    const { investimento, saidas } = await preparar();
+    const aceitar = (corpo: unknown) =>
+      pedir("POST", `/transacoes-importadas/${saidas[0].id}/aceitar`, corpo);
+
+    const soma = await aceitar({
+      como_investimento: true,
+      investimento_id: investimento,
+      destinacoes: [{ tag: "casa", percentual: 50 }],
+    });
+    const inexistente = await aceitar({
+      como_investimento: true,
+      investimento_id: ID_INEXISTENTE,
+      destinacoes: [{ tag: "casa", percentual: 100 }],
+    });
+    const comCategoria = await aceitar({ como_investimento: true, categoria: "investimentos" });
+    const aporteComTags = await aceitar({ como_investimento: true, tags: ["x"] });
+
+    expect(erroDe(soma).codigo).toBe("destinacao_invalida");
+    expect(erroDe(inexistente).codigo).toBe("investimento_nao_encontrado");
+    expect(erroDe(comCategoria).codigo).toBe("categoria_invalida");
+    expect(erroDe(aporteComTags).codigo).toBe("transacao_importada_invalida");
+  });
+
+  it("realocar move o principal sem mudar o total e não passa do principal", async () => {
+    const { investimento, saidas } = await preparar("100.00");
+    await pedir("POST", `/transacoes-importadas/${saidas[0].id}/aceitar`, {
+      como_investimento: true,
+      investimento_id: investimento,
+      destinacoes: [{ tag: "casa", percentual: 100 }],
+    });
+
+    const feita = await pedir("POST", `/investimentos/${investimento}/realocacoes`, {
+      origem: "Casa",
+      destino: "viagem",
+      percentual: 50,
+      data: "2026-10-10",
+    });
+    const acima = await pedir("POST", `/investimentos/${investimento}/realocacoes`, {
+      origem: "casa",
+      destino: "viagem",
+      valor: "99999.00",
+      data: "2026-10-10",
+    });
+
+    expect(feita.status).toBe(201);
+    expect(erroDe(acima).codigo).toBe("principal_insuficiente");
+    const lista = (await pedir("GET", `/investimentos/${investimento}/realocacoes`)).corpo as unknown[];
+    expect(lista).toHaveLength(1);
+    const [posicao] = (await posicoes()).filter((p) => p.id === investimento);
+    expect(posicao.destinacoes.map((d) => d.tag).sort()).toEqual(["casa", "viagem"]);
+  });
+
+  it("resumo por destinação e por tipo soma o saldo", async () => {
+    const { investimento, saidas } = await preparar("100.00");
+    await pedir("POST", `/transacoes-importadas/${saidas[0].id}/aceitar`, {
+      como_investimento: true,
+      investimento_id: investimento,
+      destinacoes: [
+        { tag: "casa", percentual: 60 },
+        { tag: "viagem", percentual: 40 },
+      ],
+    });
+
+    const porDestino = (await pedir("GET", "/investimentos/resumo")).corpo as {
+      total: string;
+      fatias: { rotulo: string | null; valor: string }[];
+    };
+    const porTipo = (await pedir("GET", "/investimentos/resumo?visao=tipo")).corpo as typeof porDestino;
+
+    expect(porDestino.fatias.map((f) => [f.rotulo, f.valor])).toEqual([
+      ["casa", "60.00"],
+      ["viagem", "40.00"],
+    ]);
+    expect(porTipo.fatias).toEqual([{ rotulo: "FIXED_INCOME", cor:null, valor: "100.00" }]);
+    expect(erroDe(await pedir("GET", "/investimentos/resumo?visao=xis")).codigo).toBe(
+      "requisicao_invalida",
+    );
+  });
+
+  it("aceitar em lote categoriza todas de uma vez, e é tudo ou nada", async () => {
+    const { saidas, lista } = await preparar();
+    const ids = saidas.slice(0, 2).map((t) => t.id);
+
+    const ruim = await pedir("POST", "/transacoes-importadas/aceitar-em-lote", {
+      transacao_ids: [ids[0], ID_INEXISTENTE],
+      categoria: "lazer",
+    });
+    const entrada = lista.find((t) => t.sentido === "entrada") as Item;
+    const comEntrada = await pedir("POST", "/transacoes-importadas/aceitar-em-lote", {
+      transacao_ids: [ids[0], entrada.id],
+      categoria: "lazer",
+    });
+    const boa = await pedir("POST", "/transacoes-importadas/aceitar-em-lote", {
+      transacao_ids: ids,
+      categoria: "lazer",
+      tags: ["Pix"],
+    });
+
+    expect(erroDe(ruim).codigo).toBe("transacao_importada_nao_encontrada");
+    expect(erroDe(comEntrada).codigo).toBe("transacao_importada_invalida");
+    expect(boa.status).toBe(201);
+    expect((boa.corpo as { aceitas: { tipo: string }[] }).aceitas.map((a) => a.tipo)).toEqual([
+      "gasto",
+      "gasto",
+    ]);
+    const restantes = (await pedir("GET", "/transacoes-importadas")).corpo as Item[];
+    expect(restantes.some((t) => ids.includes(t.id))).toBe(false);
+  });
+
+  it("registrar gasto com a categoria investimentos é recusado", async () => {
+    const conta = (await pedir("POST", "/contas", { nome: "C", saldo_inicial: "10.00" }))
+      .corpo as Conta;
+    const resposta = await pedir("POST", "/gastos", {
+      conta_id: conta.id,
+      valor: "1.00",
+      descricao: "LCI",
+      data: "2026-10-10",
+      categoria: "investimentos",
+      tags: [],
+    });
+    expect(erroDe(resposta).codigo).toBe("categoria_invalida");
+  });
+});
+
+describe("divisão de transação e rentabilidade simuladas", () => {
+  type Item = { id: string; descricao: string; sentido: string };
+
+  async function caixa() {
+    await pedir("POST", "/sincronizacoes");
+    const lista = (await pedir("GET", "/transacoes-importadas")).corpo as Item[];
+    return (descricao: string) => lista.find((t) => t.descricao === descricao) as Item;
+  }
+
+  const gastosDoMes = async () =>
+    (await pedir("GET", "/gastos?inicio=2000-01-01&fim=2999-12-31")).corpo as {
+      descricao: string;
+      valor: string;
+      categoria: string;
+      tags: string[];
+    }[];
+
+  it("dividir uma saída cria um gasto por parte, somando o valor", async () => {
+    const da = await caixa();
+    const farmacia = da("Farmácia");
+
+    const resposta = await pedir("POST", `/transacoes-importadas/${farmacia.id}/dividir`, {
+      partes: [
+        { categoria: "conforto", tags: ["Remédio"], percentual: 33 },
+        { categoria: "lazer", nome:"Lazer", percentual: 33 },
+        { categoria: "conhecimento", percentual: 34 },
+      ],
+    });
+
+    expect(resposta.status).toBe(201);
+    expect((resposta.corpo as { criados: { tipo: string }[] }).criados).toHaveLength(3);
+    const gastos = await gastosDoMes();
+    expect(gastos.map((g) => [g.descricao, g.valor, g.categoria]).sort()).toEqual([
+      ["Farmácia (1/3)", "15.15", "conforto"],
+      ["Farmácia (2/3)", "15.15", "lazer"],
+      ["Farmácia (3/3)", "15.60", "conhecimento"],
+    ]);
+    expect(gastos.find((g) => g.descricao === "Farmácia (1/3)")?.tags).toEqual(["remédio"]);
+    const restantes = (await pedir("GET", "/transacoes-importadas")).corpo as Item[];
+    expect(restantes.some((t) => t.id === farmacia.id)).toBe(false);
+  });
+
+  it("dividir uma entrada cria ganhos sem categoria", async () => {
+    const da = await caixa();
+    const resposta = await pedir("POST", `/transacoes-importadas/${da("Salário").id}/dividir`, {
+      partes: [{ percentual: 50 }, { percentual: 50 }],
+    });
+    expect((resposta.corpo as { criados: { tipo: string }[] }).criados.map((c) => c.tipo)).toEqual([
+      "ganho",
+      "ganho",
+    ]);
+  });
+
+  it("recusa divisão inválida sem tratar a transação", async () => {
+    const da = await caixa();
+    const id = da("Farmácia").id;
+    const enviar = (partes: unknown) =>
+      pedir("POST", `/transacoes-importadas/${id}/dividir`, { partes });
+
+    const uma = await enviar([{ categoria: "lazer", nome:"Lazer", percentual: 100 }]);
+    const soma = await enviar([
+      { categoria: "lazer", nome:"Lazer", percentual: 50 },
+      { categoria: "lazer", nome:"Lazer", percentual: 40 },
+    ]);
+    const semCategoria = await enviar([{ percentual: 50 }, { percentual: 50 }]);
+    const investimentos = await enviar([
+      { como_investimento: true, tags: ["x"], percentual: 50 },
+      { categoria: "lazer", nome:"Lazer", percentual: 50 },
+    ]);
+    const semPartes = await pedir("POST", `/transacoes-importadas/${id}/dividir`, {});
+
+    expect([uma, soma].map((r) => erroDe(r).codigo)).toEqual(["divisao_invalida", "divisao_invalida"]);
+    expect(erroDe(semCategoria).codigo).toBe("transacao_importada_invalida");
+    expect(erroDe(investimentos).codigo).toBe("transacao_importada_invalida");
+    expect(erroDe(semPartes).codigo).toBe("requisicao_invalida");
+    expect(await gastosDoMes()).toEqual([]);
+  });
+
+  it("traz a rentabilidade do investimento e das destinações", async () => {
+    const id = adicionarInvestimentoSimulado({
+      nome: "LCI",
+      tipo: "FIXED_INCOME",
+      saldo: "1043.21",
+      valor_aplicado: "1000.00",
+      rendimento: "43.21",
+    });
+    const da = await caixa();
+    await pedir("POST", `/transacoes-importadas/${da("Farmácia").id}/aceitar`, {
+      como_investimento: true,
+      investimento_id: id,
+      destinacoes: [{ tag: "casa", percentual: 100 }],
+    });
+
+    const [posicao] = (
+      (await pedir("GET", "/investimentos")).corpo as {
+        id: string;
+        valor_aplicado: string | null;
+        rendimento: string | null;
+        rentabilidade: string | null;
+        destinacoes: { tag: string; rendimento: string; rentabilidade: string | null }[];
+      }[]
+    ).filter((p) => p.id === id);
+
+    expect([posicao.valor_aplicado, posicao.rendimento, posicao.rentabilidade]).toEqual([
+      "1000.00",
+      "43.21",
+      "4.32",
+    ]);
+    expect(posicao.destinacoes[0].rendimento).toBe("997.31");
+  });
+});
+
+describe("aporte pela categoria, sugestão e saldo inicial simulados", () => {
+  type Item = {
+    id: string;
+    descricao: string;
+    sentido: string;
+    investimento_sugerido_id: string | null;
+  };
+  type Movimento = {
+    id: string;
+    conta_id: string | null;
+    investimento_id: string | null;
+    tipo: string;
+    origem: string;
+    descricao: string;
+    valor: string;
+    destinacoes: { tag: string; valor: string }[];
+  };
+  type Posicao = {
+    id: string;
+    destinacoes: { tag: string | null; principal: string; valor_atual: string }[];
+  };
+
+  async function caixa() {
+    await pedir("POST", "/sincronizacoes");
+    const lista = (await pedir("GET", "/transacoes-importadas")).corpo as Item[];
+    return (descricao: string) => lista.find((t) => t.descricao === descricao) as Item;
+  }
+
+  const movimentos = async () =>
+    (await pedir("GET", "/movimentos-de-investimento?inicio=2000-01-01&fim=2999-12-31"))
+      .corpo as Movimento[];
+  const gastos = async () =>
+    (await pedir("GET", "/gastos?inicio=2000-01-01&fim=2999-12-31")).corpo as Gasto[];
+  const posicao = async (id: string) =>
+    ((await pedir("GET", "/investimentos")).corpo as Posicao[]).find((p) => p.id === id) as Posicao;
+
+  it("aceitar a saída com marcador registra um aporte, não um gasto", async () => {
+    const id = adicionarInvestimentoSimulado({ nome: "LCI", tipo: "FIXED_INCOME", saldo: "100.00" });
+    const da = await caixa();
+
+    const resposta = await pedir("POST", `/transacoes-importadas/${da("Farmácia").id}/aceitar`, {
+      como_investimento: true,
+      investimento_id: id,
+      destinacoes: [{ tag: "casa", percentual: 100 }],
+    });
+
+    expect(resposta.status).toBe(201);
+    expect((resposta.corpo as { tipo: string }).tipo).toBe("aporte");
+    expect(await gastos()).toEqual([]);
+    const [movimento] = await movimentos();
+    expect([movimento.tipo, movimento.origem, movimento.valor]).toEqual(["aporte", "open_finance", "45.90"]);
+    expect((await posicao(id)).destinacoes.map((d) => [d.tag, d.principal])).toEqual([["casa", "45.90"]]);
+  });
+
+  it("a categoria investimentos não vale na entrada nem com tags", async () => {
+    const da = await caixa();
+
+    const comTags = await pedir("POST", `/transacoes-importadas/${da("Farmácia").id}/aceitar`, {
+      como_investimento: true,
+      tags: ["pix"],
+    });
+    const entrada = await pedir("POST", `/transacoes-importadas/${da("Salário").id}/aceitar`, {
+      como_investimento: true,
+      categoria:"conforto",
+    });
+
+    expect(erroDe(comTags).codigo).toBe("transacao_importada_invalida");
+    expect(erroDe(entrada).codigo).toBe("transacao_importada_invalida");
+  });
+
+  it("o lote com o marcador vira aportes", async () => {
+    const da = await caixa();
+
+    const resposta = await pedir("POST", "/transacoes-importadas/aceitar-em-lote", {
+      transacao_ids: [da("Farmácia").id, da("Mercado Extra").id],
+      como_investimento: true,
+    });
+
+    expect((resposta.corpo as { aceitas: { tipo: string }[] }).aceitas.map((a) => a.tipo)).toEqual([
+      "aporte",
+      "aporte",
+    ]);
+    expect(await gastos()).toEqual([]);
+  });
+
+  it("dividir com uma parte de aporte cria o aporte com as destinações e o gasto da outra", async () => {
+    const id = adicionarInvestimentoSimulado({ nome: "LCI", tipo: "FIXED_INCOME", saldo: "100.00" });
+    const da = await caixa();
+
+    const resposta = await pedir("POST", `/transacoes-importadas/${da("Farmácia").id}/dividir`, {
+      partes: [
+        {
+          como_investimento: true,
+          percentual: 70,
+          investimento_id: id,
+          destinacoes: [{ tag: "reserva", percentual: 100 }],
+        },
+        { categoria: "lazer", tags: ["pix"], percentual: 30 },
+      ],
+    });
+
+    expect(resposta.status).toBe(201);
+    expect((resposta.corpo as { criados: { tipo: string }[] }).criados.map((c) => c.tipo)).toEqual([
+      "aporte",
+      "gasto",
+    ]);
+    const [movimento] = await movimentos();
+    expect([movimento.descricao, movimento.valor, movimento.investimento_id]).toEqual([
+      "Farmácia (1/2)",
+      "32.13",
+      id,
+    ]);
+    expect((await gastos()).map((g) => [g.descricao, g.valor, g.categoria])).toEqual([
+      ["Farmácia (2/2)", "13.77", "lazer"],
+    ]);
+    expect((await posicao(id)).destinacoes.map((d) => [d.tag, d.principal])).toEqual([["reserva", "32.13"]]);
+  });
+
+  it("dividir recusa investimento fora do aporte e destinações sem investimento, sem tratar nada", async () => {
+    const id = adicionarInvestimentoSimulado({ nome: "LCI", tipo: "FIXED_INCOME", saldo: "100.00" });
+    const da = await caixa();
+    const farmacia = da("Farmácia").id;
+    const enviar = (partes: unknown) =>
+      pedir("POST", `/transacoes-importadas/${farmacia}/dividir`, { partes });
+
+    const foraDoAporte = await enviar([
+      { categoria: "lazer", nome:"Lazer", percentual: 50, investimento_id: id },
+      { categoria: "lazer", nome:"Lazer", percentual: 50 },
+    ]);
+    const semInvestimento = await enviar([
+      { como_investimento: true, percentual: 50, destinacoes: [{ tag: "casa", percentual: 100 }] },
+      { categoria: "lazer", nome:"Lazer", percentual: 50 },
+    ]);
+    const inexistente = await enviar([
+      {
+        como_investimento: true,
+        percentual: 50,
+        investimento_id: ID_INEXISTENTE,
+        destinacoes: [{ tag: "casa", percentual: 100 }],
+      },
+      { categoria: "lazer", nome:"Lazer", percentual: 50 },
+    ]);
+
+    expect(erroDe(foraDoAporte).codigo).toBe("transacao_importada_invalida");
+    expect(erroDe(semInvestimento).codigo).toBe("transacao_importada_invalida");
+    expect(erroDe(inexistente).codigo).toBe("investimento_nao_encontrado");
+    expect(await gastos()).toEqual([]);
+    expect(await movimentos()).toEqual([]);
+  });
+
+  it("sugere o investimento cujo nome aparece na descrição e cujo aplicado é o valor", async () => {
+    const sugerido = adicionarInvestimentoSimulado({
+      nome: "FARMACIA",
+      tipo: "FIXED_INCOME",
+      saldo: "46.00",
+      valor_aplicado: "45.90",
+    });
+    adicionarInvestimentoSimulado({
+      nome: "Mercado",
+      tipo: "FIXED_INCOME",
+      saldo: "90.00",
+      valor_aplicado: "90.00",
+    });
+    const da = await caixa();
+
+    expect(da("Farmácia").investimento_sugerido_id).toBe(sugerido);
+    // O valor aplicado não bate: sem sugestão. A entrada nunca tem.
+    expect(da("Mercado Extra").investimento_sugerido_id).toBeNull();
+    expect(da("Salário").investimento_sugerido_id).toBeNull();
+  });
+
+  it("não sugere quando duas posições casam nem quando a posição já tem movimento", async () => {
+    const um = { nome: "Farmácia", tipo: "FIXED_INCOME", saldo: "46.00", valor_aplicado: "45.90" };
+    adicionarInvestimentoSimulado(um);
+    const outro = adicionarInvestimentoSimulado(um);
+    let da = await caixa();
+    expect(da("Farmácia").investimento_sugerido_id).toBeNull();
+
+    // Com movimento associado, a segunda deixa de ser candidata e a primeira volta a ser única.
+    await pedir("POST", `/transacoes-importadas/${da("Mercado Extra").id}/aceitar`, {
+      como_investimento: true,
+      investimento_id: outro,
+      destinacoes: [{ tag: "casa", percentual: 100 }],
+    });
+    da = await caixa();
+    expect(da("Farmácia").investimento_sugerido_id).not.toBeNull();
+    expect(da("Farmácia").investimento_sugerido_id).not.toBe(outro);
+  });
+
+  it("definir as destinações iniciais reparte o aplicado num saldo inicial sem conta", async () => {
+    const id = adicionarInvestimentoSimulado({
+      nome: "LCI",
+      tipo: "FIXED_INCOME",
+      saldo: "1043.21",
+      valor_aplicado: "1000.00",
+    });
+
+    const resposta = await pedir("POST", `/investimentos/${id}/destinacoes`, {
+      destinacoes: [
+        { tag: "Viagem", percentual: 30 },
+        { tag: "casa", percentual: 70 },
+      ],
+    });
+
+    expect(resposta.status).toBe(201);
+    const movimento = resposta.corpo as Movimento;
+    expect([movimento.origem, movimento.conta_id, movimento.descricao, movimento.tipo]).toEqual([
+      "saldo_inicial",
+      null,
+      "Saldo inicial",
+      "aporte",
+    ]);
+    expect(movimento.valor).toBe("1000.00");
+    expect(movimento.destinacoes).toEqual([
+      { tag: "casa", valor: "700.00", categoria: null, coberto: null },
+      { tag: "viagem", valor: "300.00", categoria: null, coberto: null },
+    ]);
+    expect((await movimentos()).map((m) => m.origem)).toEqual(["saldo_inicial"]);
+    expect((await posicao(id)).destinacoes.map((d) => [d.tag, d.principal])).toEqual([
+      ["casa", "700.00"],
+      ["viagem", "300.00"],
+    ]);
+  });
+
+  it("sem aplicado, a base é o saldo; sem nada a destinar, 409", async () => {
+    const id = adicionarInvestimentoSimulado({ nome: "Fundo", tipo: "MUTUAL_FUND", saldo: "50.00" });
+    const destinar = () =>
+      pedir("POST", `/investimentos/${id}/destinacoes`, { destinacoes: [{ tag: "casa", percentual: 100 }] });
+
+    const primeira = await destinar();
+    const segunda = await destinar();
+
+    expect((primeira.corpo as Movimento).valor).toBe("50.00");
+    expect(segunda.status).toBe(409);
+    expect(erroDe(segunda).codigo).toBe("sem_valor_a_destinar");
+  });
+
+  it("recusa investimento inexistente, destinações inválidas e corpo sem destinações", async () => {
+    const id = adicionarInvestimentoSimulado({ nome: "Fundo", tipo: "MUTUAL_FUND", saldo: "50.00" });
+
+    const inexistente = await pedir("POST", `/investimentos/${ID_INEXISTENTE}/destinacoes`, {
+      destinacoes: [{ tag: "casa", percentual: 100 }],
+    });
+    const soma = await pedir("POST", `/investimentos/${id}/destinacoes`, {
+      destinacoes: [{ tag: "casa", percentual: 50 }],
+    });
+    const semCorpo = await pedir("POST", `/investimentos/${id}/destinacoes`, {});
+
+    expect(erroDe(inexistente).codigo).toBe("investimento_nao_encontrado");
+    expect(erroDe(soma).codigo).toBe("destinacao_invalida");
+    expect(erroDe(semCorpo).codigo).toBe("requisicao_invalida");
+    expect(await movimentos()).toEqual([]);
+  });
+
+  it("aporte de posição conta na meta financeira e saldo inicial fica fora", async () => {
+    const id = adicionarInvestimentoSimulado({ nome: "Fundo", tipo: "MUTUAL_FUND", saldo: "50.00" });
+    const da = await caixa();
+    const conta = (await pedir("GET", "/contas")).corpo as Conta[];
+    const hoje = limites(periodoAtual());
+    await pedir("POST", "/ganhos", {
+      conta_id: conta[0].id,
+      valor: "1000.00",
+      descricao: "Salário",
+      data: hoje.inicio,
+      tags: [],
+    });
+    await pedir("PUT", "/metas/investimentos", { percentual: 10 });
+    await pedir("POST", `/investimentos/${id}/destinacoes`, {
+      destinacoes: [{ tag: "casa", percentual: 100 }],
+    });
+    await pedir("POST", `/transacoes-importadas/${da("Farmácia").id}/aceitar`, {
+      como_investimento: true,
+    });
+
+    const mes = hoje.inicio.slice(0, 7);
+    const resumo = (await pedir("GET", `/metas/progresso?mes=${mes}`)).corpo as {
+      metas: { categoria: string; gasto: string }[];
+    };
+
+    expect(resumo.metas).toEqual([expect.objectContaining({ categoria:"liberdade_financeira", gasto: "45.90" })]);
+  });
+
+  it("desfaz uma realocação e recusa se o destino já usou o valor", async () => {
+    const id = adicionarInvestimentoSimulado({ nome: "Fundo", tipo: "MUTUAL_FUND", saldo: "100.00" });
+    await pedir("POST", `/investimentos/${id}/destinacoes`, {
+      destinacoes: [{ tag: "casa", percentual: 100 }],
+    });
+    const nova = async (origem: string, destino: string) =>
+      (
+        await pedir("POST", `/investimentos/${id}/realocacoes`, {
+          origem,
+          destino,
+          percentual: 100,
+          data: "2026-10-22",
+        })
+      ).corpo as { id: string };
+    const primeira = await nova("casa", "viagem");
+    await nova("viagem", "celular");
+
+    const recusada = await pedir("DELETE", `/investimentos/${id}/realocacoes/${primeira.id}`);
+    const inexistente = await pedir(
+      "DELETE",
+      `/investimentos/${id}/realocacoes/00000000-0000-4000-8000-000000000000`,
+    );
+
+    expect(recusada.status).toBe(422);
+    expect((recusada.corpo as { erro: { codigo: string } }).erro.codigo).toBe("principal_insuficiente");
+    expect(inexistente.status).toBe(404);
+    expect((inexistente.corpo as { erro: { codigo: string } }).erro.codigo).toBe("realocacao_nao_encontrada");
+  });
+
+  it("só o saldo inicial se desfaz, e desfazê-lo libera o valor", async () => {
+    const id = adicionarInvestimentoSimulado({ nome: "Fundo", tipo: "MUTUAL_FUND", saldo: "100.00" });
+    const da = await caixa();
+    const aporte = (
+      await pedir("POST", `/transacoes-importadas/${da("Farmácia").id}/aceitar`, {
+        como_investimento: true,
+      })
+    ).corpo as { id: string };
+    const inicial = (
+      await pedir("POST", `/investimentos/${id}/destinacoes`, {
+        destinacoes: [{ tag: "casa", percentual: 100 }],
+      })
+    ).corpo as { id: string };
+
+    const doAporte = await pedir("DELETE", `/movimentos-de-investimento/${aporte.id}`);
+    const feito = await pedir("DELETE", `/movimentos-de-investimento/${inicial.id}`);
+    const denovo = await pedir("POST", `/investimentos/${id}/destinacoes`, {
+      destinacoes: [{ tag: "viagem", percentual: 100 }],
+    });
+
+    expect(doAporte.status).toBe(409);
+    expect((doAporte.corpo as { erro: { codigo: string } }).erro.codigo).toBe("movimento_nao_desfazivel");
+    expect(feito.status).toBe(204);
+    expect(denovo.status).toBe(201);
+  });
+});
+
+describe("renda-base mensal", () => {
+  it("define, altera e remove sem mudar os registros financeiros", async () => {
+    await criarConta("Conta exemplo", "123.45");
+    const antes = await listarContas();
+    expect((await pedir("GET", "/renda-base")).corpo).toEqual({ valor: null });
+    for (const valor of ["5000.00", "7000.01"]) {
+      const resposta = await pedir("PUT", "/renda-base", { valor });
+      expect(resposta.status).toBe(200);
+      expect(resposta.corpo).toEqual({ valor });
+      expect((await pedir("GET", "/renda-base")).corpo).toEqual({ valor });
+    }
+    for (let vez = 0; vez < 2; vez++) {
+      expect((await pedir("DELETE", "/renda-base")).status).toBe(204);
+    }
+    expect((await pedir("GET", "/renda-base")).corpo).toEqual({ valor: null });
+    expect(await listarContas()).toEqual(antes);
+    expect((await pedir("GET", "/ganhos?inicio=2026-10-01&fim=2026-10-31")).corpo).toEqual([]);
+  });
+
+  it.each(["0.00", "-1.00", "1,5", "1000000000000.01", "0.001"])("recusa %s sem substituir a base", async (valor) => {
+    expect((await pedir("PUT", "/renda-base", { valor: "5000.00" })).status).toBe(200);
+    const resposta = await pedir("PUT", "/renda-base", { valor });
+    expect(resposta.status).toBe(422);
+    expect(erroDe(resposta).codigo).toBe("valor_invalido");
+    expect((await pedir("GET", "/renda-base")).corpo).toEqual({ valor: "5000.00" });
+  });
+
+  it.each([{ valor: 5000 }, { valor: true }, { valor: null }, {}])("exige string decimal: %j", async (corpo) => {
+    const resposta = await pedir("PUT", "/renda-base", corpo);
+    expect(resposta.status).toBe(422);
+    expect(erroDe(resposta).codigo).toBe("requisicao_invalida");
+  });
+
+  it("mantém renda real e usa a base em qualquer mês, inclusive sem ganhos", async () => {
+    const conta = await criarConta("Conta exemplo");
+    await pedir("POST", "/ganhos", { conta_id: conta.id, valor: "7000.00", descricao: "Ganho exemplo", data: "2026-10-05" });
+    await pedir("PUT", "/metas/lazer", { percentual: 20 });
+    await pedir("PUT", "/renda-base", { valor: "5000.00" });
+    for (const [mes, renda] of [["2026-10", "7000.00"], ["2025-01", "0.00"]]) {
+      const resposta = await pedir("GET", `/metas/progresso?mes=${mes}`);
+      expect(resposta.corpo).toMatchObject({ renda, renda_base: "5000.00", renda_de_referencia: "5000.00", metas: [{ limite: "1000.00", situacao: "dentro" }] });
+    }
+    await pedir("DELETE", "/renda-base");
+    expect((await pedir("GET", "/metas/progresso?mes=2026-10")).corpo).toMatchObject({ renda: "7000.00", renda_base: null, renda_de_referencia: "7000.00", metas: [{ limite: "1400.00" }] });
+  });
+
+  it("exige autenticação e proteção de origem nas escritas", async () => {
+    expect((await pedir("PUT", "/renda-base", { valor: "5000.00" }, { antiCsrf: null })).status).toBe(403);
+    reiniciarSimulacao();
+    for (const metodo of ["GET", "PUT", "DELETE"]) {
+      expect((await pedir(metodo, "/renda-base", { valor: "5000.00" })).status).toBe(401);
+    }
+  });
+});
+
+describe("desfazer classificação de investimento", () => {
+  type Movimento = { id: string; transacao_importada_id: string | null; descricao: string };
+  const periodo = "inicio=2000-01-01&fim=2999-12-31";
+  const movimentos = async () => (await pedir("GET", `/movimentos-de-investimento?${periodo}`)).corpo as Movimento[];
+  const desfazer = (id: string, corpo?: unknown) => pedir("POST", `/movimentos-de-investimento/${id}/desfazer-classificacao`, corpo);
+  async function preparar(descricao = "Farmácia", dados: Record<string, unknown> = {}) {
+    await pedir("POST", "/sincronizacoes");
+    const caixa = (await pedir("GET", "/transacoes-importadas")).corpo as { id: string; descricao: string; sentido: string }[];
+    const transacao = caixa.find((t) => t.descricao === descricao)!;
+    const aceite = await pedir("POST", `/transacoes-importadas/${transacao.id}/aceitar`, { como_investimento: true, ...dados });
+    expect(aceite.status).toBe(201);
+    return { transacao, id: (aceite.corpo as { id: string }).id };
+  }
+  async function fotografia() {
+    return Promise.all(["/contas", `/gastos?${periodo}`, `/ganhos?${periodo}`, `/movimentos-de-investimento?${periodo}`, "/investimentos", "/transacoes-importadas?estado=aceita"].map(async (rota) => (await pedir("GET", rota)).corpo));
+  }
+  it.each(["Farmácia", "Salário"])("reabre %s sem mudar saldo nem outros lançamentos", async (descricao) => {
+    const { transacao, id } = await preparar(descricao);
+    expect((await movimentos()).find((m) => m.id === id)?.transacao_importada_id).toBe(transacao.id);
+    const antes = await fotografia();
+    expect(await desfazer(id)).toMatchObject({ status: 200, corpo: { transacao_id: transacao.id, estado: "pendente", lancamentos_removidos: 1 } });
+    const depois = await fotografia();
+    expect(depois.slice(0, 3)).toEqual(antes.slice(0, 3));
+    expect((await pedir("GET", "/transacoes-importadas")).corpo).toContainEqual(expect.objectContaining(transacao));
+    expect((await movimentos()).some((m) => m.id === id)).toBe(false);
+    expect((await desfazer(id)).status).toBe(404);
+    expect((await pedir("POST", `/transacoes-importadas/${transacao.id}/aceitar`, descricao === "Salário" ? {} : { categoria: "lazer" })).status).toBe(201);
+  });
+  it("a divisão só sai inteira depois de confirmação explícita, inclusive gastos e destinações", async () => {
+    const investimento = adicionarInvestimentoSimulado({ nome: "Reserva", tipo: "FIXED_INCOME", saldo: "100.00" });
+    await pedir("POST", "/sincronizacoes");
+    const caixa = (await pedir("GET", "/transacoes-importadas")).corpo as { id: string; descricao: string }[];
+    const t = caixa.find((t) => t.descricao === "Farmácia")!;
+    const r = await pedir("POST", `/transacoes-importadas/${t.id}/dividir`, { partes: [
+      { categoria: "lazer", nome:"Lazer", percentual: 40 },
+      { como_investimento: true, percentual: 30, investimento_id: investimento, destinacoes: [{ tag: "reserva", percentual: 100 }] },
+      { como_investimento: true, percentual: 30, investimento_id: investimento, destinacoes: [{ tag: "reserva", percentual: 100 }] },
+    ] });
+    expect(r.status).toBe(201);
+    const [m] = await movimentos();
+    expect(m.transacao_importada_id).toBe(t.id);
+    const antes = await fotografia();
+    const resposta = await desfazer(m.id);
+    expect(resposta.status).toBe(409);
+    expect(erroDe(resposta)).toMatchObject({ codigo: "divisao_exige_confirmacao", mensagem: expect.stringContaining("3 partes") });
+    expect(await fotografia()).toEqual(antes);
+    expect(await desfazer(m.id, { desfazer_divisao_inteira: true })).toMatchObject({ status: 200, corpo: { lancamentos_removidos: 3 } });
+    expect(await movimentos()).toEqual([]);
+    expect((await pedir("GET", `/gastos?${periodo}`)).corpo).toEqual([]);
+    const posicoes = (await pedir("GET", "/investimentos")).corpo as { destinacoes: { principal: string }[] }[];
+    expect(posicoes.every((p) => p.destinacoes.every((d) => d.principal === "0.00"))).toBe(true);
+  });
+  it("confere o principal do grupo somado antes de remover qualquer parte", async () => {
+    const investimento = adicionarInvestimentoSimulado({ nome: "Reserva", tipo: "FIXED_INCOME", saldo: "100.00" });
+    const { id } = await preparar("Farmácia", { investimento_id: investimento, destinacoes: [{ tag: "casa", percentual: 100 }] });
+    await pedir("POST", `/investimentos/${investimento}/realocacoes`, { origem: "casa", destino: "viagem", valor: "1.00", data: "2026-10-29" });
+    const antes = await fotografia();
+    const resposta = await desfazer(id);
+    expect(resposta.status).toBe(422);
+    expect(erroDe(resposta).codigo).toBe("principal_insuficiente");
+    expect(await fotografia()).toEqual(antes);
+  });
+  it("grava vínculo também no lote de aportes", async () => {
+    await pedir("POST", "/sincronizacoes");
+    const caixa = (await pedir("GET", "/transacoes-importadas")).corpo as { id: string; sentido: string }[];
+    const ids = caixa.filter((t) => t.sentido === "saida").slice(0, 2).map((t) => t.id);
+    expect((await pedir("POST", "/transacoes-importadas/aceitar-em-lote", { transacao_ids: ids, como_investimento: true })).status).toBe(201);
+    expect((await movimentos()).map((m) => m.transacao_importada_id).sort()).toEqual([...ids].sort());
+  });
+  it("saldo inicial e legado sem candidato seguro dão 409 sem escrita", async () => {
+    reiniciarSimulacao({ comExemplos: true }); entrarNaSimulacao();
+    const [legado] = await movimentos();
+    const antes = await fotografia();
+    expect(erroDe(await desfazer(legado.id)).codigo).toBe("movimento_nao_desfazivel");
+    expect(await fotografia()).toEqual(antes);
+    const investimento = adicionarInvestimentoSimulado({ nome: "Saldo", tipo: "FIXED_INCOME", saldo: "20.00" });
+    const saldo = await pedir("POST", `/investimentos/${investimento}/destinacoes`, { destinacoes: [{ tag: "casa", percentual: 100 }] });
+    expect(erroDe(await desfazer((saldo.corpo as { id: string }).id)).codigo).toBe("movimento_nao_desfazivel");
+  });
+  it("exige sessão e CSRF; sem caixa não altera o grupo", async () => {
+    const { id } = await preparar();
+    const antes = await fotografia();
+    expect((await pedir("POST", `/movimentos-de-investimento/${id}/desfazer-classificacao`, undefined, { credenciais: "omit" })).status).toBe(401);
+    expect((await pedir("POST", `/movimentos-de-investimento/${id}/desfazer-classificacao`, undefined, { antiCsrf: null })).status).toBe(403);
+    expect(await fotografia()).toEqual(antes);
+    expect((await pedir("POST", "/auth/cadastro", { nome: "Outra", email: "outra@exemplo.com", senha: "senha-de-exemplo-123" })).status).toBe(201);
+    expect((await pedir("POST", "/auth/entrar", { email: "outra@exemplo.com", senha: "senha-de-exemplo-123" })).status).toBe(200);
+    const resposta = await desfazer(id);
+    expect(resposta.status).toBe(409);
+    expect(erroDe(resposta).codigo).toBe("movimento_nao_desfazivel");
+  });
+});
+
+describe("gestão de investimentos no perfil simulado", () => {
+  it("dona tem gestão; outra pessoa não herda posições da dona", async () => {
+    adicionarInvestimentoSimulado({ nome: "Exemplo", tipo: "OTHER", saldo: "1.00" });
+    expect((await pedir("GET", "/auth/eu")).corpo).toMatchObject({ gestao_de_investimentos: true });
+    await pedir("POST", "/auth/cadastro", { nome: "Outra", email: "outra@exemplo.com", senha: SENHA_DE_EXEMPLO });
+    await pedir("POST", "/auth/entrar", { email: "outra@exemplo.com", senha: SENHA_DE_EXEMPLO });
+    expect((await pedir("GET", "/auth/eu")).corpo).toMatchObject({ gestao_de_investimentos: false, importacao_bancaria: false });
+    adicionarInvestimentoSimulado({ nome: "Da outra pessoa", tipo: "OTHER", saldo: "2.00" });
+    expect((await pedir("GET", "/auth/eu")).corpo).toMatchObject({ gestao_de_investimentos: true, importacao_bancaria: false });
+  });
+});
+
+it("resumo simulado usa o líquido e preserva lançamentos",async()=>{
+ const {prepararCenarioLiberdadeFinanceira}=await import("./manipuladores");
+ prepararCenarioLiberdadeFinanceira({valorCompra:"80.01",tags:["loja","online"],coberto:"30.00"});
+ const periodo="?inicio=2026-11-01&fim=2026-11-30";
+ const resumo=await pedir("GET","/resumos/tags"+periodo);
+ expect(resumo.status).toBe(200);
+ expect(resumo.corpo).toEqual({inicio:"2026-11-01",fim:"2026-11-30",total:"50.01",fatias:[{tag:"loja",valor:"25.01"},{tag:"online",valor:"25.00"}]});
+ const lista=await pedir("GET","/gastos"+periodo);
+ expect((lista.corpo as Gasto[])[0].valor).toBe("80.01");
+ expect((lista.corpo as Gasto[])[0].valor_coberto).toBe("30.00");
+});
+
+it("cobrir e desfazer na simulação preserva saldos movimentos posições e Tags brutas",async()=>{
+ const {prepararCenarioLiberdadeFinanceira}=await import("./manipuladores");
+ const {gastoId}=prepararCenarioLiberdadeFinanceira();
+ const periodo="?inicio=2026-11-01&fim=2026-11-30";
+ const antes=await Promise.all([pedir("GET","/contas"),pedir("GET","/investimentos"),pedir("GET","/movimentos-de-investimento"+periodo)]);
+ const c=await pedir("POST",`/gastos/${gastoId}/coberturas`,{tag:"celular",valor:"30.00"});
+ expect(c.status).toBe(201);
+ expect((await pedir("GET","/resumos/tags"+periodo)).corpo).toMatchObject({total:"50.00"});
+ const reserva=await pedir("GET","/reservas-das-destinacoes?categoria=conforto");
+ expect(reserva.corpo).toEqual([{tag:"celular",reservado:"100.00",coberto:"30.00",disponivel:"70.00",cor:null}]);
+ expect((await pedir("POST",`/gastos/${gastoId}/coberturas`,{tag:"celular",valor:"1.00"})).status).toBe(409);
+ expect((await pedir("DELETE",`/gastos/${gastoId}/coberturas/${(c.corpo as {id:string}).id}`)).status).toBe(204);
+ expect((await pedir("GET","/resumos/tags"+periodo)).corpo).toMatchObject({total:"80.00"});
+ const depois=await Promise.all([pedir("GET","/contas"),pedir("GET","/investimentos"),pedir("GET","/movimentos-de-investimento"+periodo)]);
+ expect(depois.map(r=>r.corpo)).toEqual(antes.map(r=>r.corpo));
+});
+
+it("recusa desfazer aporte cuja reserva já cobre compra sem mudar registros",async()=>{
+ await pedir("POST","/sincronizacoes");
+ const caixa=(await pedir("GET","/transacoes-importadas")).corpo as {id:string;descricao:string}[];
+ const t=caixa.find(t=>t.descricao==="Farmácia")!;
+ const inv=adicionarInvestimentoSimulado({nome:"Reserva fictícia",tipo:"FIXED_INCOME",saldo:"100.00"});
+ const aporte=await pedir("POST",`/transacoes-importadas/${t.id}/aceitar`,{como_investimento:true,investimento_id:inv,destinacoes:[{tag:"celular",percentual:100}]});
+ expect(aporte.status).toBe(201);
+ definirCategoriaHistoricaSimulada((aporte.corpo as {id:string}).id, "conforto");
+ const conta=await criarConta("Carteira fictícia","100.00");
+ const g=await pedir("POST","/gastos",{conta_id:conta.id,valor:"20.00",descricao:"Compra fictícia",data:"2026-10-10",categoria:"conforto",tags:[]});
+ expect((await pedir("POST",`/gastos/${(g.corpo as Gasto).id}/coberturas`,{tag:"celular",valor:"10.00"})).status).toBe(201);
+ const antes=(await pedir("GET","/investimentos")).corpo;
+ const resultado=await pedir("POST",`/movimentos-de-investimento/${(aporte.corpo as {id:string}).id}/desfazer-classificacao`);
+ expect(resultado.status).toBe(409);
+ expect(erroDe(resultado).mensagem).toContain("já cobre compras");
+ expect((await pedir("GET","/investimentos")).corpo).toEqual(antes);
+});
+
+describe("resgate por custo médio simulado", () => {
+  type Item = { id: string; descricao: string };
+  type Posicao = {
+    id: string;
+    destinacoes: {
+      tag: string | null;
+      principal: string;
+      valor_atual: string;
+      rentabilidade: string | null;
+    }[];
+  };
+
+  /** Cria a posição, reparte o aplicado (saldo inicial) e devolve o resgate pronto para classificar. */
+  async function preparar(
+    posicao: { saldo: string; aplicado: string; saldo_anterior?: string },
+    tags: { tag: string; percentual: number }[],
+  ) {
+    const investimento = adicionarInvestimentoSimulado({
+      nome: "Renda variável",
+      tipo: "EQUITY",
+      saldo: posicao.saldo,
+      valor_aplicado: posicao.aplicado,
+      saldo_anterior: posicao.saldo_anterior,
+    });
+    await pedir("POST", "/sincronizacoes");
+    const definida = await pedir("POST", `/investimentos/${investimento}/destinacoes`, {
+      destinacoes: tags,
+    });
+    expect(definida.status).toBe(201);
+    const caixa = (await pedir("GET", "/transacoes-importadas")).corpo as Item[];
+    const resgatar = (descricao: string, destinacoes: { tag: string; percentual: number }[]) =>
+      pedir(
+        "POST",
+        `/transacoes-importadas/${(caixa.find((t) => t.descricao === descricao) as Item).id}/aceitar`,
+        { como_investimento: true, investimento_id: investimento, destinacoes },
+      );
+    return { investimento, resgatar };
+  }
+
+  const destinacoesDe = async (investimento: string) =>
+    ((await pedir("GET", "/investimentos")).corpo as Posicao[]).find((p) => p.id === investimento)
+      ?.destinacoes as Posicao["destinacoes"];
+
+  it("abate o principal na proporção do valor da tag (CT0 em escala)", async () => {
+    // Cada tag: principal 8.000,00 e valor 10.000,00. O resgate de 5.000,00 é metade do valor da
+    // viagem: abate metade do dinheiro em principal proporcional (4.000,00), não 5.000,00.
+    const { investimento, resgatar } = await preparar(
+      { saldo: "15000.00", aplicado: "16000.00", saldo_anterior: "20000.00" },
+      [
+        { tag: "viagem", percentual: 50 },
+        { tag: "casa", percentual: 50 },
+      ],
+    );
+
+    const resposta = await resgatar("Salário", [{ tag: "viagem", percentual: 100 }]);
+
+    expect(resposta.status).toBe(201);
+    const porTag = new Map((await destinacoesDe(investimento)).map((d) => [d.tag, d]));
+    expect(porTag.get("viagem")?.principal).toBe("4000.00");
+    expect(porTag.get("casa")?.principal).toBe("8000.00");
+    expect(porTag.get("viagem")?.valor_atual).toBe("5000.00");
+    expect(porTag.get("casa")?.valor_atual).toBe("10000.00");
+    expect(porTag.get("viagem")?.rentabilidade).toBe("25.00");
+    expect(porTag.get("casa")?.rentabilidade).toBe("25.00");
+  });
+
+  it("aceita o resgate total da tag mesmo com lucro e zera o principal", async () => {
+    const { investimento, resgatar } = await preparar(
+      { saldo: "1.00", aplicado: "4000.00", saldo_anterior: "5000.00" },
+      [{ tag: "viagem", percentual: 100 }],
+    );
+
+    const resposta = await resgatar("Salário", [{ tag: "viagem", percentual: 100 }]);
+
+    expect(resposta.status).toBe(201);
+    expect((await destinacoesDe(investimento)).map((d) => d.tag)).toEqual([null]);
+  });
+
+  it("recusa a parte em dinheiro maior que o valor da tag", async () => {
+    const { investimento, resgatar } = await preparar(
+      { saldo: "3000.00", aplicado: "2000.00", saldo_anterior: "3000.00" },
+      [{ tag: "viagem", percentual: 100 }],
+    );
+
+    const resposta = await resgatar("Salário", [{ tag: "viagem", percentual: 100 }]);
+
+    expect(resposta.status).toBe(422);
+    const erro = (resposta.corpo as { erro: { codigo: string; mensagem: string } }).erro;
+    expect(erro.codigo).toBe("resgate_maior_que_o_valor");
+    expect(erro.mensagem).toContain("viagem");
+    expect((await destinacoesDe(investimento))[0].principal).toBe("2000.00");
+  });
+
+  it("sem histórico anterior, vale a regra antiga: o dinheiro abate o principal e não passa dele", async () => {
+    const { investimento, resgatar } = await preparar(
+      { saldo: "3000.00", aplicado: "3000.00" },
+      [{ tag: "viagem", percentual: 100 }],
+    );
+
+    const acima = await resgatar("Estorno de compra", [{ tag: "viagem", percentual: 100 }]);
+    expect(acima.status).toBe(201);
+    expect((await destinacoesDe(investimento))[0].principal).toBe("2980.10");
+
+    const demais = await resgatar("Salário", [{ tag: "viagem", percentual: 100 }]);
+    expect(demais.status).toBe(422);
+    expect((demais.corpo as { erro: { codigo: string } }).erro.codigo).toBe("principal_insuficiente");
+  });
+
+  it("abate ao menos 1 centavo de principal quando o custo médio trunca para zero", async () => {
+    const { investimento, resgatar } = await preparar(
+      { saldo: "100.00", aplicado: "0.02", saldo_anterior: "100.00" },
+      [{ tag: "viagem", percentual: 100 }],
+    );
+
+    const resposta = await resgatar("Estorno de compra", [{ tag: "viagem", percentual: 100 }]);
+
+    expect(resposta.status).toBe(201);
+    expect((await destinacoesDe(investimento))[0].principal).toBe("0.01");
+  });
+});
+
+
+// --- faturas -------------------------------------------------------------------
+
+describe("faturas", () => {
+  it("exige o hoje válido, a conta existente e a fatura da pessoa", async () => {
+    prepararCenarioDeFaturas();
+
+    for (const caminho of ["/faturas", "/faturas?hoje=ontem", "/faturas?hoje=2026-13-01"]) {
+      const resposta = await pedir("GET", caminho);
+      expect(resposta.status).toBe(422);
+      expect((resposta.corpo as { erro: { codigo: string } }).erro.codigo).toBe("requisicao_invalida");
+    }
+    const semConta = await pedir("GET", `/faturas?hoje=2026-11-05&conta_id=${crypto.randomUUID()}`);
+    expect(semConta.status).toBe(404);
+    expect((semConta.corpo as { erro: { codigo: string } }).erro.codigo).toBe("conta_nao_encontrada");
+    const semFatura = await pedir("GET", `/faturas/${crypto.randomUUID()}?hoje=2026-11-05`);
+    expect(semFatura.status).toBe(404);
+    expect((semFatura.corpo as { erro: { codigo: string } }).erro.codigo).toBe("fatura_nao_encontrada");
+  });
+
+  it("calcula a situação com o hoje enviado", async () => {
+    prepararCenarioDeFaturas();
+
+    type Lista = { cartoes: { conta_nome: string; faturas: { situacao: string }[] }[] };
+    const situacoes = async (hoje: string, nome: string) =>
+      ((await pedir("GET", `/faturas?hoje=${hoje}`)).corpo as Lista).cartoes
+        .find((cartao) => cartao.conta_nome === nome)
+        ?.faturas.map((fatura) => fatura.situacao);
+
+    // Fechamento em 15/11 e vencimento em 22/11: aberta até o dia do fechamento, fechada até o
+    // dia do vencimento e vencida depois. A fatura de total zero não deve nada, então é paga.
+    expect(await situacoes("2026-11-15", "FREE VISA")).toEqual(["aberta", "paga"]);
+    expect(await situacoes("2026-11-22", "FREE VISA")).toEqual(["fechada", "paga"]);
+    expect(await situacoes("2026-11-30", "FREE VISA")).toEqual(["vencida", "paga"]);
+    expect(await situacoes("2026-11-30", "Cartão Roxo")).toEqual(["paga", "vencida"]);
+  });
+});
+
+it('ignora com motivo, filtra e limpa o motivo ao restaurar', async () => {
+  await pedir('POST', '/sincronizacoes');
+  const caixa = await pedir('GET', '/transacoes-importadas');
+  const [t] = caixa.corpo as {id:string}[];
+  expect((await pedir('POST', `/transacoes-importadas/${t.id}/ignorar`, {motivo:'transferencia_entre_contas'})).status).toBe(204);
+  const ignoradas = await pedir('GET','/transacoes-importadas?estado=ignorada&motivo=transferencia_entre_contas');
+  expect((ignoradas.corpo as {id:string}[]).map(x=>x.id)).toEqual([t.id]);
+  expect((await pedir('POST',`/transacoes-importadas/${t.id}/restaurar`)).status).toBe(204);
+  const restauradas = await pedir('GET','/transacoes-importadas');
+  expect((restauradas.corpo as {id:string;motivo_ignorada:string|null}[]).find(x=>x.id===t.id)?.motivo_ignorada).toBeNull();
+});
+
+it('histórico de metas registra só alterações efetivas', async () => {
+  await pedir('PUT','/metas/lazer',{percentual:19});
+  await pedir('PUT','/metas/lazer',{percentual:19});
+  await pedir('PUT','/metas/lazer',{percentual:20});
+  await pedir('DELETE','/metas/lazer');
+  const historico = await pedir('GET','/metas/historico');
+  expect(historico.status).toBe(200);
+  expect((historico.corpo as {acao:string}[]).map(r=>r.acao)).toEqual(['removida','alterada','criada']);
+});

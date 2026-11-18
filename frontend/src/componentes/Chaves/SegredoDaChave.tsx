@@ -7,6 +7,7 @@ import {
   useState,
 } from "react";
 
+import { Botao } from "../Botao/Botao";
 import estilos from "./Chaves.module.css";
 
 type Propriedades = {
@@ -121,18 +122,13 @@ export function SegredoDaChave({ nome, segredo, aoFechar }: Propriedades) {
 
         <div className={estilos.acoes}>
           {area && (
-            <button
-              ref={botaoCopiar}
-              type="button"
-              className={estilos.primario}
-              onClick={() => void copiar()}
-            >
+            <Botao ref={botaoCopiar} variante="primario" onClick={() => void copiar()}>
               Copiar
-            </button>
+            </Botao>
           )}
-          <button type="button" className={estilos.secundario} onClick={aoFechar}>
+          <Botao variante="secundario" onClick={aoFechar}>
             Fechar
-          </button>
+          </Botao>
         </div>
       </div>
     </dialog>

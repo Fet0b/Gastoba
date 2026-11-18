@@ -35,7 +35,7 @@ describe("BarraDeAbas", () => {
     expect(screen.queryByRole("dialog")).toBeNull();
   });
 
-  it("abre a folha com as outras quatro; escolher uma navega e fecha", () => {
+  it("abre a folha com as outras cinco; escolher uma navega e fecha", () => {
     const navegacao = criar();
     render(<BarraDeAbas navegacao={navegacao} />);
     fireEvent.click(screen.getByRole("button", { name: "Mais" }));
@@ -43,11 +43,20 @@ describe("BarraDeAbas", () => {
     expect(
       within(folha)
         .getAllByRole("listitem")
-        .map((item) => item.textContent),
-    ).toEqual(["Faturas", "Tags", "Outros", "Perfil"]);
+        .map((item) => item.querySelector("button")?.getAttribute("aria-label") ?? item.textContent),
+    ).toEqual(["Investimentos", "Faturas", "Tags", "Recorrências", "Perfil"]);
     fireEvent.click(within(folha).getByRole("button", { name: "Tags" }));
     expect(navegacao.aoIrPara).toHaveBeenCalledWith("tags");
     expect(screen.queryByRole("dialog")).toBeNull();
+  });
+
+  it("Faturas não leva mais o selo 'em breve'", () => {
+    render(<BarraDeAbas navegacao={criar()} />);
+    fireEvent.click(screen.getByRole("button", { name: "Mais" }));
+    const faturas = within(screen.getByRole("dialog")).getByRole("button", { name: "Faturas" });
+
+    expect(faturas.textContent).not.toContain("em breve");
+    expect(faturas.getAttribute("aria-describedby")).toBeNull();
   });
 
   it("marca Mais e a entrada da folha quando a tela atual está em Mais", () => {

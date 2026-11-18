@@ -32,6 +32,7 @@ _RESPOSTAS_DE_ERRO = {401: _ERRO, 403: _ERRO, 404: _ERRO, 409: _ERRO, 422: _ERRO
 def _para_resposta(ganho: Ganho) -> GanhoResposta:
     return GanhoResposta(
         id=ganho.id,
+        transacao_importada_id=ganho.transacao_importada_id,
         conta_id=ganho.conta_id,
         valor=dinheiro_para_texto(ganho.valor),
         descricao=ganho.descricao,

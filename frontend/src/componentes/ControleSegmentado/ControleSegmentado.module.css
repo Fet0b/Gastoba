@@ -1,0 +1,68 @@
+.grupo {
+  display: inline-flex;
+  min-width: 0;
+  max-width: 100%;
+  padding: 0.125rem;
+  border: 1px solid var(--cor-veludo);
+  border-radius: var(--raio-campo);
+  background: var(--cor-noite);
+}
+
+.opcao {
+  position: relative;
+  display: inline-flex;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+/* O radio nativo cobre a opção, invisível, e continua focável. */
+.radio {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.texto {
+  display: inline-flex;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  min-height: calc(var(--alvo-de-toque) - 0.5rem);
+  min-width: 0;
+  padding: 0 var(--espaco-2);
+  border-radius: var(--raio-campo);
+  color: var(--cor-bruma);
+  font-size: var(--texto-pequeno);
+  white-space: nowrap;
+  transition: background-color var(--duracao-curta) var(--curva-saida);
+}
+
+.opcao:hover .texto {
+  color: var(--cor-nevoa);
+}
+
+.radio:checked + .texto {
+  background: var(--cor-lavanda);
+  color: var(--cor-noite);
+  font-weight: var(--peso-secao);
+}
+
+.radio:focus-visible + .texto {
+  outline: var(--anel-de-foco);
+  outline-offset: var(--afastamento-do-foco);
+}
+
+.grupo[data-compacto] .texto {
+  min-height: 1.75rem;
+  padding: 0 var(--espaco-2);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .texto {
+    transition: none;
+  }
+}

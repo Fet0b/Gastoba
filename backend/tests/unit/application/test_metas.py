@@ -1,4 +1,5 @@
-from datetime import date
+import copy
+from datetime import UTC, date, datetime
 from uuid import uuid4
 
 import pytest
@@ -13,7 +14,7 @@ from gastoba.domain.categoria import CategoriaDoGasto
 from gastoba.domain.dinheiro import Dinheiro
 from gastoba.domain.excecoes import MetaNaoEncontrada, PercentuaisExcedem100, PercentualInvalido
 from gastoba.domain.mes import Mes
-from gastoba.domain.meta import SituacaoDaMeta
+from gastoba.domain.meta import AlvoDaMeta, SituacaoDaMeta
 
 USUARIO_ID = uuid4()
 LAZER = CategoriaDoGasto.LAZER
@@ -21,7 +22,9 @@ FIXO = CategoriaDoGasto.GASTO_FIXO
 
 
 def definir(unidade_de_trabalho, categoria, percentual, usuario_id=USUARIO_ID):
-    return DefinirMeta(unidade_de_trabalho).executar(usuario_id, categoria, percentual)
+    return DefinirMeta(unidade_de_trabalho, RelogioFixo()).executar(
+        usuario_id, categoria, percentual
+    )
 
 
 def test_define_a_meta_e_troca_o_percentual_da_mesma_categoria(unidade_de_trabalho):
@@ -72,14 +75,14 @@ def test_a_soma_e_por_usuario(unidade_de_trabalho):
 
 def test_listar_na_ordem_das_categorias_e_so_do_usuario(unidade_de_trabalho):
     definir(unidade_de_trabalho, FIXO, 30)
-    definir(unidade_de_trabalho, CategoriaDoGasto.INVESTIMENTOS, 10)
+    definir(unidade_de_trabalho, AlvoDaMeta.LIBERDADE_FINANCEIRA, 10)
     definir(unidade_de_trabalho, LAZER, 20)
     definir(unidade_de_trabalho, LAZER, 20, usuario_id=uuid4())
 
     metas = ListarMetas(unidade_de_trabalho).executar(USUARIO_ID)
 
-    assert [(m.categoria, m.percentual) for m in metas] == [
-        (CategoriaDoGasto.INVESTIMENTOS, 10),
+    assert [(m.alvo, m.percentual) for m in metas] == [
+        (AlvoDaMeta.LIBERDADE_FINANCEIRA, 10),
         (LAZER, 20),
         (FIXO, 30),
     ]
@@ -87,7 +90,7 @@ def test_listar_na_ordem_das_categorias_e_so_do_usuario(unidade_de_trabalho):
 
 def test_remover_apaga_a_meta_e_libera_a_soma(unidade_de_trabalho):
     definir(unidade_de_trabalho, FIXO, 90)
-    RemoverMeta(unidade_de_trabalho).executar(USUARIO_ID, FIXO)
+    RemoverMeta(unidade_de_trabalho, RelogioFixo()).executar(USUARIO_ID, FIXO)
 
     assert unidade_de_trabalho.confirmado.metas == {}
     definir(unidade_de_trabalho, LAZER, 100)
@@ -97,7 +100,7 @@ def test_remover_meta_inexistente_ou_de_outro_usuario(unidade_de_trabalho):
     definir(unidade_de_trabalho, FIXO, 30, usuario_id=uuid4())
 
     with pytest.raises(MetaNaoEncontrada):
-        RemoverMeta(unidade_de_trabalho).executar(USUARIO_ID, FIXO)
+        RemoverMeta(unidade_de_trabalho, RelogioFixo()).executar(USUARIO_ID, FIXO)
     assert len(unidade_de_trabalho.confirmado.metas) == 1
 
 
@@ -146,7 +149,7 @@ class TestProgresso:
 
         resumo = self._progresso(unidade_de_trabalho)
 
-        por_categoria = {p.categoria: p for p in resumo.progressos}
+        por_categoria = {p.alvo: p for p in resumo.progressos}
         assert resumo.renda == Dinheiro(500000)
         assert list(por_categoria) == [LAZER, CategoriaDoGasto.CONFORTO, FIXO]  # ordem do enum
         assert por_categoria[LAZER].limite == Dinheiro(50000)
@@ -200,3 +203,76 @@ class TestProgresso:
 
         assert resumo.renda == Dinheiro(0)
         assert resumo.progressos[0].gasto == Dinheiro(0)
+
+    @pytest.mark.parametrize("ganhos", [0, 300000, 700000])
+    def test_base_e_referencia_independente_dos_ganhos_sem_mudar_registros(
+        self, unidade_de_trabalho, semear_conta, ganhos
+    ):
+        conta = semear_conta(usuario_id=USUARIO_ID, saldo=Dinheiro(0))
+        if ganhos:
+            self._registrar_ganho(unidade_de_trabalho, conta, ganhos)
+        definir(unidade_de_trabalho, LAZER, 33)
+        self._registrar_gasto(unidade_de_trabalho, conta, 150000, LAZER, date(2026, 10, 3))
+        with unidade_de_trabalho as uow:
+            uow.renda_base.definir(USUARIO_ID, Dinheiro(500001))
+            uow.renda_base.definir(uuid4(), Dinheiro(999999))
+            uow.commit()
+        antes = copy.deepcopy(unidade_de_trabalho.confirmado)
+        commits_antes = unidade_de_trabalho.commits
+
+        resumo = self._progresso(unidade_de_trabalho)
+
+        assert resumo.renda == Dinheiro(ganhos)
+        assert resumo.renda_base == Dinheiro(500001)
+        assert resumo.renda_de_referencia == Dinheiro(500001)
+        [progresso] = resumo.progressos
+        assert progresso.limite == Dinheiro(165000)
+        assert progresso.restante == Dinheiro(15000)
+        assert progresso.percentual_usado == 90
+        assert progresso.situacao == SituacaoDaMeta.ALERTA
+        assert unidade_de_trabalho.confirmado == antes
+        assert unidade_de_trabalho.commits == commits_antes
+        # A base única também vale para meses passados sem ganhos.
+        passado = self._progresso(unidade_de_trabalho, Mes(2026, 9))
+        assert passado.renda == Dinheiro(0)
+        assert passado.renda_de_referencia == Dinheiro(500001)
+        assert passado.progressos[0].limite == Dinheiro(165000)
+
+    def test_remover_base_restaura_renda_registrada_e_ignora_base_alheia(
+        self, unidade_de_trabalho, semear_conta
+    ):
+        conta = semear_conta(usuario_id=USUARIO_ID, saldo=Dinheiro(0))
+        self._registrar_ganho(unidade_de_trabalho, conta, 100000)
+        definir(unidade_de_trabalho, LAZER, 20)
+        with unidade_de_trabalho as uow:
+            uow.renda_base.definir(USUARIO_ID, Dinheiro(500000))
+            uow.renda_base.definir(uuid4(), Dinheiro(999999))
+            uow.commit()
+        assert self._progresso(unidade_de_trabalho).progressos[0].limite == Dinheiro(100000)
+
+        with unidade_de_trabalho as uow:
+            uow.renda_base.remover(USUARIO_ID)
+            uow.commit()
+        resumo = self._progresso(unidade_de_trabalho)
+
+        assert resumo.renda_base is None
+        assert resumo.renda_de_referencia == resumo.renda == Dinheiro(100000)
+        assert resumo.progressos[0].limite == Dinheiro(20000)
+
+    @pytest.mark.parametrize("ganhos", [0, 300000])
+    def test_sem_base_referencia_e_a_renda_real(self, unidade_de_trabalho, semear_conta, ganhos):
+        conta = semear_conta(usuario_id=USUARIO_ID, saldo=Dinheiro(0))
+        if ganhos:
+            self._registrar_ganho(unidade_de_trabalho, conta, ganhos)
+        definir(unidade_de_trabalho, LAZER, 20)
+
+        resumo = self._progresso(unidade_de_trabalho)
+
+        assert resumo.renda_base is None
+        assert resumo.renda_de_referencia == resumo.renda == Dinheiro(ganhos)
+        assert resumo.progressos[0].limite == Dinheiro(ganhos * 20 // 100)
+
+
+class RelogioFixo:
+    def agora(self):
+        return datetime(2026, 11, 9, tzinfo=UTC)

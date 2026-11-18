@@ -1,10 +1,13 @@
 import { useEffect, useId, useRef } from "react";
 
 import type { Conta } from "../../api/tipos";
+import type { SituacaoDoCartao } from "../../contas/situacaoDosCartoes";
+import { Botao } from "../Botao/Botao";
 import { EstadoVazio } from "../EstadoVazio/EstadoVazio";
 import { CartaoDeConta } from "./CartaoDeConta";
 import estilos from "./Contas.module.css";
 import { FormularioDeConta } from "./FormularioDeConta";
+import { MenuDaConta } from "./MenuDaConta";
 
 type Propriedades = {
   /** `undefined` enquanto a primeira busca não respondeu (ou se ela falhou). */
@@ -17,6 +20,10 @@ type Propriedades = {
   aoMudarFormulario: (aberto: boolean) => void;
   aoCriar: (conta: Conta) => void;
   aoFalhar: (erro: unknown) => void;
+  /** Exclui a conta; devolve `true` se deu certo. Sem ele, não há a ação de excluir. */
+  aoExcluir?: (conta: Conta) => Promise<boolean>;
+  /** Situação das faturas de cada cartão, pelo id da conta (só com a importação bancária). */
+  situacaoDosCartoes?: ReadonlyMap<string, SituacaoDoCartao>;
 };
 
 /**
@@ -33,6 +40,8 @@ export function ListaDeContas({
   aoMudarFormulario,
   aoCriar,
   aoFalhar,
+  aoExcluir,
+  situacaoDosCartoes,
 }: Propriedades) {
   const idTitulo = useId();
   const raiz = useRef<HTMLElement>(null);
@@ -62,8 +71,8 @@ export function ListaDeContas({
     ) : (
       <EstadoVazio
         icone="contas"
-        titulo="Nenhuma conta ainda. Crie a primeira."
-        texto="Uma conta guarda o saldo e recebe os gastos e ganhos."
+        titulo="Nenhuma conta ainda"
+        descricao="Cadastre uma conta para reunir seus saldos e lançamentos."
         acao={{ rotulo: "Nova conta", aoClicar: () => aoMudarFormulario(true) }}
       />
     );
@@ -73,12 +82,18 @@ export function ListaDeContas({
         {contas.map((conta) => {
           const selecionada = conta.id === contaSelecionada;
           return (
-            <li key={conta.id}>
+            <li key={conta.id} className={estilos.item}>
               <CartaoDeConta
                 conta={conta}
                 selecionada={selecionada}
                 aoAlternar={aoSelecionar && (() => aoSelecionar(selecionada ? null : conta.id))}
+                situacaoDoCartao={situacaoDosCartoes?.get(conta.id)}
               />
+              {aoExcluir && (
+                <span className={estilos.menuDaConta}>
+                  <MenuDaConta conta={conta} aoExcluir={aoExcluir} />
+                </span>
+              )}
             </li>
           );
         })}
@@ -88,9 +103,9 @@ export function ListaDeContas({
 
   return (
     <section ref={raiz} className={estilos.contas} aria-labelledby={idTitulo}>
-      <h2 id={idTitulo} className={estilos.titulo}>
-        Contas
-      </h2>
+      <h3 id={idTitulo} className={estilos.titulo}>
+        Suas contas
+      </h3>
       {conteudo}
       {formularioAberto ? (
         <FormularioDeConta
@@ -102,15 +117,15 @@ export function ListaDeContas({
           aoFalhar={aoFalhar}
         />
       ) : contas !== undefined && contas.length === 0 ? null : (
-        <button
+        <Botao
           ref={botaoNovaConta}
-          type="button"
+          variante="secundario"
+          icone="adicionar"
           className={estilos.novaConta}
           onClick={() => aoMudarFormulario(true)}
         >
-          <span aria-hidden="true">+ </span>
           Nova conta
-        </button>
+        </Botao>
       )}
     </section>
   );

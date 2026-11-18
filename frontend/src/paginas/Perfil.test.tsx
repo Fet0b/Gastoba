@@ -31,6 +31,12 @@ function navegacao(): Navegacao {
   return { nomeDaPessoa: "Você", tela: "perfil", aoIrPara: vi.fn(), aoSair: vi.fn() };
 }
 
+/** Abre o menu "Mais ações" da chave e escolhe "Revogar"; o diálogo de confirmação abre. */
+function pedirRevogacao(item: HTMLElement, nome: string): void {
+  fireEvent.click(within(item).getByRole("button", { name: `Mais ações da chave ${nome}` }));
+  fireEvent.click(screen.getByRole("menuitem", { name: `Revogar a chave ${nome}` }));
+}
+
 function renderizar(nav: Navegacao = navegacao()) {
   return render(<Perfil navegacao={nav} />);
 }
@@ -40,7 +46,7 @@ async function criarPelaApi(nome: string, escopo: "leitura" | "escrita" = "leitu
 }
 
 function dialogo(): HTMLDialogElement | null {
-  return document.querySelector("dialog");
+  return document.querySelector("dialog[open]");
 }
 
 /** Preenche o formulário e cria a chave; devolve o diálogo do segredo. */
@@ -65,14 +71,15 @@ describe("Perfil", () => {
     expect(screen.getByRole("heading", { level: 1 }).textContent).toBe("Gastoba");
     expect(screen.getByRole("heading", { level: 2, name: "Chaves de API" })).not.toBeNull();
     expect(screen.getByRole("button", { name: "Perfil" }).getAttribute("aria-current")).toBe("page");
-    expect(await screen.findByText("Nenhuma chave ainda.")).not.toBeNull();
+    expect(await screen.findByText("Nenhuma chave de API ainda")).not.toBeNull();
   });
 
-  it("sem chaves, o estado vazio explica para que serve a chave", async () => {
+  it("sem chaves, o estado vazio é uma frase só", async () => {
     renderizar();
 
-    const titulo = await screen.findByText("Nenhuma chave ainda.");
-    expect(titulo.parentElement?.textContent).toContain("Crie uma chave");
+    const titulo = await screen.findByText("Nenhuma chave de API ainda");
+    expect(titulo.parentElement?.querySelectorAll("p")).toHaveLength(2);
+    expect(screen.getByText("As chaves criadas aparecem aqui, com o escopo, a data de criação e o último uso.")).toBeTruthy();
     expect(screen.queryByRole("list", { name: "Chaves de API ativas" })).toBeNull();
   });
 
@@ -115,6 +122,28 @@ describe("Perfil", () => {
     expect(within(screen.getByRole("main")).getByText("Você")).not.toBeNull();
     fireEvent.click(within(screen.getByRole("main")).getByRole("button", { name: "Sair" }));
     expect(nav.aoSair).toHaveBeenCalledTimes(1);
+  });
+
+  it("tem cabeçalho com subtítulo e o cartão da pessoa com as iniciais", () => {
+    renderizar({ ...navegacao(), nomeDaPessoa: "Ana Maria Silva" });
+
+    const titulo = screen.getByRole("heading", { level: 2, name: "Perfil" });
+    expect(titulo.closest("header")?.querySelector("p")?.textContent).toBe("Sua conta e o acesso por chaves.");
+    const cartao = screen.getByRole("group", { name: "Sua conta" });
+    expect(cartao.querySelector("[data-avatar]")?.textContent).toBe("AS");
+    expect(cartao.querySelector("[data-avatar]")?.getAttribute("aria-hidden")).toBe("true");
+    expect(cartao.textContent).toContain("Ana Maria Silva");
+    expect(within(cartao).getByRole("button", { name: "Sair" })).toBeTruthy();
+  });
+
+  it("a lista de chaves tem cabeçalho visual aria-hidden logo antes dela", async () => {
+    await criarPelaApi("Planilha");
+    renderizar();
+
+    const lista = await screen.findByRole("list", { name: "Chaves de API ativas" });
+    const cabecalho = lista.previousElementSibling;
+    expect(cabecalho?.hasAttribute("data-cabecalho-da-lista")).toBe(true);
+    expect(cabecalho?.getAttribute("aria-hidden")).toBe("true");
   });
 
   it("Início na navegação volta ao início", () => {
@@ -164,7 +193,7 @@ describe("Perfil", () => {
 
   it("criar mostra o segredo uma vez num diálogo e a chave entra na lista", async () => {
     renderizar();
-    await screen.findByText("Nenhuma chave ainda.");
+    await screen.findByText("Nenhuma chave de API ainda");
 
     const caixa = await criarPelaTela("Script de backup", "Escrita");
 
@@ -275,15 +304,16 @@ describe("Perfil", () => {
     const item = await within(await screen.findByRole("list", { name: "Chaves de API ativas" }))
       .findByRole("listitem");
 
-    fireEvent.click(within(item).getByRole("button", { name: "Revogar a chave Planilha" }));
+    pedirRevogacao(item, "Planilha");
 
-    expect(item.textContent).toContain("Revogar a chave Planilha?");
-    expect(document.activeElement).toBe(within(item).getByRole("button", { name: "Cancelar" }));
-    fireEvent.click(within(item).getByRole("button", { name: "Cancelar" }));
+    const dialogo = screen.getByRole("dialog");
+    expect(dialogo.textContent).toContain("Revogar a chave Planilha?");
+    expect(document.activeElement).toBe(within(dialogo).getByRole("button", { name: "Cancelar" }));
+    fireEvent.click(within(dialogo).getByRole("button", { name: "Cancelar" }));
 
-    expect(within(item).queryByRole("button", { name: "Confirmar revogação" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Confirmar revogação" })).toBeNull();
     expect(document.activeElement).toBe(
-      within(item).getByRole("button", { name: "Revogar a chave Planilha" }),
+      within(item).getByRole("button", { name: "Mais ações da chave Planilha" }),
     );
     const chaves = await chamar<ChaveDeApi[]>("/chaves-de-api");
     expect(chaves).toHaveLength(1);
@@ -295,11 +325,11 @@ describe("Perfil", () => {
     const item = await within(await screen.findByRole("list", { name: "Chaves de API ativas" }))
       .findByRole("listitem");
 
-    fireEvent.click(within(item).getByRole("button", { name: "Revogar a chave Planilha" }));
-    fireEvent.click(within(item).getByRole("button", { name: "Confirmar revogação" }));
+    pedirRevogacao(item, "Planilha");
+    fireEvent.click(screen.getByRole("button", { name: "Confirmar revogação" }));
 
     expect(await screen.findByText("Chave revogada.")).not.toBeNull();
-    expect(await screen.findByText("Nenhuma chave ainda.")).not.toBeNull();
+    expect(await screen.findByText("Nenhuma chave de API ainda")).not.toBeNull();
   });
 
   it("revogar uma chave já revogada mostra a mensagem da API e recarrega a lista", async () => {
@@ -307,15 +337,15 @@ describe("Perfil", () => {
     renderizar();
     const item = await within(await screen.findByRole("list", { name: "Chaves de API ativas" }))
       .findByRole("listitem");
-    fireEvent.click(within(item).getByRole("button", { name: "Revogar a chave Planilha" }));
+    pedirRevogacao(item, "Planilha");
 
     await act(async () => {
       await chamar(`/chaves-de-api/${criada.id}`, { metodo: "DELETE" });
     });
-    fireEvent.click(within(item).getByRole("button", { name: "Confirmar revogação" }));
+    fireEvent.click(screen.getByRole("button", { name: "Confirmar revogação" }));
 
     expect(await screen.findByText("Chave de API não encontrada.")).not.toBeNull();
-    expect(await screen.findByText("Nenhuma chave ainda.")).not.toBeNull();
+    expect(await screen.findByText("Nenhuma chave de API ainda")).not.toBeNull();
   });
 
   it("sem resposta do servidor ao listar: avisa", async () => {

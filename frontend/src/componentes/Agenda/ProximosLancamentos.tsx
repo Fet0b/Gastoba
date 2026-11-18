@@ -47,8 +47,9 @@ function Item({ lancamento, posicao }: { lancamento: Lancamento; posicao: number
       <span className={estilos.descricao}>
         <span className={estilos.nomeDoItem}>{recorrencia.descricao}</span>
         <span className={estilos.detalhe}>
-          {ganho ? "Ganho" : "Gasto"} ·{" "}
-          <time dateTime={data}>{dataPorExtenso(data)}</time> · {distancia(diasAte)}
+          <span>{ganho ? "Ganho" : "Gasto"}</span>
+          <time dateTime={data}>{dataPorExtenso(data)}</time>
+          <span>{distancia(diasAte)}</span>
         </span>
       </span>
       <span className={estilos.valorDoItem}>{valor}</span>
@@ -68,11 +69,18 @@ export function ProximosLancamentos({ recorrencias, hoje, carregando }: Propried
     corpo = <p className={estilos.nota}>{carregando ? "Carregando…" : "Não foi possível carregar"}</p>;
   } else if (proximos.length > 0) {
     corpo = (
+      <>
+      <div className={estilos.cabecalhoDaLista} data-cabecalho-da-lista="" aria-hidden="true">
+        <span />
+        <span>Lançamento</span>
+        <span>Valor</span>
+      </div>
       <ol className={estilos.lista} aria-label="Próximos lançamentos">
         {proximos.map((lancamento, posicao) => (
           <Item key={lancamento.recorrencia.id} lancamento={lancamento} posicao={posicao} />
         ))}
       </ol>
+      </>
     );
   } else if (algumVigente) {
     corpo = <p className={estilos.nota}>Nada nos próximos {DIAS_DA_AGENDA} dias</p>;
@@ -80,8 +88,7 @@ export function ProximosLancamentos({ recorrencias, hoje, carregando }: Propried
     corpo = (
       <EstadoVazio
         icone="outros"
-        titulo="Nada agendado"
-        texto="Crie uma recorrência e as próximas datas aparecem aqui."
+        titulo="Nada agendado para os próximos 30 dias"
       />
     );
   }

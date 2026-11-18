@@ -1,3 +1,5 @@
+import { Botao } from "../Botao/Botao";
+import { Chip } from "../Chip/Chip";
 import estilos from "./Gastos.module.css";
 
 type Propriedades = {
@@ -11,7 +13,7 @@ type Propriedades = {
 
 /**
  * Chips das tags usadas nos gastos. Tags não têm cor: chips neutros, com a
- * ativa em Lavanda. "Limpar" só aparece com uma tag ativa.
+ * ativa preenchida e com ✓. "Limpar" só aparece com uma tag ativa.
  */
 export function FiltroDeTags({ tags, ativa, aoAlternar, aoLimpar }: Propriedades) {
   if (!tags?.length && ativa === null) return null;
@@ -24,26 +26,16 @@ export function FiltroDeTags({ tags, ativa, aoAlternar, aoLimpar }: Propriedades
       <ul className={estilos.chips}>
         {tags?.map((tag) => (
           <li key={tag}>
-            <button
-              type="button"
-              className={estilos.chip}
-              aria-pressed={tag === ativa}
-              onClick={() => aoAlternar(tag)}
-            >
+            <Chip selecionado={tag === ativa} aoAlternar={() => aoAlternar(tag)}>
               {tag}
-            </button>
+            </Chip>
           </li>
         ))}
       </ul>
       {ativa !== null && (
-        <button
-          type="button"
-          className={estilos.limpar}
-          aria-label="Limpar filtro de tag"
-          onClick={aoLimpar}
-        >
+        <Botao variante="terciario" aria-label="Limpar filtro de tag" onClick={aoLimpar}>
           Limpar
-        </button>
+        </Botao>
       )}
     </div>
   );

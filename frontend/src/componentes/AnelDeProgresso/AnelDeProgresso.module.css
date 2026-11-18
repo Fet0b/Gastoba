@@ -1,0 +1,72 @@
+.anel {
+  --tamanho: 3.5rem;
+
+  position: relative;
+  flex: none;
+  width: var(--tamanho);
+  height: var(--tamanho);
+  color: var(--cor-do-anel);
+}
+
+.anel[data-compacto] {
+  --tamanho: 2.75rem;
+}
+
+.anel[data-situacao="estourou"] {
+  color: var(--cor-negativo);
+}
+
+.svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.trilha,
+.arco {
+  stroke-width: 4;
+}
+
+/* O trilho neutro mantém o anel legível mesmo com 0% usado. */
+.trilha {
+  stroke: var(--cor-neutra);
+  opacity: 0.28;
+}
+
+.arco {
+  stroke: currentColor;
+}
+
+.centro {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--cor-nevoa);
+  font-family: var(--fonte-titulo);
+  font-size: var(--texto-rotulo);
+  font-weight: var(--peso-titulo);
+  font-variant-numeric: tabular-nums;
+}
+
+.anel[data-compacto] .centro {
+  font-size: var(--texto-minimo);
+}
+
+.anel[data-animando] .arco {
+  animation: encherArco var(--duracao-media) var(--curva-saida) both;
+  animation-delay: calc(var(--indice, 0) * 60ms);
+}
+
+@keyframes encherArco {
+  from {
+    stroke-dasharray: 0 100;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .anel[data-animando] .arco {
+    animation: none;
+  }
+}

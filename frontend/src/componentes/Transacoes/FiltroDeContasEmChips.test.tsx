@@ -47,4 +47,13 @@ describe("FiltroDeContasEmChips", () => {
 
     expect(within(grupo()).getAllByRole("button")).toHaveLength(1);
   });
+
+  it("os chips são Chips: o ativo mostra o ícone de selecionado e os nomes acessíveis seguem os das contas", () => {
+    render(<FiltroDeContasEmChips contas={CONTAS} ativa="c2" aoMudar={vi.fn()} />);
+
+    const nubank = within(grupo()).getByRole("button", { name: "Nubank" });
+    expect(nubank.hasAttribute("data-chip")).toBe(true);
+    expect(nubank.querySelector("svg")).not.toBeNull();
+    expect(within(grupo()).getByRole("button", { name: "Carteira" }).querySelector("svg")).toBeNull();
+  });
 });

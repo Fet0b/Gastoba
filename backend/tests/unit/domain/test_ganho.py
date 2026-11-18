@@ -86,3 +86,8 @@ def test_conta_creditar_alem_do_limite_levanta_valor_invalido():
         conta.creditar(Dinheiro(1))
 
     assert conta.saldo == Dinheiro(LIMITE_CENTAVOS)
+
+
+def test_lancamento_sem_origem_importada_tem_vinculo_nulo():
+    lancamento = criar()
+    assert getattr(lancamento, "transacao_importada_id", "ausente") is None

@@ -26,9 +26,9 @@
 
 .valor {
   font-family: var(--fonte-titulo);
-  font-size: var(--texto-destaque);
-  line-height: var(--texto-destaque-linha);
-  font-variant-numeric: proportional-nums;
+  font-size: var(--numero-grande);
+  line-height: var(--texto-titulo-linha);
+  font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
 
@@ -42,7 +42,7 @@
   display: inline-flex;
   align-items: flex-start;
   gap: var(--espaco-2);
-  font-weight: 600;
+  font-weight: var(--peso-secao);
 }
 
 .frase svg {
@@ -51,8 +51,15 @@
   color: var(--marca);
 }
 
-.nota {
+.cabecalho {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--espaco-1);
+}
+
+.sobra {
   color: var(--cor-bruma);
-  font-size: var(--texto-minimo);
-  line-height: var(--texto-minimo-linha);
+  font-size: var(--texto-pequeno);
+  line-height: var(--texto-pequeno-linha);
+  font-variant-numeric: tabular-nums;
 }

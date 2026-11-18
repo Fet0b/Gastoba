@@ -16,55 +16,49 @@
 .titulo {
   font-size: var(--texto-grande);
   line-height: var(--texto-grande-linha);
-  font-weight: 650;
+  font-weight: var(--peso-secao);
 }
 
 .estado {
   color: var(--cor-bruma);
 }
 
-.link,
-.acao {
-  min-height: var(--alvo-de-toque);
-  padding: 0 var(--espaco-3);
-  border: none;
-  border-radius: var(--raio-campo);
-  background: transparent;
-  color: var(--cor-lavanda);
-  font: inherit;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.link:hover,
-.acao:hover {
-  background: var(--cor-veludo);
-}
-
-.link:focus-visible,
-.acao:focus-visible {
-  outline: var(--anel-de-foco);
-  outline-offset: var(--afastamento-do-foco);
-}
-
-.ultimos {
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-/* Descrição longa: uma linha com reticências, sem estourar a largura. */
-.ultimos > li [data-descricao] {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  overflow-wrap: normal;
-}
-
 .resumo {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: var(--espaco-5);
+}
+
+/* Ganhos e gastos do mês: números menores, alinhados à direita do valor. */
+.numeros {
+  display: flex;
+  gap: var(--espaco-5);
+  margin: 0;
+  padding-top: var(--espaco-4);
+  border-top: var(--borda-de-camada);
+  grid-column: 1 / -1;
+}
+
+.numero {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espaco-1);
+  min-width: 0;
+}
+
+.numero dt {
+  color: var(--cor-bruma);
+  font-size: var(--texto-pequeno);
+  line-height: var(--texto-pequeno-linha);
+}
+
+.numero dd {
+  margin: 0;
+  font-family: var(--fonte-titulo);
+  font-size: var(--texto-grande);
+  line-height: var(--texto-grande-linha);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }
 
 .principal {
@@ -86,22 +80,189 @@
 
 .aviso {
   display: flex;
-  align-items: center;
-  gap: var(--espaco-2);
-  padding: var(--espaco-3) var(--espaco-4);
+  flex-direction: column;
+  justify-content: space-between;
+  gap: var(--espaco-3);
+  height: 100%;
+  padding: var(--espaco-4);
   border: var(--borda-de-camada);
   border-radius: var(--raio-cartao);
   background: var(--cor-veludo);
-  font-weight: 600;
 }
 
-.aviso svg {
+.avisoTexto {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--espaco-3);
+}
+
+.avisoTexto svg {
   flex: none;
+  margin-top: 0.125rem;
   color: var(--cor-alerta);
 }
 
-.aviso[data-situacao="estourou"] svg {
+.aviso[data-situacao="estourou"] .avisoTexto svg {
   color: var(--cor-brasa);
+}
+
+.avisoTitulo {
+  font-weight: var(--peso-secao);
+}
+
+.avisoFrase {
+  color: var(--cor-bruma);
+  font-size: var(--texto-pequeno);
+  line-height: var(--texto-pequeno-linha);
+}
+
+.avisoAcao {
+  align-self: flex-start;
+}
+
+/* Últimos gastos em colunas (computador): descrição, categoria, conta, data e valor. */
+.listaDeGastos {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.cabecalhoDaLista,
+.gasto {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--espaco-3);
+  align-items: center;
+}
+
+.cabecalhoDaLista {
+  display: none;
+  padding: 0 0 var(--espaco-2);
+  border-bottom: var(--borda-de-camada);
+  color: var(--cor-bruma);
+  font-size: var(--texto-minimo);
+  line-height: var(--texto-minimo-linha);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.gasto {
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas:
+    "descricao valor"
+    "detalhe detalhe";
+  gap: var(--espaco-1) var(--espaco-3);
+  padding: var(--espaco-3) 0;
+  border-bottom: var(--borda-de-camada);
+}
+
+.gasto:last-child {
+  border-bottom: none;
+}
+
+.gastoTexto {
+  grid-area: descricao;
+  min-width: 0;
+}
+
+.gastoSecundaria {
+  display: flex;
+  align-items: center;
+  gap: var(--espaco-2);
+  overflow: hidden;
+  color: var(--cor-bruma);
+  font-size: var(--texto-pequeno);
+  line-height: var(--texto-pequeno-linha);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.gastoDescricao {
+  display: flex;
+  align-items: center;
+  gap: var(--espaco-1) var(--espaco-2);
+  min-width: 0;
+  overflow: hidden;
+  font-weight: var(--peso-secao);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.gastoDetalhe {
+  display: flex;
+  grid-area: detalhe;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--espaco-1) var(--espaco-3);
+  min-width: 0;
+  color: var(--cor-bruma);
+  font-size: var(--texto-pequeno);
+  line-height: var(--texto-pequeno-linha);
+}
+
+.selo {
+  display: inline-flex;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.pontoDaCategoria {
+  width: 0.5rem;
+  height: 0.5rem;
+  flex: none;
+  border-radius: 50%;
+}
+
+.gastoValor {
+  grid-area: valor;
+  color: var(--cor-brasa);
+  font-family: var(--fonte-titulo);
+  font-variant-numeric: tabular-nums;
+  font-weight: var(--peso-secao);
+  text-align: right;
+  white-space: nowrap;
+}
+
+@media (min-width: 64rem) {
+  .cabecalhoDaLista,
+  .gasto {
+    grid-template-columns: minmax(0, 1fr) 9rem 8rem 4rem 7.5rem;
+    grid-template-areas: none;
+    gap: var(--espaco-4);
+  }
+
+  .cabecalhoDaLista {
+    display: grid;
+  }
+
+  .gasto {
+    padding: var(--espaco-3) 0;
+  }
+
+  /* O detalhe deixa de ser uma linha e as três colunas dele entram direto na grade do item. */
+  .gastoDetalhe {
+    display: contents;
+  }
+
+  .gastoTexto,
+  .gastoValor {
+    grid-area: auto;
+  }
+
+  .colunaDireita {
+    text-align: right;
+  }
+
+  .gastoConta,
+  .gastoData {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .gastoData {
+    font-variant-numeric: tabular-nums;
+  }
 }
 
 @media (max-width: 48rem) {

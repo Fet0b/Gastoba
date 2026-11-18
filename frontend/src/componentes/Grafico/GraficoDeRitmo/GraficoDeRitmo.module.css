@@ -68,7 +68,7 @@
 .rotuloFinal {
   fill: var(--cor-nevoa);
   font-size: var(--texto-minimo);
-  font-weight: 600;
+  font-weight: var(--peso-secao);
   paint-order: stroke;
   stroke: var(--cor-ameixa);
   stroke-width: 3px;

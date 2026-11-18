@@ -1,9 +1,9 @@
 from datetime import date
 from uuid import UUID
 
-from gastoba.domain.categoria import CategoriaDoGasto
+from gastoba.domain.categoria import CategoriaDoGasto, exigir_categoria_ativa
 from gastoba.domain.dinheiro import Dinheiro
-from gastoba.domain.excecoes import RecorrenciaNaoEncontrada
+from gastoba.domain.excecoes import RecorrenciaEmRevisao, RecorrenciaNaoEncontrada
 from gastoba.domain.portas import UnidadeDeTrabalho
 from gastoba.domain.recorrencia import Recorrencia
 from gastoba.domain.tag import Tag
@@ -32,6 +32,13 @@ class AlterarRecorrencia:
             atual = uow.recorrencias.obter(usuario_id, id)
             if atual is None:
                 raise RecorrenciaNaoEncontrada("Recorrência não encontrada.")
+            if atual.categoria is not None and atual.categoria.legada:
+                raise RecorrenciaEmRevisao(
+                    "Esta recorrência ainda usa a categoria antiga Investimentos: revise-a em "
+                    "Investimentos antes de editar."
+                )
+            if categoria is not None:
+                exigir_categoria_ativa(categoria)
             alterada = Recorrencia(
                 usuario_id=atual.usuario_id,
                 tipo=atual.tipo,

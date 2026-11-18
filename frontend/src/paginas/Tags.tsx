@@ -80,6 +80,11 @@ export function Tags({ navegacao }: { navegacao: Navegacao }) {
       mensagem={mensagem}
       aoDispensarMensagem={() => definirMensagem(null)}
       controles={{ periodo, aoMudarPeriodo: definirPeriodo }}
+      cabecalho={{titulo: "Tags", subtitulo: "Como e onde o dinheiro foi gasto.", dica: {
+            assunto: "a divisão por tags",
+            texto:
+              "O valor de um gasto com várias tags se divide em partes iguais entre elas. Toque numa tag para ver os gastos dela.",
+          }}}
     >
       <div className={estilos.conteudo} ref={conteudo}>
         <p className={estilos.somenteLeitor} role="status">
@@ -91,21 +96,24 @@ export function Tags({ navegacao }: { navegacao: Navegacao }) {
             <ValorAnimado valor={resumo.dados.total} className={estilos.valorDoTotal} />
           </p>
         )}
-        <GraficoDeBarras
-          resumo={resumo.dados}
-          carregando={resumo.carregando}
-          gastos={gastosDoMes}
-          selecionada={selecionada}
-          aoSelecionar={definirSelecionada}
-        />
-        {barraFixada && (
-          <DetalheDaTag
-            key={barraFixada.chave}
-            barra={barraFixada}
+        <div className={estilos.area} data-com-detalhe={barraFixada !== undefined}>
+          <GraficoDeBarras
+            resumo={resumo.dados}
+            carregando={resumo.carregando}
             gastos={gastosDoMes}
-            aoFechar={fecharDetalhe}
+            selecionada={selecionada}
+            aoSelecionar={definirSelecionada}
+            aoAdicionarTag={() => navegacao.aoIrPara("transacoes")}
           />
-        )}
+          {barraFixada && (
+            <DetalheDaTag
+              key={barraFixada.chave}
+              barra={barraFixada}
+              gastos={gastosDoMes}
+              aoFechar={fecharDetalhe}
+            />
+          )}
+        </div>
       </div>
     </Pagina>
   );

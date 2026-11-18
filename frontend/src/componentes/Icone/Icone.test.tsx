@@ -51,4 +51,15 @@ describe("Icone", () => {
     expect(caminhos.length).toBeGreaterThan(0);
     for (const caminho of caminhos) expect((caminho.getAttribute("d") ?? "").trim()).not.toBe("");
   });
+
+  it.each(["info", "repetir", "verificado"] as const)("o ícone novo %s existe e é um SVG com caminho", (nome) => {
+    expect(NOMES).toContain(nome);
+    const { container } = render(<Icone nome={nome} />);
+    expect(container.querySelector("svg path")).not.toBeNull();
+  });
+
+  it("o ícone novo com rótulo vira imagem", () => {
+    const { container } = render(<Icone nome="info" rotulo="Informação" />);
+    expect(container.querySelector("svg")?.getAttribute("role")).toBe("img");
+  });
 });

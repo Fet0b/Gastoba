@@ -1,8 +1,10 @@
-import { useEffect, useId, useRef, useState } from "react";
+import { useId, useState } from "react";
 
 import type { ChaveDeApi } from "../../api/tipos";
-import { Cartao } from "../Cartao/Cartao";
+import { Badge } from "../Badge/Badge";
+import { DialogoDeConfirmacao } from "../DialogoDeConfirmacao/DialogoDeConfirmacao";
 import { EstadoVazio } from "../EstadoVazio/EstadoVazio";
+import { MenuDeAcoes } from "../MenuDeAcoes/MenuDeAcoes";
 import estilos from "./Chaves.module.css";
 import { ESCOPOS } from "./FormularioDeChave";
 
@@ -37,47 +39,25 @@ type PropriedadesDoItem = {
   aoRevogar: (chave: ChaveDeApi) => Promise<boolean>;
 };
 
-/** Uma chave: dados e o botão "Revogar", que pede confirmação na própria linha. */
+/** Uma chave: dados e o menu "Mais ações", cujo item "Revogar" abre a confirmação num diálogo. */
 function ItemDeChave({ chave, aoRevogar }: PropriedadesDoItem) {
   const [confirmando, definirConfirmando] = useState(false);
   const [revogando, definirRevogando] = useState(false);
   const id = useId();
-  const botaoRevogar = useRef<HTMLButtonElement>(null);
-  const botaoCancelar = useRef<HTMLButtonElement>(null);
-  // Só depois de um Cancelar o foco volta ao "Revogar" (não ao montar).
-  const devolverFoco = useRef(false);
-
-  useEffect(() => {
-    if (confirmando) {
-      botaoCancelar.current?.focus();
-    } else if (devolverFoco.current) {
-      devolverFoco.current = false;
-      botaoRevogar.current?.focus();
-    }
-  }, [confirmando]);
-
-  function cancelar(): void {
-    devolverFoco.current = true;
-    definirConfirmando(false);
-  }
 
   async function confirmar(): Promise<void> {
     definirRevogando(true);
-    const revogada = await aoRevogar(chave);
-    // Revogada, a linha sai da lista; senão a confirmação fecha e a lista recarrega.
-    if (!revogada) {
-      definirRevogando(false);
-      devolverFoco.current = true;
-      definirConfirmando(false);
-    }
+    await aoRevogar(chave);
+    // Revogada, a linha sai da lista; senão o diálogo fecha e a lista recarrega.
+    definirRevogando(false);
+    definirConfirmando(false);
   }
 
   const idTitulo = `${id}-titulo`;
-  const idPergunta = `${id}-pergunta`;
   const expirada = chave.expira_em !== null && new Date(chave.expira_em).getTime() <= Date.now();
 
   return (
-    <Cartao como="li" variante="elevado" className={estilos.item} aria-label={chave.nome}>
+    <li className={estilos.item} aria-label={chave.nome}>
       <div className={estilos.topoDoItem}>
         <h3 id={idTitulo} className={estilos.nomeDaChave}>
           {chave.nome}
@@ -85,7 +65,7 @@ function ItemDeChave({ chave, aoRevogar }: PropriedadesDoItem) {
         <span className={estilos.escopo} data-escopo={chave.escopo}>
           {nomeDoEscopo(chave)}
         </span>
-        {expirada && <span className={estilos.expirada}>Expirada</span>}
+        {expirada && <Badge tom="atencao">Expirada</Badge>}
       </div>
 
       <dl className={estilos.dados}>
@@ -115,44 +95,27 @@ function ItemDeChave({ chave, aoRevogar }: PropriedadesDoItem) {
         </div>
       </dl>
 
-      {confirmando ? (
-        <div className={estilos.confirmacao} role="group" aria-labelledby={idPergunta}>
-          <p id={idPergunta}>
-            Revogar a chave {chave.nome}? Quem a usa perde o acesso na hora, e isso não pode ser
-            desfeito.
-          </p>
-          <div className={estilos.acoes}>
-            <button
-              type="button"
-              className={estilos.perigo}
-              onClick={() => void confirmar()}
-              disabled={revogando}
-            >
-              Confirmar revogação
-            </button>
-            <button
-              ref={botaoCancelar}
-              type="button"
-              className={estilos.secundario}
-              onClick={cancelar}
-              disabled={revogando}
-            >
-              Cancelar
-            </button>
-          </div>
-        </div>
-      ) : (
-        <button
-          ref={botaoRevogar}
-          type="button"
-          className={estilos.revogar}
-          aria-label={`Revogar a chave ${chave.nome}`}
-          onClick={() => definirConfirmando(true)}
-        >
-          Revogar
-        </button>
-      )}
-    </Cartao>
+      <MenuDeAcoes
+        rotulo={`Mais ações da chave ${chave.nome}`}
+        itens={[
+          {
+            rotulo: "Revogar",
+            nomeAcessivel: `Revogar a chave ${chave.nome}`,
+            destrutivo: true,
+            aoEscolher: () => definirConfirmando(true),
+          },
+        ]}
+      />
+      <DialogoDeConfirmacao
+        aberto={confirmando}
+        titulo={`Revogar a chave ${chave.nome}?`}
+        descricao="Quem a usa perde o acesso na hora, e isso não pode ser desfeito."
+        rotuloDaAcao="Confirmar revogação"
+        pendente={revogando}
+        aoConfirmar={() => void confirmar()}
+        aoCancelar={() => definirConfirmando(false)}
+      />
+    </li>
   );
 }
 
@@ -170,17 +133,27 @@ export function ListaDeChaves({ chaves, carregando, aoRevogar }: Propriedades) {
   if (chaves.length === 0) {
     return (
       <EstadoVazio
-        icone="perfil"
-        titulo="Nenhuma chave ainda."
-        texto="Crie uma chave para um script ou outro programa usar o Gastoba sem a sua senha."
+        icone="chave"
+        titulo="Nenhuma chave de API ainda"
+        descricao="As chaves criadas aparecem aqui, com o escopo, a data de criação e o último uso."
       />
     );
   }
   return (
-    <ul className={estilos.lista} aria-label="Chaves de API ativas">
-      {chaves.map((chave) => (
-        <ItemDeChave key={chave.id} chave={chave} aoRevogar={aoRevogar} />
-      ))}
-    </ul>
+    <>
+      <div className={estilos.cabecalhoDaLista} data-cabecalho-da-lista="" aria-hidden="true">
+        <span>Chave</span>
+        <span>Prefixo</span>
+        <span>Criada em</span>
+        <span>Último uso</span>
+        <span>Expira em</span>
+        <span />
+      </div>
+      <ul className={estilos.lista} aria-label="Chaves de API ativas">
+        {chaves.map((chave) => (
+          <ItemDeChave key={chave.id} chave={chave} aoRevogar={aoRevogar} />
+        ))}
+      </ul>
+    </>
   );
 }

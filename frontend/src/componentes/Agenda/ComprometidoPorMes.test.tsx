@@ -34,6 +34,19 @@ function mostrar(recorrencias: Recorrencia[] | undefined, carregando = false) {
 }
 
 describe("ComprometidoPorMes", () => {
+  it("põe os três números numa lista de definição, com a diferença em destaque", () => {
+    const { container } = mostrar([
+      rec({ id: "a", tipo: "ganho", valor: "5000.00", categoria: null }),
+      rec({ id: "b", valor: "1500.00" }),
+    ]);
+
+    const termos = Array.from(container.querySelectorAll("dl dt")).map((dt) => dt.textContent);
+    expect(termos).toEqual(["Ganhos fixos", "Gastos fixos", "Diferença"]);
+    expect(container.querySelectorAll("dl dd")).toHaveLength(3);
+    expect(container.querySelector('[data-lado="diferenca"]')).not.toBeNull();
+    expect(container.querySelector("dl")?.closest('[role="group"]')).not.toBeNull();
+  });
+
   it("mostra ganhos, gastos e a diferença das recorrências vigentes", () => {
     const { grupo } = mostrar([
       rec({ id: "a", tipo: "ganho", valor: "5000.00", categoria: null }),

@@ -1,0 +1,3 @@
+import {paraCentavos} from "../dinheiro/dinheiro";
+import {limites,mesDoPeriodo,type Periodo} from "../periodo/periodo";
+export function consumoDoMes({gasto,disponivel,hoje,periodo}:{gasto:string;disponivel:string;hoje:string;periodo:Periodo}){const diasNoMes=Number(limites(periodo).fim.slice(-2));const mes=mesDoPeriodo(periodo);const dia=mes<hoje.slice(0,7)?diasNoMes:mes>hoje.slice(0,7)?0:Math.min(diasNoMes,Number(hoje.slice(-2)));const total=paraCentavos(disponivel);const usado=paraCentavos(gasto);const fracao=total<=0n?(usado>0n?1000:0):Number(usado<=0n?0n:usado>=total?1000n:usado*1000n/total);return {fracao,dia,diasNoMes};}

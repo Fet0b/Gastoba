@@ -80,6 +80,48 @@ def test_aceitar_e_ignorar_so_valem_uma_vez():
         ignorada.aceitar()
 
 
+def test_restaurar_volta_a_ignorada_para_pendente_e_preserva_os_demais_campos():
+    ignorada = transacao(tipo_de_operacao="PIX")
+    ignorada.ignorar()
+    antes = (
+        ignorada.id,
+        ignorada.conta_id,
+        ignorada.id_externo,
+        ignorada.data,
+        ignorada.descricao,
+        ignorada.valor,
+        ignorada.sentido,
+        ignorada.tipo_de_operacao,
+    )
+
+    ignorada.restaurar()
+
+    assert ignorada.estado == EstadoDaTransacaoImportada.PENDENTE
+    assert antes == (
+        ignorada.id,
+        ignorada.conta_id,
+        ignorada.id_externo,
+        ignorada.data,
+        ignorada.descricao,
+        ignorada.valor,
+        ignorada.sentido,
+        ignorada.tipo_de_operacao,
+    )
+
+
+@pytest.mark.parametrize(
+    "estado", [EstadoDaTransacaoImportada.PENDENTE, EstadoDaTransacaoImportada.ACEITA]
+)
+def test_restaurar_so_vale_para_ignorada(estado):
+    t = transacao()
+    t.estado = estado
+
+    with pytest.raises(TransacaoJaTratada):
+        t.restaurar()
+
+    assert t.estado == estado
+
+
 def test_igualdade_e_pelo_id():
     a = transacao()
     assert a == a
@@ -94,3 +136,21 @@ def test_transferencia_e_pagamento_de_fatura_sao_descartados_na_importacao(opera
 @pytest.mark.parametrize("operacao", ["ESTORNO", None, "PIX", "OPERACAO_DESCONHECIDA"])
 def test_estorno_e_as_demais_operacoes_nao_sao_descartados_na_importacao(operacao):
     assert descartar_na_importacao(operacao) is False
+
+
+@pytest.mark.parametrize("estado", list(EstadoDaTransacaoImportada))
+def test_reabrir_so_aceita_e_preserva_os_demais_campos(estado):
+    from dataclasses import asdict
+
+    from gastoba.domain.excecoes import MovimentoNaoDesfazivel
+
+    t = transacao(estado=estado)
+    antes = asdict(t)
+    if estado == EstadoDaTransacaoImportada.ACEITA:
+        t.reabrir()
+        assert t.estado == EstadoDaTransacaoImportada.PENDENTE
+        antes["estado"] = EstadoDaTransacaoImportada.PENDENTE
+    else:
+        with pytest.raises(MovimentoNaoDesfazivel):
+            t.reabrir()
+    assert asdict(t) == antes

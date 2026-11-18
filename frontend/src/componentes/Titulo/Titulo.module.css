@@ -1,0 +1,18 @@
+.titulo {
+  margin: 0;
+  font-family: var(--fonte-titulo);
+  font-weight: var(--peso-secao);
+  font-size: var(--texto-grande);
+  line-height: var(--texto-grande-linha);
+}
+
+.titulo[data-nivel="pagina"] {
+  font-size: var(--texto-titulo);
+  line-height: var(--texto-titulo-linha);
+  font-weight: var(--peso-titulo);
+}
+
+.titulo[data-nivel="cartao"] {
+  font-size: var(--texto-base);
+  line-height: var(--texto-base-linha);
+}

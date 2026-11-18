@@ -13,6 +13,7 @@ from gastoba.api.dependencias import (
     obter_entrar_com_senha,
     obter_sair_da_sessao,
     obter_usuario_atual,
+    obter_verificar_gestao_de_investimentos,
 )
 from gastoba.api.esquemas import (
     CadastroRequisicao,
@@ -26,6 +27,7 @@ from gastoba.application.autenticacao import Autenticacao
 from gastoba.application.cadastrar_usuario import CadastrarUsuario
 from gastoba.application.entrar_com_senha import EntrarComSenha
 from gastoba.application.sair_da_sessao import SairDaSessao
+from gastoba.application.verificar_gestao_de_investimentos import VerificarGestaoDeInvestimentos
 from gastoba.domain.usuario import Usuario
 from gastoba.infrastructure.configuracoes import Configuracoes
 
@@ -122,8 +124,13 @@ def sair(
 def eu(
     usuario: Annotated[Usuario, Depends(obter_usuario_atual)],
     configuracoes: ConfiguracoesDaApp,
+    verificar: Annotated[
+        VerificarGestaoDeInvestimentos, Depends(obter_verificar_gestao_de_investimentos)
+    ],
 ) -> PerfilResposta:
+    importacao = e_dono_da_importacao(configuracoes, usuario)
     return PerfilResposta(
         **_para_resposta(usuario).model_dump(),
-        importacao_bancaria=e_dono_da_importacao(configuracoes, usuario),
+        importacao_bancaria=importacao,
+        gestao_de_investimentos=importacao or verificar.executar(usuario.id),
     )

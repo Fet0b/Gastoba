@@ -1,5 +1,5 @@
 import react from "@vitejs/plugin-react";
-import { defineConfig } from "vitest/config";
+import { configDefaults, defineConfig } from "vitest/config";
 
 // Fuso fixo nos testes: as regras de data (hojeLocal, "Hoje"/"Ontem") são
 // conferidas no horário de Brasília, inclusive perto da meia-noite.
@@ -14,6 +14,7 @@ export default defineConfig({
     strictPort: true,
   },
   test: {
+    exclude: [...configDefaults.exclude, "e2e/**"],
     environment: "jsdom",
     setupFiles: ["./src/testes/preparar.ts"],
   },

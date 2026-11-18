@@ -29,7 +29,7 @@
 .tipo[aria-pressed="true"] {
   background: var(--cor-ametista);
   color: var(--cor-noite);
-  font-weight: 650;
+  font-weight: var(--peso-secao);
 }
 
 .campo {
@@ -41,7 +41,7 @@
 
 .campo label {
   color: var(--cor-bruma);
-  font-size: 0.9375rem;
+  font-size: var(--texto-corpo);
 }
 
 .linha {
@@ -65,18 +65,18 @@
 
 .erro {
   color: var(--cor-brasa);
-  font-size: 0.9375rem;
+  font-size: var(--texto-corpo);
 }
 
 .dica {
   color: var(--cor-bruma);
-  font-size: 0.9375rem;
+  font-size: var(--texto-corpo);
 }
 
 .motivos {
   padding-left: var(--espaco-4);
   color: var(--cor-bruma);
-  font-size: 0.9375rem;
+  font-size: var(--texto-corpo);
   list-style: disc;
 }
 
@@ -88,7 +88,7 @@
   background: var(--cor-ametista);
   color: var(--cor-noite);
   font: inherit;
-  font-weight: 650;
+  font-weight: var(--peso-secao);
   cursor: pointer;
 }
 
@@ -102,16 +102,35 @@
 .lista {
   display: flex;
   flex-direction: column;
-  gap: var(--espaco-3);
+}
+
+/* P3: cabeçalho visual das colunas, só no computador. */
+.cabecalhoDaLista {
+  display: none;
+}
+
+@media (min-width: 48rem) {
+  .cabecalhoDaLista {
+    display: flex;
+    justify-content: space-between;
+    color: var(--cor-bruma);
+    font-size: var(--texto-minimo);
+    line-height: var(--texto-minimo-linha);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
 }
 
 .item {
   display: flex;
   flex-direction: column;
   gap: var(--espaco-2);
-  padding: var(--espaco-4);
-  border-radius: var(--raio-cartao);
-  background: var(--cor-veludo);
+  padding: var(--espaco-4) 0;
+  border-top: 1px solid var(--cor-veludo);
+}
+
+.valor {
+  font-variant-numeric: tabular-nums;
 }
 
 .item[data-ativa="false"] {
@@ -127,22 +146,26 @@
 }
 
 .nome {
-  font-weight: 650;
+  font-weight: var(--peso-secao);
   overflow-wrap: anywhere;
 }
 
 .valor {
-  font-weight: 600;
+  font-weight: var(--peso-secao);
   color: var(--cor-brasa);
 }
 
 .item[data-tipo="ganho"] .valor {
-  color: var(--cor-lavanda);
+  color: var(--cor-positivo);
 }
 
 .detalhe {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--espaco-1) var(--espaco-3);
   color: var(--cor-bruma);
-  font-size: 0.9375rem;
+  font-size: var(--texto-corpo);
 }
 
 .situacao {
@@ -188,4 +211,10 @@
   .linha {
     grid-template-columns: minmax(0, 1fr);
   }
+}
+
+.acoesDoFormulario {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--espaco-2);
 }

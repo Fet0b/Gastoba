@@ -6,25 +6,59 @@
   gap: var(--espaco-4);
 }
 
+.conteudo > * {
+  min-width: 0;
+}
+
+/* Cabeçalho (P1): o nome da tela e uma frase curta em bruma. */
+.cabecalho {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espaco-1);
+}
+
+.chamada {
+  font-family: var(--fonte-titulo);
+  font-size: var(--texto-titulo);
+  line-height: var(--texto-titulo-linha);
+  font-weight: var(--peso-titulo);
+  letter-spacing: -0.02em;
+}
+
+.chamada:focus-visible {
+  outline: var(--anel-de-foco);
+  outline-offset: var(--afastamento-do-foco);
+}
+
+.subtitulo {
+  color: var(--cor-bruma);
+  font-size: var(--texto-pequeno);
+  line-height: var(--texto-pequeno-linha);
+}
+
+/* Cartão da lista: só a borda de camada, sem sombra (P6). */
 .secao {
   display: flex;
   flex-direction: column;
   gap: var(--espaco-4);
+  min-width: 0;
   padding: var(--espaco-5);
+  border: var(--borda-de-camada);
   border-radius: var(--raio-painel);
   background: var(--cor-ameixa);
 }
 
-.titulo {
-  font-size: var(--texto-grande);
-  line-height: var(--texto-grande-linha);
-  font-weight: 650;
-}
-
+/* Conta, categoria e tag lado a lado; quebram de linha quando não cabem. */
 .filtros {
   display: flex;
-  flex-direction: column;
-  gap: var(--espaco-3);
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: var(--espaco-2) var(--espaco-5);
+}
+
+.filtros > * {
+  min-width: 0;
+  max-width: 100%;
 }
 
 .nota,
@@ -36,26 +70,8 @@
 
 .alternador {
   display: flex;
+  flex-wrap: wrap;
   gap: var(--espaco-2);
-}
-
-.opcao {
-  min-height: var(--alvo-de-toque);
-  padding: var(--espaco-2) var(--espaco-4);
-  border-radius: var(--raio-painel);
-  background: var(--cor-ameixa);
-  color: inherit;
-  cursor: pointer;
-}
-
-.opcao:focus-visible {
-  outline: var(--anel-de-foco);
-  outline-offset: var(--afastamento-do-foco);
-}
-
-.opcao[aria-pressed="true"] {
-  font-weight: 650;
-  outline: 2px solid currentColor;
 }
 
 @media (max-width: 48rem) {

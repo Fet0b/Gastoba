@@ -16,6 +16,8 @@ import { hojeLocal } from "../../periodo/periodo";
 import { aparar, normalizarTag } from "../../tags/tags";
 import { CampoDeTags } from "./CampoDeTags";
 import { CampoDeValor } from "./CampoDeValor";
+import { Botao } from "../Botao/Botao";
+import { Chip } from "../Chip/Chip";
 import estilos from "./CompositorDeGasto.module.css";
 import { SeletorDeCategoria } from "./SeletorDeCategoria";
 
@@ -272,15 +274,13 @@ export function CompositorDeGasto({
 
         <div role="group" aria-label="O que registrar" className={estilos.tipos}>
           {(["gasto", "ganho"] as const).map((opcao) => (
-            <button
+            <Chip
               key={opcao}
-              type="button"
-              className={estilos.tipo}
-              aria-pressed={tipo === opcao}
-              onClick={() => definirTipo(opcao)}
+              selecionado={tipo === opcao}
+              aoAlternar={() => definirTipo(opcao)}
             >
               {opcao === "gasto" ? "Gasto" : "Ganho"}
-            </button>
+            </Chip>
           ))}
         </div>
 
@@ -399,12 +399,11 @@ export function CompositorDeGasto({
             </ul>
           )}
           <div className={estilos.acoes}>
-            <button type="button" className={estilos.secundario} onClick={aoFechar}>
+            <Botao variante="secundario" onClick={aoFechar}>
               Cancelar
-            </button>
-            <button
+            </Botao>
+            <Botao variante="primario"
               type="submit"
-              className={estilos.primario}
               disabled={motivos.length > 0 || registrar.pendente}
               aria-describedby={motivos.length > 0 ? idMotivos : undefined}
             >
@@ -413,7 +412,7 @@ export function CompositorDeGasto({
                 : tipo === "gasto"
                   ? "Registrar gasto"
                   : "Registrar ganho"}
-            </button>
+            </Botao>
           </div>
         </footer>
       </form>
