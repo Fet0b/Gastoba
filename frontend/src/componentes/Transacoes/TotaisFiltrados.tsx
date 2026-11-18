@@ -8,7 +8,7 @@ export function TotaisFiltrados({ transacoes }: { transacoes: readonly Transacao
 
   return (
     <dl className={estilos.totais} aria-label="Totais do que está na lista">
-      <div className={estilos.total}>
+      <div className={`${estilos.total} ${estilos.entradas}`}>
         <dt>Entradas</dt>
         <dd>
           <ValorAnimado valor={totais.entradas} />

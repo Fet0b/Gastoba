@@ -11,6 +11,8 @@ import { FormularioDeChave } from "../componentes/Chaves/FormularioDeChave";
 import { ListaDeChaves } from "../componentes/Chaves/ListaDeChaves";
 import { SegredoDaChave } from "../componentes/Chaves/SegredoDaChave";
 import { useEstadoDoOlho } from "../componentes/Olho/useEstadoDoOlho";
+import { iniciaisDe } from "../pessoa/iniciais";
+import { Botao } from "../componentes/Botao/Botao";
 import estilos from "./Perfil.module.css";
 import { ehSemResposta, MENSAGEM_SERVIDOR_FORA } from "./mensagens";
 
@@ -65,20 +67,26 @@ export function Perfil({ navegacao }: { navegacao: Navegacao }) {
       estadoDoOlho={estadoDoOlho}
       mensagem={mensagem}
       aoDispensarMensagem={() => definirMensagem(null)}
+      cabecalho={{titulo: "Perfil", subtitulo: "Sua conta e o acesso por chaves."}}
     >
       <div className={estilos.conteudo}>
-        <div className={estilos.introducao}>
-          <h2 className={estilos.titulo}>Perfil</h2>
-          <Cartao variante="destaque" className={estilos.identidade}>
-            <div className={estilos.pessoa} role="group" aria-label="Sua conta">
-              <span className="visualmente-oculto">Conectado como</span>
+        <Cartao className={estilos.identidade}>
+          <div className={estilos.pessoa} role="group" aria-label="Sua conta">
+            <span className={estilos.avatar} data-avatar="" aria-hidden="true">
+              {iniciaisDe(navegacao.nomeDaPessoa)}
+            </span>
+            <span className={estilos.textoDaPessoa}>
+              <span className={estilos.rotuloDaPessoa}>Conectado como</span>
               <span className={estilos.nomeDaPessoa}>{navegacao.nomeDaPessoa}</span>
-              <button type="button" className={estilos.sair} onClick={navegacao.aoSair}>
-                Sair
-              </button>
-            </div>
-          </Cartao>
-          <h2 id={idTitulo} className={estilos.titulo}>
+            </span>
+            <Botao variante="secundario" onClick={navegacao.aoSair}>
+              Sair
+            </Botao>
+          </div>
+        </Cartao>
+
+        <div className={estilos.introducao}>
+          <h2 id={idTitulo} className={estilos.tituloDaSecao}>
             Chaves de API
           </h2>
           <p className={estilos.texto}>

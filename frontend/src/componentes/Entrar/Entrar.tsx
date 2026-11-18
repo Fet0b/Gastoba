@@ -1,9 +1,12 @@
+import { CampoDeTexto } from "../Campo/CampoDeTexto";
+import { Titulo } from "../Titulo/Titulo";
 import { type FormEvent, useId, useRef, useState } from "react";
 
 import { ErroDaApiCliente, MENSAGEM_SEM_RESPOSTA } from "../../api/cliente";
 import type { Credenciais } from "../../api/sessao";
 import { Olho } from "../Olho/Olho";
 import { useEstadoDoOlho } from "../Olho/useEstadoDoOlho";
+import { Botao } from "../Botao/Botao";
 import estilos from "./Entrar.module.css";
 
 type Propriedades = {
@@ -89,8 +92,6 @@ export function Entrar({ aoEntrar, aviso, aoCriarConta }: Propriedades) {
 
   const idEmail = `${id}-email`;
   const idSenha = `${id}-senha`;
-  const idErroEmail = `${id}-erro-email`;
-  const idErroSenha = `${id}-erro-senha`;
   const idErroGeral = `${id}-erro`;
   const idTitulo = `${id}-titulo`;
 
@@ -99,9 +100,9 @@ export function Entrar({ aoEntrar, aviso, aoCriarConta }: Propriedades) {
       <div className={estilos.cartao}>
         <div className={estilos.marca}>
           <Olho decorativo estado={estadoDoOlho} className={estilos.olho} />
-          <h1 id={idTitulo} className={estilos.nome}>
+          <Titulo nivel="pagina" como="h1" id={idTitulo} className={estilos.nome}>
             Gastoba
-          </h1>
+          </Titulo>
         </div>
         <p className={estilos.chamada}>Entre para ver para onde vai o seu dinheiro.</p>
 
@@ -118,62 +119,26 @@ export function Entrar({ aoEntrar, aviso, aoCriarConta }: Propriedades) {
           aria-describedby={erros.geral ? idErroGeral : undefined}
           noValidate
         >
-          <div className={estilos.campo}>
-            <label htmlFor={idEmail}>E-mail</label>
-            <input
-              ref={campoEmail}
-              id={idEmail}
-              type="email"
-              className={estilos.entrada}
-              value={email}
-              onChange={(evento) => definirEmail(evento.target.value)}
-              autoComplete="username"
-              autoFocus
-              spellCheck={false}
-              aria-invalid={erros.email ? true : undefined}
-              aria-describedby={erros.email ? idErroEmail : undefined}
-            />
-            {erros.email && (
-              <p id={idErroEmail} className={estilos.erroDoCampo}>
-                {erros.email}
-              </p>
-            )}
-          </div>
+          <CampoDeTexto rotulo="E-mail" ref={campoEmail} id={idEmail} tipo="email" autoComplete="username" erro={erros.email} valor={email} aoMudar={definirEmail} autoFocus spellCheck={false} />
 
-          <div className={estilos.campo}>
-            <label htmlFor={idSenha}>Senha</label>
-            <input
-              ref={campoSenha}
-              id={idSenha}
-              type="password"
-              className={estilos.entrada}
-              autoComplete="current-password"
-              aria-invalid={erros.senha ? true : undefined}
-              aria-describedby={erros.senha ? idErroSenha : undefined}
-            />
-            {erros.senha && (
-              <p id={idErroSenha} className={estilos.erroDoCampo}>
-                {erros.senha}
-              </p>
-            )}
-          </div>
+          <CampoDeTexto rotulo="Senha" ref={campoSenha} id={idSenha} tipo="password" autoComplete="current-password" erro={erros.senha} />
 
           {/* Sempre montada: uma região criada junto com o texto pode não ser anunciada. */}
           <div id={idErroGeral} className={estilos.erroGeral} aria-live="polite" aria-atomic="true">
             {erros.geral && <p>{erros.geral}</p>}
           </div>
 
-          <button type="submit" className={estilos.entrar} disabled={enviando}>
+          <Botao variante="primario" type="submit" disabled={enviando}>
             Entrar
-          </button>
+          </Botao>
         </form>
 
         {aoCriarConta && (
           <p className={estilos.alternativa}>
             Ainda não tem conta?{" "}
-            <button type="button" className={estilos.ligacao} onClick={aoCriarConta}>
+            <Botao variante="terciario" onClick={aoCriarConta}>
               Criar conta
-            </button>
+            </Botao>
           </p>
         )}
       </div>

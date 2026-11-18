@@ -1,7 +1,7 @@
 import { act, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
-import { definirLayoutEstreito } from "../../testes/preparar";
+import { definirLayoutEstreito, definirLayoutIntermediario } from "../../testes/preparar";
 import { Navegacao } from "./Navegacao";
 import type { Navegacao as DadosDaNavegacao } from "./telas";
 
@@ -16,7 +16,7 @@ describe("Navegacao", () => {
   it("usa a barra lateral no computador", () => {
     render(<Navegacao navegacao={dados} estadoDoOlho="normal" />);
     expect(screen.getAllByRole("navigation", { name: "Telas" })).toHaveLength(1);
-    expect(screen.getAllByRole("button")).toHaveLength(8);
+    expect(screen.getAllByRole("button")).toHaveLength(9);
     expect(screen.queryByRole("button", { name: "Mais" })).toBeNull();
   });
 
@@ -33,6 +33,22 @@ describe("Navegacao", () => {
     expect(screen.getByRole("button", { name: "Mais" })).toBeTruthy();
     act(() => definirLayoutEstreito(false));
     expect(screen.queryByRole("button", { name: "Mais" })).toBeNull();
-    expect(screen.getAllByRole("button")).toHaveLength(8);
+    expect(screen.getAllByRole("button")).toHaveLength(9);
+  });
+
+  it("de 45rem a 64rem usa a barra lateral recolhida: só ícones, com o nome acessível em cada item", () => {
+    definirLayoutIntermediario(true);
+    const { container } = render(<Navegacao navegacao={dados} estadoDoOlho="normal" />);
+    expect(screen.queryByRole("button", { name: "Mais" })).toBeNull();
+    expect(container.querySelector("aside")?.getAttribute("data-recolhida")).toBe("");
+    for (const nome of ["Início", "Transações", "Orçamento", "Contas", "Investimentos", "Faturas", "Tags", "Recorrências", "Perfil"]) {
+      expect(screen.getByRole("button", { name: nome }).getAttribute("data-rotulo")).toBe(nome);
+    }
+    expect(screen.getByRole("heading", { level: 1, name: "Gastoba" })).toBeTruthy();
+  });
+
+  it("a barra lateral completa não é recolhida", () => {
+    const { container } = render(<Navegacao navegacao={dados} estadoDoOlho="normal" />);
+    expect(container.querySelector("aside")?.hasAttribute("data-recolhida")).toBe(false);
   });
 });

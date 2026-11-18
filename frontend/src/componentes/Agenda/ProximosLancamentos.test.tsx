@@ -34,6 +34,14 @@ function mostrar(recorrencias: Recorrencia[] | undefined, carregando = false) {
 }
 
 describe("ProximosLancamentos", () => {
+  it("a lista tem cabeçalho visual aria-hidden logo antes dela", () => {
+    const { lista } = mostrar([rec({ id: "a" })]);
+
+    const cabecalho = lista?.previousElementSibling;
+    expect(cabecalho?.hasAttribute("data-cabecalho-da-lista")).toBe(true);
+    expect(cabecalho?.getAttribute("aria-hidden")).toBe("true");
+  });
+
   it("lista por data, com ganho e gasto em texto e com sinal", () => {
     const { lista, itens } = mostrar([
       rec({ id: "a", descricao: "Aluguel", dia_do_mes: 20 }),

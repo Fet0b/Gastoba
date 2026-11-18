@@ -1,0 +1,38 @@
+.dialogo {
+  box-sizing: border-box;
+  width: min(40rem, calc(100vw - 2 * var(--espaco-4)));
+  max-height: calc(100dvh - 2 * var(--espaco-4));
+  padding: var(--espaco-5);
+  border: var(--borda-de-camada);
+  border-radius: var(--raio-painel);
+  background: var(--cor-ameixa);
+  color: var(--cor-nevoa);
+  box-shadow: var(--sombra-alta);
+}
+
+.dialogo::backdrop {
+  background: var(--cor-noite);
+  opacity: var(--opacidade-discreta);
+}
+
+.conteudo {
+  margin-top: var(--espaco-4);
+}
+
+.rodape {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--espaco-2);
+  justify-content: flex-end;
+  margin-top: var(--espaco-5);
+}
+
+@media (max-width: 45rem) {
+  .dialogo {
+  margin: auto 0 0;
+  width: 100%;
+  max-height: 90dvh;
+  border-radius: var(--raio-painel) var(--raio-painel) 0 0;
+}
+
+}

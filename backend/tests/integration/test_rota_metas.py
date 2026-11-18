@@ -45,9 +45,11 @@ def test_definir_cria_e_depois_troca_o_percentual(cliente_autenticado):
     segunda = cliente_autenticado.put("/metas/lazer", json={"percentual": 35})
 
     assert primeira.status_code == segunda.status_code == 200
-    assert primeira.json() == {"categoria": "lazer", "percentual": 20}
-    assert segunda.json() == {"categoria": "lazer", "percentual": 35}
-    assert cliente_autenticado.get("/metas").json() == [{"categoria": "lazer", "percentual": 35}]
+    assert primeira.json() == {"categoria": "lazer", "nome": "Lazer", "percentual": 20}
+    assert segunda.json() == {"categoria": "lazer", "nome": "Lazer", "percentual": 35}
+    assert cliente_autenticado.get("/metas").json() == [
+        {"categoria": "lazer", "nome": "Lazer", "percentual": 35}
+    ]
 
 
 @pytest.mark.parametrize("percentual", [0, -1, 101])
@@ -95,7 +97,7 @@ def test_listar_na_ordem_das_categorias(cliente_autenticado):
 
     lista = cliente_autenticado.get("/metas").json()
 
-    assert [m["categoria"] for m in lista] == ["investimentos", "lazer", "gasto_fixo"]
+    assert [m["categoria"] for m in lista] == ["liberdade_financeira", "lazer", "gasto_fixo"]
 
 
 # DELETE /metas/{categoria}
@@ -135,30 +137,49 @@ def test_progresso_traz_renda_limite_gasto_restante_e_situacao(cliente_autentica
     assert resposta.json() == {
         "mes": "2026-10",
         "renda": "5000.00",
+        "renda_base": None,
+        "aportes_do_mes": "0.00",
+        "renda_de_referencia": "5000.00",
+        "classificacoes_para_revisar": 0,
         "metas": [
             {
                 "categoria": "lazer",
+                "nome": "Lazer",
                 "percentual": 10,
                 "limite": "500.00",
                 "gasto": "450.00",
+                "gasto_bruto": "450.00",
+                "limite_adicional": "0.00",
+                "caixinhas": [],
+                "rentabilidade": None,
                 "restante": "50.00",
                 "percentual_usado": 90,
                 "situacao": "alerta",
             },
             {
                 "categoria": "conforto",
+                "nome": "Conforto",
                 "percentual": 5,
                 "limite": "250.00",
                 "gasto": "0.00",
+                "gasto_bruto": "0.00",
+                "limite_adicional": "0.00",
+                "caixinhas": [],
+                "rentabilidade": None,
                 "restante": "250.00",
                 "percentual_usado": 0,
                 "situacao": "dentro",
             },
             {
                 "categoria": "gasto_fixo",
+                "nome": "Gasto fixo",
                 "percentual": 40,
                 "limite": "2000.00",
                 "gasto": "2100.00",
+                "gasto_bruto": "2100.00",
+                "limite_adicional": "0.00",
+                "caixinhas": [],
+                "rentabilidade": None,
                 "restante": "-100.00",
                 "percentual_usado": 105,
                 "situacao": "estourou",
@@ -184,7 +205,15 @@ def test_progresso_sem_metas_devolve_so_a_renda(cliente_autenticado):
 
     corpo = cliente_autenticado.get("/metas/progresso", params={"mes": "2026-10"}).json()
 
-    assert corpo == {"mes": "2026-10", "renda": "100.00", "metas": []}
+    assert corpo == {
+        "mes": "2026-10",
+        "renda": "100.00",
+        "renda_base": None,
+        "aportes_do_mes": "0.00",
+        "renda_de_referencia": "100.00",
+        "classificacoes_para_revisar": 0,
+        "metas": [],
+    }
 
 
 @pytest.mark.parametrize("mes", ["2026-13", "2026-00", "0000-01"])
@@ -216,3 +245,42 @@ def test_chave_de_leitura_consulta_mas_nao_define(cliente_autenticado, cliente):
         cliente.put("/metas/lazer", json={"percentual": 10}, headers=chave), 403, "acesso_negado"
     )
     _confere_erro(cliente.delete("/metas/lazer", headers=chave), 403, "acesso_negado")
+
+
+def test_progresso_usa_base_em_qualquer_mes_e_mantem_renda_real(cliente_autenticado):
+    cliente = cliente_autenticado
+    conta = _criar_conta(cliente)
+    _ganho(cliente, conta, "7000.00")
+    assert cliente.put("/metas/lazer", json={"percentual": 20}).status_code == 200
+    assert cliente.put("/renda-base", json={"valor": "5000.00"}).status_code == 200
+    for mes, renda in [("2026-10", "7000.00"), ("2025-01", "0.00")]:
+        resposta = cliente.get("/metas/progresso", params={"mes": mes})
+        assert resposta.status_code == 200
+        corpo = resposta.json()
+        assert corpo["renda"] == renda
+        assert corpo["renda_base"] == corpo["renda_de_referencia"] == "5000.00"
+        assert corpo["metas"][0]["limite"] == "1000.00"
+        assert corpo["metas"][0]["situacao"] == "dentro"
+    assert cliente.delete("/renda-base").status_code == 204
+    corpo = cliente.get("/metas/progresso", params={"mes": "2026-10"}).json()
+    assert corpo["renda_base"] is None
+    assert corpo["renda_de_referencia"] == "7000.00"
+    assert corpo["metas"][0]["limite"] == "1400.00"
+
+
+def test_alvos_e_alias_compatibilidade(cliente_autenticado):
+    alvos = cliente_autenticado.get("/metas/alvos")
+    assert alvos.status_code == 200
+    assert [a["codigo"] for a in alvos.json()] == [
+        "liberdade_financeira",
+        "lazer",
+        "conhecimento",
+        "conforto",
+        "gasto_fixo",
+    ]
+    resposta = cliente_autenticado.put("/metas/investimentos", json={"percentual": 10})
+    assert resposta.status_code == 200
+    assert resposta.json()["categoria"] == "liberdade_financeira"
+    assert resposta.json()["nome"] == "Liberdade financeira"
+    assert cliente_autenticado.delete("/metas/investimentos").status_code == 204
+    assert cliente_autenticado.get("/metas").json() == []

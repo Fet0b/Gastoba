@@ -40,12 +40,21 @@ const lista = () => screen.findByRole("list", { name: "Gastos por tag" });
 const barra = (tag: string) => screen.findByRole("button", { name: new RegExp(`^${tag}: .*\\d+ gastos?$`) });
 
 describe("Tags", () => {
+  it("tem cabeçalho com subtítulo e um só h1", async () => {
+    render(<Tags navegacao={navegacao()} />);
+
+    const titulo = screen.getByRole("heading", { level: 2, name: "Tags" });
+    expect(titulo.closest("header")?.querySelector("p")?.textContent).toBe("Como e onde o dinheiro foi gasto.");
+    expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);
+    expect(await screen.findByRole("heading", { name: "Distribuição por tags" })).toBeTruthy();
+  });
+
   it("mostra as barras ordenadas por valor, com a contagem de gastos no nome", async () => {
     await gastar([["a"], ["b"], ["c"]]);
     render(<Tags navegacao={navegacao()} />);
 
     const itens = (await lista()).querySelectorAll(":scope > li");
-    expect(Array.from(itens).map((li) => li.textContent?.slice(0, 1))).toEqual(["c", "b", "a"]);
+    expect(Array.from(itens).map((li) => li.textContent?.slice(0, 1))).toEqual(["C", "B", "A"]);
     expect(await barra("c")).toBeTruthy();
     expect(screen.queryByRole("img", { name: /^Pizza/ })).toBeNull();
   });
@@ -64,7 +73,7 @@ describe("Tags", () => {
 
     fireEvent.click(await barra("a"));
 
-    const painel = await screen.findByRole("region", { name: "a" });
+    const painel = await screen.findByRole("region", { name: "A" });
     expect(screen.getByRole("status").textContent).toContain("a: ");
     await waitFor(() => expect(painel.querySelectorAll("li")).toHaveLength(2));
     expect(painel.textContent).toContain("Gasto 0");
@@ -78,18 +87,18 @@ describe("Tags", () => {
     render(<Tags navegacao={navegacao()} />);
 
     fireEvent.click(await barra("a"));
-    await screen.findByRole("region", { name: "a" });
+    await screen.findByRole("region", { name: "A" });
     fireEvent.click(await barra("a"));
-    expect(screen.queryByRole("region", { name: "a" })).toBeNull();
+    expect(screen.queryByRole("region", { name: "A" })).toBeNull();
 
     fireEvent.click(await barra("a"));
-    await screen.findByRole("region", { name: "a" });
+    await screen.findByRole("region", { name: "A" });
     fireEvent.keyDown(await barra("a"), { key: "Escape" });
-    expect(screen.queryByRole("region", { name: "a" })).toBeNull();
+    expect(screen.queryByRole("region", { name: "A" })).toBeNull();
 
     fireEvent.click(await barra("a"));
     fireEvent.click(await screen.findByRole("button", { name: "Fechar detalhe" }));
-    expect(screen.queryByRole("region", { name: "a" })).toBeNull();
+    expect(screen.queryByRole("region", { name: "A" })).toBeNull();
   });
 
   it("fixar mantém o foco na barra, anuncia na região de status e Fechar devolve o foco", async () => {
@@ -99,7 +108,7 @@ describe("Tags", () => {
     const botao = await barra("a");
     botao.focus();
     fireEvent.click(botao);
-    await screen.findByRole("region", { name: "a" });
+    await screen.findByRole("region", { name: "A" });
     expect(document.activeElement).toBe(botao);
     expect(screen.getByRole("status").textContent).toContain("a: ");
     expect(screen.getByRole("status").textContent).toContain("gastos estão abaixo");
@@ -129,7 +138,7 @@ describe("Tags", () => {
     fireEvent.click(await screen.findByRole("button", { name: /^Outras \(4 tags\)/ }));
     fireEvent.click(await screen.findByRole("button", { name: /^t0: / }));
 
-    const painel = await screen.findByRole("region", { name: "t0" });
+    const painel = await screen.findByRole("region", { name: "T0" });
     await waitFor(() => expect(painel.querySelectorAll("li")).toHaveLength(1));
   });
 
@@ -137,18 +146,18 @@ describe("Tags", () => {
     await gastar([["a"], ["b"]]);
     render(<Tags navegacao={navegacao()} />);
     fireEvent.click(await barra("a"));
-    await screen.findByRole("region", { name: "a" });
+    await screen.findByRole("region", { name: "A" });
 
     fireEvent.click(screen.getByRole("button", { name: "Próximo mês" }));
 
-    await waitFor(() => expect(screen.getByText("Sem gastos neste período")).toBeTruthy());
-    expect(screen.queryByRole("region", { name: "a" })).toBeNull();
+    await waitFor(() => expect(screen.getByText("Nenhum gasto com tag neste período")).toBeTruthy());
+    expect(screen.queryByRole("region", { name: "A" })).toBeNull();
     expect(screen.queryByRole("alert")).toBeNull();
 
     // Voltar ao mês em que a tag existe não reabre o painel: a seleção foi mesmo limpa.
     fireEvent.click(screen.getByRole("button", { name: "Mês anterior" }));
     await barra("a");
-    expect(screen.queryByRole("region", { name: "a" })).toBeNull();
+    expect(screen.queryByRole("region", { name: "A" })).toBeNull();
   });
 
   it("trocar de mês mantém a tag fixada quando ela existe no mês novo", async () => {
@@ -167,12 +176,12 @@ describe("Tags", () => {
     });
     render(<Tags navegacao={navegacao()} />);
     fireEvent.click(await barra("a"));
-    await screen.findByRole("region", { name: "a" });
+    await screen.findByRole("region", { name: "A" });
 
     fireEvent.click(screen.getByRole("button", { name: "Mês anterior" }));
 
     await waitFor(() => {
-      const painel = screen.getByRole("region", { name: "a" });
+      const painel = screen.getByRole("region", { name: "A" });
       expect(painel.textContent).toContain("Do mês passado");
     });
     expect((await barra("a")).getAttribute("aria-pressed")).toBe("true");
@@ -188,7 +197,7 @@ describe("Tags", () => {
   it("sem gastos no mês mostra o estado vazio", async () => {
     render(<Tags navegacao={navegacao()} />);
 
-    expect(await screen.findByText("Sem gastos neste período")).toBeTruthy();
+    expect(await screen.findByText("Nenhum gasto com tag neste período")).toBeTruthy();
   });
 });
 
@@ -197,3 +206,46 @@ function mesPassado(): string {
   const anterior = mes === 1 ? { ano: ano - 1, mes: 12 } : { ano, mes: mes - 1 };
   return `${anterior.ano}-${String(anterior.mes).padStart(2, "0")}-15`;
 }
+
+it("atualiza Tags ao associar e desfazer sem recarregar",async()=>{
+ const {default:App}=await import("../App");
+ const {prepararCenarioLiberdadeFinanceira}=await import("../simulacao/manipuladores");
+ prepararCenarioLiberdadeFinanceira({data:hojeLocal()});
+ const consulta=vi.spyOn(window,"fetch");
+ render(<App/>);
+ fireEvent.click(await screen.findByRole("button",{name:"Tags"}));
+ expect((await barra("loja")).textContent).toContain("80,00");
+ fireEvent.click(screen.getByRole("button",{name:"Transações"}));
+ fireEvent.click(await screen.findByRole("button",{name:"Mais ações de Compra fictícia"}));
+ fireEvent.click(screen.getByRole("menuitem",{name:"Usar reserva de uma destinação"}));
+ fireEvent.click(await screen.findByRole("radio",{name:/celular/}));
+ fireEvent.change(screen.getByLabelText("Valor coberto"),{target:{value:"30,00"}});
+ fireEvent.click(screen.getByRole("button",{name:"Confirmar cobertura"}));
+ expect((await screen.findAllByText(/30,00 já reservados/)).length).toBeGreaterThanOrEqual(1);
+ await waitFor(()=>expect(screen.getAllByText(/^Reserva «celular»/).length).toBeGreaterThanOrEqual(1));
+ fireEvent.click(screen.getByRole("button",{name:"Fechar cobertura"}));
+ fireEvent.click(screen.getByRole("button",{name:"Tags"}));
+ expect((await barra("loja")).textContent).toContain("50,00");
+ fireEvent.click(await barra("loja"));
+ expect(screen.getByRole("list",{name:"Gastos de loja"}).textContent).toContain("50,00");
+ fireEvent.click(screen.getByRole("button",{name:"Transações"}));
+ fireEvent.click(await screen.findByRole("button",{name:"Mais ações de Compra fictícia"}));
+ fireEvent.click(screen.getByRole("menuitem",{name:"Desfazer cobertura de celular"}));
+ await waitFor(()=>expect(screen.queryByText(/^Reserva «celular»/)).toBeNull());
+ fireEvent.click(screen.getByRole("button",{name:"Tags"}));
+ expect((await barra("loja")).textContent).toContain("80,00");
+ expect(consulta.mock.calls.filter(([url])=>String(url).includes("resumos/tags")).length).toBeGreaterThanOrEqual(3);
+ expect(consulta.mock.calls.filter(([url])=>String(url).includes("/gastos?")).length).toBeGreaterThanOrEqual(3);
+});
+
+it("a explicação da divisão é uma Dica do cabeçalho e o vazio leva às Transações", async () => {
+    const nav = navegacao();
+    render(<Tags navegacao={nav} />);
+
+    const dica = screen.getByRole("button", { name: "Sobre a divisão por tags" });
+    const texto = document.getElementById(dica.getAttribute("aria-describedby") ?? "");
+    expect(texto?.textContent).toContain("se divide em partes iguais entre elas");
+
+    fireEvent.click(await screen.findByRole("button", { name: "Adicionar tag a um gasto" }));
+    expect(nav.aoIrPara).toHaveBeenCalledWith("transacoes");
+  });

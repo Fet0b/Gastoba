@@ -3,17 +3,33 @@ from typing import Self
 
 from sqlalchemy.orm import Session, sessionmaker
 
+from gastoba.infrastructure.persistencia.operacoes import (
+    RepositorioDeAlocacoesSqlAlchemy,
+    RepositorioDeCasamentosSqlAlchemy,
+    RepositorioDeOperacoesSqlAlchemy,
+)
 from gastoba.infrastructure.persistencia.repositorios import (
     RepositorioDeChavesDeApiSqlAlchemy,
+    RepositorioDeCoberturasSqlAlchemy,
     RepositorioDeContasSqlAlchemy,
+    RepositorioDeCoresDasDestinacoesSqlAlchemy,
+    RepositorioDeDestinacoesSqlAlchemy,
+    RepositorioDeFaturasSqlAlchemy,
     RepositorioDeGanhosSqlAlchemy,
     RepositorioDeGastosSqlAlchemy,
+    RepositorioDeHistoricoDeMetasSqlAlchemy,
+    RepositorioDeInvestimentosSqlAlchemy,
     RepositorioDeMetasSqlAlchemy,
+    RepositorioDeMovimentosDeInvestimentoSqlAlchemy,
+    RepositorioDeReaplicacoesDeResgatesSqlAlchemy,
     RepositorioDeRecorrenciasSqlAlchemy,
+    RepositorioDeRendaBaseSqlAlchemy,
     RepositorioDeSessoesSqlAlchemy,
     RepositorioDeTransacoesImportadasSqlAlchemy,
     RepositorioDeUsuariosSqlAlchemy,
 )
+from gastoba.infrastructure.persistencia.transferencias import RepositorioDeTransferenciasSqlAlchemy
+from gastoba.infrastructure.persistencia.tratamentos import RepositorioDeTratamentosSqlAlchemy
 
 
 class UnidadeDeTrabalhoSqlAlchemy:
@@ -26,8 +42,13 @@ class UnidadeDeTrabalhoSqlAlchemy:
     contas: RepositorioDeContasSqlAlchemy
     gastos: RepositorioDeGastosSqlAlchemy
     ganhos: RepositorioDeGanhosSqlAlchemy
+    faturas: RepositorioDeFaturasSqlAlchemy
     transacoes_importadas: RepositorioDeTransacoesImportadasSqlAlchemy
+    investimentos: RepositorioDeInvestimentosSqlAlchemy
+    movimentos_de_investimento: RepositorioDeMovimentosDeInvestimentoSqlAlchemy
+    destinacoes: RepositorioDeDestinacoesSqlAlchemy
     recorrencias: RepositorioDeRecorrenciasSqlAlchemy
+    renda_base: RepositorioDeRendaBaseSqlAlchemy
     metas: RepositorioDeMetasSqlAlchemy
     sessoes: RepositorioDeSessoesSqlAlchemy
     chaves_de_api: RepositorioDeChavesDeApiSqlAlchemy
@@ -38,12 +59,28 @@ class UnidadeDeTrabalhoSqlAlchemy:
 
     def __enter__(self) -> Self:
         self._sessao = self._fabrica_de_sessoes()
+        self.transferencias = RepositorioDeTransferenciasSqlAlchemy(self._sessao)
+        self.operacoes = RepositorioDeOperacoesSqlAlchemy(self._sessao)
+        self.tratamentos = RepositorioDeTratamentosSqlAlchemy(self._sessao)
+        self.alocacoes = RepositorioDeAlocacoesSqlAlchemy(self._sessao)
+        self.casamentos = RepositorioDeCasamentosSqlAlchemy(self._sessao)
         self.usuarios = RepositorioDeUsuariosSqlAlchemy(self._sessao)
+        self.cores_das_destinacoes = RepositorioDeCoresDasDestinacoesSqlAlchemy(self._sessao)
+        self.coberturas = RepositorioDeCoberturasSqlAlchemy(self._sessao)
+        self.faturas = RepositorioDeFaturasSqlAlchemy(self._sessao)
         self.contas = RepositorioDeContasSqlAlchemy(self._sessao)
         self.gastos = RepositorioDeGastosSqlAlchemy(self._sessao)
         self.ganhos = RepositorioDeGanhosSqlAlchemy(self._sessao)
         self.transacoes_importadas = RepositorioDeTransacoesImportadasSqlAlchemy(self._sessao)
+        self.investimentos = RepositorioDeInvestimentosSqlAlchemy(self._sessao)
+        self.movimentos_de_investimento = RepositorioDeMovimentosDeInvestimentoSqlAlchemy(
+            self._sessao
+        )
+        self.destinacoes = RepositorioDeDestinacoesSqlAlchemy(self._sessao)
         self.recorrencias = RepositorioDeRecorrenciasSqlAlchemy(self._sessao)
+        self.renda_base = RepositorioDeRendaBaseSqlAlchemy(self._sessao)
+        self.historico_de_metas = RepositorioDeHistoricoDeMetasSqlAlchemy(self._sessao)
+        self.reaplicacoes_de_resgates = RepositorioDeReaplicacoesDeResgatesSqlAlchemy(self._sessao)
         self.metas = RepositorioDeMetasSqlAlchemy(self._sessao)
         self.sessoes = RepositorioDeSessoesSqlAlchemy(self._sessao)
         self.chaves_de_api = RepositorioDeChavesDeApiSqlAlchemy(self._sessao)

@@ -7,6 +7,7 @@ type Propriedades = {
   variante?: "padrao" | "elevado" | "destaque";
   className?: string;
   "aria-label"?: string;
+  "aria-labelledby"?: string;
   children: ReactNode;
 };
 

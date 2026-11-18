@@ -55,6 +55,7 @@ def test_registrar_ganho_devolve_201_e_credita_a_conta(cliente_autenticado):
     corpo = resposta.json()
     UUID(corpo["id"])
     assert corpo == {
+        "transacao_importada_id": None,
         "id": corpo["id"],
         "conta_id": conta_id,
         "valor": "5000.00",

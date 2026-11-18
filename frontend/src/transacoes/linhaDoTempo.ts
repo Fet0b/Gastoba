@@ -1,27 +1,30 @@
+import {valorLiquido} from "./despesas";
 // A linha do tempo única de Transações: gastos e ganhos juntos, agrupados por dia.
 // Módulo puro; dinheiro só em BigInt de centavos (Art. III).
 
-import type { Ganho, Gasto } from "../api/tipos";
+import type { Ganho, Gasto, MovimentoDeInvestimento } from "../api/tipos";
 import { deCentavos, paraCentavos } from "../dinheiro/dinheiro";
 
 export type TransacaoDaLinha =
   | ({ tipo: "gasto" } & Gasto)
-  | ({ tipo: "ganho" } & Ganho);
+  | ({ tipo: "ganho" } & Ganho)
+  | (Omit<MovimentoDeInvestimento,"tipo"|"conta_id"|"categoria"> & {tipo:"aporte";conta_id:string;categoria:string;tags:[];recorrencia_id:null});
 
 export type GrupoDoDia = { data: string; transacoes: TransacaoDaLinha[] };
 
 export const TAMANHO_DA_PAGINA = 100;
 
 /** Une gastos e ganhos: data mais recente primeiro e, no mesmo dia, saídas antes de entradas. */
-export function juntarTransacoes(gastos: readonly Gasto[], ganhos: readonly Ganho[]): TransacaoDaLinha[] {
+export function juntarTransacoes(gastos: readonly Gasto[], ganhos: readonly Ganho[], _movimentos: readonly MovimentoDeInvestimento[] = []): TransacaoDaLinha[] {
   const todas: TransacaoDaLinha[] = [
     ...gastos.map((g): TransacaoDaLinha => ({ ...g, tipo: "gasto" })),
+
     ...ganhos.map((g): TransacaoDaLinha => ({ ...g, tipo: "ganho" })),
   ];
   // `sort` é estável: itens iguais mantêm a ordem em que chegaram.
   return todas.sort((a, b) => {
     if (a.data !== b.data) return a.data < b.data ? 1 : -1;
-    if (a.tipo !== b.tipo) return a.tipo === "gasto" ? -1 : 1;
+    if (a.tipo !== b.tipo) return (a.tipo === "ganho" ? 1 : 0) - (b.tipo === "ganho" ? 1 : 0);
     return 0;
   });
 }
@@ -69,7 +72,7 @@ export function totaisDasTransacoes(transacoes: readonly TransacaoDaLinha[]): {
   let entradas = 0n;
   let saidas = 0n;
   for (const transacao of transacoes) {
-    const valor = paraCentavos(transacao.valor);
+    const valor = paraCentavos(transacao.tipo === "gasto" ? valorLiquido(transacao) : transacao.valor);
     if (transacao.tipo === "ganho") entradas += valor;
     else saidas += valor;
   }

@@ -31,7 +31,7 @@
   font-family: var(--fonte-corpo);
   font-size: var(--texto-pequeno);
   line-height: var(--texto-pequeno-linha);
-  font-weight: 600;
+  font-weight: var(--peso-secao);
 }
 
 .linhas {
@@ -44,30 +44,12 @@
 
 .maisLinhas {
   align-self: center;
-  min-height: var(--alvo-de-toque);
-  padding: 0 var(--espaco-5);
-  border: 1px solid var(--cor-veludo);
-  border-radius: var(--raio-campo);
-  background: transparent;
-  color: var(--cor-lavanda);
-  font: inherit;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.maisLinhas:hover {
-  background: var(--cor-veludo);
-}
-
-.maisLinhas:focus-visible {
-  outline: var(--anel-de-foco);
-  outline-offset: var(--afastamento-do-foco);
 }
 
 @keyframes entrada {
   from {
     opacity: 0;
-    transform: translateY(8px);
+    transform: translateY(var(--espaco-2));
   }
 
   to {

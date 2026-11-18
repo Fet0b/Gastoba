@@ -61,3 +61,28 @@ def test_env_example_documenta_as_variaveis_novas():
 
     for variavel in VARIAVEIS:
         assert f"{variavel}=" in exemplo
+
+
+def test_credenciais_e_itens_da_pluggy_perdem_espacos_e_quebras_de_linha(sem_ambiente, monkeypatch):
+    # Segredo colado com uma quebra de linha no fim (ou item com espaço) faria a Pluggy recusar a
+    # credencial ou não achar o item, sem nenhum erro de configuração que explicasse a falha.
+    monkeypatch.setenv("GASTOBA_PLUGGY_CLIENT_ID", "meu-id\n")
+    monkeypatch.setenv("GASTOBA_PLUGGY_CLIENT_SECRET", " meu-segredo \n")
+    monkeypatch.setenv("GASTOBA_PLUGGY_ITEM_IDS", '[" item-1\\n", "", "item-2 "]')
+    monkeypatch.setenv("GASTOBA_PLUGGY_EMAIL_DO_DONO", " dona@exemplo.com\n")
+
+    configuracoes = Configuracoes()
+
+    assert configuracoes.pluggy_client_id == "meu-id"
+    assert configuracoes.pluggy_client_secret.get_secret_value() == "meu-segredo"
+    assert configuracoes.pluggy_item_ids == ["item-1", "item-2"]
+    assert configuracoes.pluggy_email_do_dono == "dona@exemplo.com"
+
+
+def test_credencial_da_pluggy_so_com_espacos_conta_como_ausente(sem_ambiente, monkeypatch):
+    monkeypatch.setenv("GASTOBA_PLUGGY_CLIENT_ID", "meu-id")
+    monkeypatch.setenv("GASTOBA_PLUGGY_CLIENT_SECRET", "  \n")
+    monkeypatch.setenv("GASTOBA_PLUGGY_ITEM_IDS", '["item-1"]')
+    monkeypatch.setenv("GASTOBA_PLUGGY_EMAIL_DO_DONO", "dona@exemplo.com")
+
+    assert Configuracoes().importacao_ativa is False

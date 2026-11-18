@@ -1,5 +1,6 @@
 import type { Conta } from "../../api/tipos";
 import estilos from "../Gastos/Gastos.module.css";
+import { Chip } from "../Chip/Chip";
 
 type Propriedades = {
   /** `undefined` enquanto a primeira busca não respondeu (ou se ela falhou). */
@@ -18,25 +19,18 @@ export function FiltroDeContasEmChips({ contas, ativa, aoMudar }: Propriedades) 
       </span>
       <ul className={estilos.chips}>
         <li>
-          <button
-            type="button"
-            className={estilos.chip}
-            aria-pressed={ativa === null}
-            onClick={() => aoMudar(null)}
-          >
+          <Chip selecionado={ativa === null} aoAlternar={() => aoMudar(null)}>
             Todas as contas
-          </button>
+          </Chip>
         </li>
         {contas?.map((conta) => (
           <li key={conta.id}>
-            <button
-              type="button"
-              className={estilos.chip}
-              aria-pressed={conta.id === ativa}
-              onClick={() => aoMudar(conta.id === ativa ? null : conta.id)}
+            <Chip
+              selecionado={conta.id === ativa}
+              aoAlternar={() => aoMudar(conta.id === ativa ? null : conta.id)}
             >
               {conta.nome}
-            </button>
+            </Chip>
           </li>
         ))}
       </ul>

@@ -109,7 +109,8 @@ def test_listar_nunca_traz_o_segredo(cliente, sessao):
     for chave in chaves:
         assert "segredo" not in chave
     assert segredo not in resposta.text
-    assert segredo.split("_")[-1] not in resposta.text
+    parte_aleatoria = segredo.split("_", 2)[2]
+    assert parte_aleatoria not in resposta.text
 
 
 def test_listar_mostra_o_ultimo_uso(cliente, sessao):

@@ -1,0 +1,227 @@
+/* Editor das destinações de um aporte: investimento, linhas tag + percentual e a soma. Texto
+   sempre nas cores de texto; a soma completa também é dita em texto. */
+
+.grupo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espaco-2);
+  min-width: 0;
+  margin: 0;
+  padding: var(--espaco-3);
+  border: 1px solid var(--cor-ameixa);
+  border-radius: var(--raio-campo);
+}
+
+/* Dentro da linha de uma parte da divisão: sem moldura, o investimento numa linha só. */
+.semMoldura {
+  padding: 0;
+  border: 0;
+}
+
+.semMoldura .campo {
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--espaco-2);
+}
+
+.semMoldura .campo .entrada {
+  flex: 1 1 10rem;
+  min-width: 0;
+}
+
+.legenda {
+  padding-inline: var(--espaco-1);
+  color: var(--cor-bruma);
+  font-size: var(--texto-pequeno);
+}
+
+.apoio,
+.motivo {
+  color: var(--cor-bruma);
+  font-size: var(--texto-pequeno);
+}
+
+.motivo {
+  color: var(--cor-brasa);
+}
+
+.campo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espaco-1);
+}
+
+.rotulo {
+  color: var(--cor-bruma);
+  font-size: var(--texto-pequeno);
+}
+
+.entrada {
+  min-height: var(--alvo-de-toque);
+  padding: var(--espaco-1) var(--espaco-3);
+  border: 1px solid var(--cor-veludo);
+  border-radius: var(--raio-campo);
+  background: var(--cor-noite);
+  color: var(--cor-nevoa);
+  font: inherit;
+}
+
+.entrada:focus-visible,
+.adicionar:focus-visible,
+.remover:focus-visible {
+  outline: var(--anel-de-foco);
+  outline-offset: var(--afastamento-do-foco);
+}
+
+.linhas {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espaco-2);
+}
+
+.linha {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--espaco-2);
+}
+
+.tag {
+  flex: 1 1 8rem;
+  min-width: 0;
+}
+
+.percentual {
+  width: 4.5rem;
+  text-align: right;
+}
+
+.sufixo {
+  color: var(--cor-bruma);
+}
+
+.parte {
+  color: var(--cor-lavanda);
+  font-size: var(--texto-pequeno);
+}
+
+.remover,
+.adicionar {
+  min-height: 2rem;
+  padding: var(--espaco-1) var(--espaco-3);
+  border: 1px dashed var(--cor-bruma);
+  border-radius: var(--raio-chip);
+  background: none;
+  color: var(--cor-bruma);
+  font: inherit;
+  font-size: var(--texto-pequeno);
+  cursor: pointer;
+}
+
+.remover:hover,
+.adicionar:hover {
+  color: var(--cor-nevoa);
+}
+
+.rodape {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--espaco-2);
+}
+
+.soma {
+  color: var(--cor-bruma);
+  font-size: var(--texto-pequeno);
+}
+
+.soma[data-completa="true"] {
+  color: var(--cor-lavanda);
+}
+
+.restante {
+  margin: 0;
+  color: var(--cor-bruma);
+  font-size: var(--texto-pequeno);
+}
+
+.restante[data-restante="excede"] {
+  color: var(--cor-brasa);
+}
+
+.deslizante {
+  flex: 1 1 100%;
+  width: 100%;
+  min-height: var(--alvo-de-toque);
+  accent-color: var(--cor-ametista);
+  cursor: pointer;
+}
+
+.deslizante:disabled {
+  cursor: default;
+  opacity: 0.6;
+}
+
+.deslizante:focus-visible {
+  outline: var(--anel-de-foco);
+  outline-offset: var(--afastamento-do-foco);
+}
+
+.figura {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espaco-2);
+  margin: 0;
+}
+
+.faixa {
+  display: flex;
+  gap: var(--espaco-1);
+  height: 0.75rem;
+  border-radius: var(--raio-chip);
+  background: var(--cor-ameixa);
+  overflow: hidden;
+}
+
+.segmento {
+  flex: none;
+  transition: width var(--duracao-media) var(--curva-saida);
+}
+
+.segmento[data-segmento="a-distribuir"] {
+  box-sizing: border-box;
+  background: none;
+  border: 1px dashed var(--cor-bruma);
+}
+
+.legendaDaFaixa {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--espaco-1) var(--espaco-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  color: var(--cor-bruma);
+  font-size: var(--texto-pequeno);
+}
+
+.itemDaLegenda {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--espaco-1);
+}
+
+.ponto {
+  flex: none;
+  width: 0.625rem;
+  height: 0.625rem;
+  border-radius: 50%;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .segmento {
+    transition: none;
+  }
+}

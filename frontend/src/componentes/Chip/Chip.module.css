@@ -1,0 +1,60 @@
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--espaco-1);
+  min-height: var(--alvo-de-toque);
+  padding: 0 var(--espaco-3);
+  border: 0;
+  border-radius: var(--raio-chip);
+  background: var(--superficie-badge);
+  color: var(--cor-nevoa);
+  font: inherit;
+  font-size: var(--texto-pequeno);
+  line-height: var(--texto-pequeno-linha);
+  cursor: pointer;
+  transition: background-color var(--duracao-curta) var(--curva-saida);
+}
+
+/* Dentro de linhas de lista: mais baixo, ainda com a área de toque estendida por ::after. */
+.chip[data-tamanho="pequeno"] {
+  position: relative;
+  min-height: 1.75rem;
+  padding: 0 var(--espaco-2);
+  font-size: var(--texto-minimo);
+  line-height: var(--texto-minimo-linha);
+}
+
+.chip[data-tamanho="pequeno"]::after {
+  position: absolute;
+  inset-block: -0.5rem;
+  inset-inline: 0;
+  content: "";
+}
+
+.chip:hover {
+  background: var(--superficie-tonal);
+}
+
+.chip:focus-visible {
+  outline: var(--anel-de-foco);
+  outline-offset: var(--afastamento-do-foco);
+}
+
+.chip[aria-pressed="true"] {
+  background: var(--cor-lavanda);
+  color: var(--cor-noite);
+  font-weight: var(--peso-secao);
+}
+
+.ponto {
+  width: 0.625rem;
+  height: 0.625rem;
+  border-radius: var(--raio-chip);
+  flex: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .chip {
+    transition: none;
+  }
+}

@@ -13,17 +13,22 @@ function meta(
 ): ProgressoDaMeta {
   return {
     categoria,
+    nome: NOMES[categoria as keyof typeof NOMES] ?? categoria,
     percentual: 10,
     limite: "100.00",
     gasto: "50.00",
     restante,
     percentual_usado: percentualUsado,
     situacao,
+    gasto_bruto: "50.00",
+    limite_adicional: "0.00",
+    caixinhas: [],
+    rentabilidade: null,
   };
 }
 
 function resumo(...metas: ProgressoDaMeta[]): ResumoDasMetas {
-  return { mes: "2026-04", renda: "1000.00", metas };
+  return { mes: "2026-04", renda: "1000.00", renda_base: null, renda_de_referencia: "1000.00", metas };
 }
 
 describe("avisoDoMes", () => {

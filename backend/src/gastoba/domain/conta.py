@@ -13,11 +13,19 @@ class OrigemDaConta(StrEnum):
     OPEN_FINANCE = "open_finance"
 
 
+class PapelDaConta(StrEnum):
+    CORRENTE = "corrente"
+    INVESTIMENTO = "investimento"
+
+
 class TipoDaConta(StrEnum):
     """Conta corrente (ou carteira, poupança) ou cartão de crédito."""
 
     CORRENTE = "corrente"
     CARTAO = "cartao"
+    # Conta que aplica e resgata sozinha: o saldo é dinheiro investido (a caixinha), então não
+    # entra no "dinheiro nas contas".
+    REMUNERADA = "remunerada"
 
 
 @dataclass(slots=True, eq=False)
@@ -32,6 +40,7 @@ class Conta:
     id_externo: str | None = None
     id: UUID = field(default_factory=uuid4)
     tipo: TipoDaConta = TipoDaConta.CORRENTE
+    papel: PapelDaConta | None = None
 
     def __post_init__(self) -> None:
         self.nome = self.nome.strip()

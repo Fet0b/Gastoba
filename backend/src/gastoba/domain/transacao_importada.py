@@ -4,7 +4,13 @@ from enum import StrEnum
 from uuid import UUID, uuid4
 
 from gastoba.domain.dinheiro import Dinheiro
-from gastoba.domain.excecoes import DescricaoInvalida, TransacaoJaTratada, ValorInvalido
+from gastoba.domain.excecoes import (
+    DescricaoInvalida,
+    MovimentoNaoDesfazivel,
+    TransacaoImportadaInvalida,
+    TransacaoJaTratada,
+    ValorInvalido,
+)
 
 TAMANHO_MAXIMO_DA_DESCRICAO = 200
 DESCRICAO_PADRAO = "Sem descrição"
@@ -23,14 +29,22 @@ OPERACOES_DESCARTADAS_NA_IMPORTACAO = frozenset(
 )
 
 
-def descartar_na_importacao(tipo_de_operacao: str | None) -> bool:
+def descartar_na_importacao(tipo_de_operacao: str | None, descricao: str = "") -> bool:
     """A transação com esse tipo de operação entra já ignorada."""
-    return tipo_de_operacao in OPERACOES_DESCARTADAS_NA_IMPORTACAO
+    from gastoba.domain.natureza_do_movimento import e_conta_remunerada
+
+    return tipo_de_operacao in OPERACOES_DESCARTADAS_NA_IMPORTACAO and not e_conta_remunerada(
+        descricao
+    )
 
 
 class SentidoDaTransacao(StrEnum):
     ENTRADA = "entrada"
     SAIDA = "saida"
+
+
+class MotivoDaTransacaoIgnorada(StrEnum):
+    TRANSFERENCIA_ENTRE_CONTAS = "transferencia_entre_contas"
 
 
 class EstadoDaTransacaoImportada(StrEnum):
@@ -55,6 +69,11 @@ class TransacaoImportada:
     tipo_de_operacao: str | None = None
     estado: EstadoDaTransacaoImportada = EstadoDaTransacaoImportada.PENDENTE
     id: UUID = field(default_factory=uuid4)
+    # Só em compras de cartão: a fatura (id externo do banco) e a parcela, se o banco informa.
+    id_externo_da_fatura: str | None = None
+    parcela_numero: int | None = None
+    parcela_total: int | None = None
+    motivo_ignorada: MotivoDaTransacaoIgnorada | None = None
 
     def __post_init__(self) -> None:
         # O texto vem do banco: aparar e limitar ao tamanho da descrição de gasto e ganho.
@@ -70,11 +89,28 @@ class TransacaoImportada:
     def sugerir_descarte(self) -> bool:
         return self.tipo_de_operacao in OPERACOES_QUE_PEDEM_DESCARTE
 
+    def reabrir(self) -> None:
+        if self.estado != EstadoDaTransacaoImportada.ACEITA:
+            raise MovimentoNaoDesfazivel("Só uma transação aceita pode voltar à caixa de entrada.")
+        self.estado = EstadoDaTransacaoImportada.PENDENTE
+        self.motivo_ignorada = None
+
+    def restaurar(self) -> None:
+        if self.estado != EstadoDaTransacaoImportada.IGNORADA:
+            raise TransacaoJaTratada("Só uma transação ignorada pode voltar à caixa de entrada.")
+        self.estado = EstadoDaTransacaoImportada.PENDENTE
+        self.motivo_ignorada = None
+
     def aceitar(self) -> None:
         self._tratar(EstadoDaTransacaoImportada.ACEITA)
 
-    def ignorar(self) -> None:
+    def ignorar(self, motivo: MotivoDaTransacaoIgnorada | None = None) -> None:
+        try:
+            motivo = MotivoDaTransacaoIgnorada(motivo) if motivo is not None else None
+        except ValueError as erro:
+            raise TransacaoImportadaInvalida("Motivo de descarte inválido.") from erro
         self._tratar(EstadoDaTransacaoImportada.IGNORADA)
+        self.motivo_ignorada = motivo
 
     def _tratar(self, novo: EstadoDaTransacaoImportada) -> None:
         if self.estado != EstadoDaTransacaoImportada.PENDENTE:

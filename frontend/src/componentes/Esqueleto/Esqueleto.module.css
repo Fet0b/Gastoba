@@ -1,0 +1,29 @@
+.esqueleto {
+  display: grid;
+  gap: var(--espaco-3);
+  padding: var(--espaco-5);
+  background: var(--cor-ameixa);
+  border: var(--borda-de-camada);
+  border-radius: var(--raio-painel);
+}
+
+.linha {
+  height: var(--espaco-5);
+  background: var(--cor-veludo);
+  border-radius: var(--raio-campo);
+  animation: brilho var(--duracao-media) var(--curva-saida) infinite alternate;
+}
+
+@keyframes brilho {
+  to {
+  opacity: var(--opacidade-discreta);
+}
+
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .linha {
+  animation: none;
+}
+
+}

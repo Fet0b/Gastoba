@@ -18,6 +18,15 @@ describe("dinheiroTotalDasContas", () => {
     expect(dinheiroTotalDasContas(contas)).toBe("150.50");
   });
 
+  it("a conta remunerada é dinheiro investido (caixinha) e fica de fora", () => {
+    const contas = [
+      conta("Banco", "100.00", "corrente", "open_finance"),
+      conta("BTG", "962.17", "remunerada", "open_finance"),
+    ];
+
+    expect(dinheiroTotalDasContas(contas)).toBe("100.00");
+  });
+
   it("sem contas correntes o total é zero", () => {
     expect(dinheiroTotalDasContas([conta("Cartão", "-300.00", "cartao", "open_finance")])).toBe("0.00");
     expect(dinheiroTotalDasContas([])).toBe("0.00");

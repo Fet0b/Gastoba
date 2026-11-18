@@ -1,5 +1,6 @@
 import { useId, useRef } from "react";
 
+import { Botao } from "../Botao/Botao";
 import estilos from "./BuscaDeTransacoes.module.css";
 
 type Propriedades = {
@@ -50,8 +51,8 @@ export function BuscaDeTransacoes({ valor, aoMudar }: Propriedades) {
         onChange={(evento) => aoMudar(evento.target.value)}
       />
       {valor !== "" && (
-        <button
-          type="button"
+        <Botao
+          variante="terciario"
           className={estilos.limpar}
           aria-label="Limpar busca"
           onClick={() => {
@@ -60,7 +61,7 @@ export function BuscaDeTransacoes({ valor, aoMudar }: Propriedades) {
           }}
         >
           Limpar
-        </button>
+        </Botao>
       )}
     </div>
   );

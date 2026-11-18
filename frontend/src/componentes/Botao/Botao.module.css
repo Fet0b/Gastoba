@@ -1,0 +1,75 @@
+.botao {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--espaco-2);
+  min-height: max(var(--altura-minima-do-botao), var(--alvo-de-toque));
+  padding: var(--espaco-2) var(--espaco-4);
+  border: 0;
+  border-radius: var(--raio-campo);
+  font: inherit;
+  font-size: var(--texto-pequeno);
+  line-height: var(--texto-pequeno-linha);
+  font-weight: var(--peso-secao);
+  cursor: pointer;
+  transition: background-color var(--duracao-curta) var(--curva-saida);
+}
+
+.botao:focus-visible {
+  outline: var(--anel-de-foco);
+  outline-offset: var(--afastamento-do-foco);
+}
+
+.botao:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.botao[data-variante="primario"] {
+  background: var(--cor-ametista);
+  color: var(--cor-noite);
+  font-weight: var(--peso-secao);
+}
+
+.botao[data-variante="primario"]:hover:not(:disabled) {
+  background: var(--cor-ametista-hover);
+}
+
+.botao[data-variante="secundario"] {
+  background: var(--superficie-tonal);
+  color: var(--cor-nevoa);
+}
+
+.botao[data-variante="secundario"]:hover:not(:disabled) {
+  background: var(--superficie-tonal-hover);
+}
+
+.botao[data-variante="terciario"] {
+  background: transparent;
+  color: var(--cor-lavanda);
+}
+
+.botao[data-variante="terciario"]:hover:not(:disabled),
+.botao[data-variante="terciario"]:focus-visible {
+  text-decoration: underline;
+}
+
+.botao[data-variante="terciario"]:hover:not(:disabled) {
+  background: var(--superficie-badge);
+}
+
+/* Destrutivo: só dentro do DialogoDeConfirmacao */
+.botao[data-variante="destrutivo"] {
+  background: var(--cor-brasa);
+  color: var(--cor-noite);
+}
+
+.botao[data-variante="destrutivo"]:hover:not(:disabled) {
+  filter: brightness(1.08);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .botao {
+    transition: none;
+  }
+}

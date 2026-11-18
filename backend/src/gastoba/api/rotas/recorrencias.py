@@ -28,10 +28,10 @@ from gastoba.domain.usuario import Usuario
 roteador = APIRouter(tags=["recorrencias"])
 
 _ERRO = {"model": RespostaDeErro}
-_RESPOSTAS_DE_ERRO = {401: _ERRO, 403: _ERRO, 404: _ERRO, 422: _ERRO}
+_RESPOSTAS_DE_ERRO = {401: _ERRO, 403: _ERRO, 404: _ERRO, 409: _ERRO, 422: _ERRO}
 
 
-def _para_resposta(recorrencia: Recorrencia) -> RecorrenciaResposta:
+def recorrencia_para_resposta(recorrencia: Recorrencia) -> RecorrenciaResposta:
     return RecorrenciaResposta(
         id=recorrencia.id,
         tipo=recorrencia.tipo.value,
@@ -71,7 +71,7 @@ def criar_recorrencia(
         requisicao.tags,
         requisicao.fim,
     )
-    return _para_resposta(recorrencia)
+    return recorrencia_para_resposta(recorrencia)
 
 
 @roteador.get(
@@ -81,7 +81,7 @@ def listar_recorrencias(
     usuario: Annotated[Usuario, Depends(obter_usuario_atual)],
     caso_de_uso: Annotated[ListarRecorrencias, Depends(obter_listar_recorrencias)],
 ) -> list[RecorrenciaResposta]:
-    return [_para_resposta(r) for r in caso_de_uso.executar(usuario.id)]
+    return [recorrencia_para_resposta(r) for r in caso_de_uso.executar(usuario.id)]
 
 
 @roteador.put(
@@ -105,7 +105,7 @@ def alterar_recorrencia(
         requisicao.tags,
         requisicao.fim,
     )
-    return _para_resposta(recorrencia)
+    return recorrencia_para_resposta(recorrencia)
 
 
 @roteador.delete(

@@ -1,7 +1,8 @@
+import {despesasDoPeriodo} from "../transacoes/despesas";
 import { useEffect, useState } from "react";
 
 import { ErroDaApiCliente } from "../api/cliente";
-import { useCategorias, useContas, useGanhos, useGastos, useProgressoDasMetas } from "../api/consultas";
+import { useCategorias, useAlvosDasMetas, useMovimentosDeInvestimento, useContas, useGanhos, useGastos, useProgressoDasMetas } from "../api/consultas";
 import type { MensagemDoAviso } from "../componentes/Aviso/Aviso";
 import { Cartao } from "../componentes/Cartao/Cartao";
 import { GraficoDeRitmo } from "../componentes/Grafico/GraficoDeRitmo/GraficoDeRitmo";
@@ -57,9 +58,12 @@ export function Inicio({ navegacao }: { navegacao: Navegacao }) {
 
   const contas = useContas();
   const gastos = useGastos(limites(periodo));
+  const movimentos = useMovimentosDeInvestimento(limites(periodo).inicio,limites(periodo).fim);
+  const despesas = gastos.dados !== undefined && movimentos.dados !== undefined ? despesasDoPeriodo(gastos.dados,movimentos.dados) : undefined;
   const ganhos = useGanhos(limites(periodo));
   const metas = useProgressoDasMetas(mesDoPeriodo(periodo));
-  const categorias = useCategorias();
+  const categorias = useAlvosDasMetas();
+  const categoriasDosGastos = useCategorias();
 
   // Uma consulta que falha pisca o olho e avisa; os dados em cache continuam na tela.
   function avisarFalha(erro: unknown): void {
@@ -89,14 +93,14 @@ export function Inicio({ navegacao }: { navegacao: Navegacao }) {
   const irParaTransacoes = () => navegacao.aoIrPara("transacoes");
   const momento = momentoDoPeriodo(periodo, periodoAtual());
   const renda = ganhos.dados && somar(ganhos.dados.map((ganho) => ganho.valor));
-  const gasto = gastos.dados && somar(gastos.dados.map((item) => item.valor));
+  const gasto = despesas && somar(despesas.map((item) => item.valor));
   const nomesDasCategorias = Object.fromEntries(
     (categorias.dados ?? []).map((categoria) => [categoria.codigo, categoria.nome]),
   );
   const aviso = avisoDoMes(metas.dados, nomesDasCategorias);
 
   let ritmo;
-  if (gastos.dados === undefined || renda === undefined) {
+  if (despesas === undefined || renda === undefined) {
     ritmo = (
       <p className={estilos.estado}>
         {gastos.carregando || ganhos.carregando
@@ -109,9 +113,9 @@ export function Inicio({ navegacao }: { navegacao: Navegacao }) {
       <GraficoDeRitmo
         periodo={periodo}
         acumulado={gastoAcumuladoPorDia(
-          gastos.dados,
+          despesas,
           periodo,
-          ultimoDiaDaCurva(momento, periodo, gastos.dados),
+          ultimoDiaDaCurva(momento, periodo, despesas),
         )}
         ideal={ritmoIdealPorDia(renda, periodo)}
         mesFuturo={momento === "futuro"}
@@ -127,12 +131,15 @@ export function Inicio({ navegacao }: { navegacao: Navegacao }) {
       mensagem={mensagem}
       aoDispensarMensagem={() => definirMensagem(null)}
       controles={{ periodo, aoMudarPeriodo: definirPeriodo }}
+      cabecalho={{ titulo: "Seu mês, com clareza.", subtitulo: "Acompanhe seus gastos e cuide das suas metas." }}
     >
-      <div className={estilos.conteudo}>
-        <Cartao variante="destaque" aria-label="Resumo do mês">
+
+      <div className={estilos.conteudo} data-com-aviso={aviso !== null}>
+        <Cartao variante="destaque" aria-label="Resumo do mês" className={estilos.resumo}>
           <ResumoDoMes
             renda={renda}
             gasto={gasto}
+            aportes={metas.dados === undefined ? undefined : metas.dados.aportes_do_mes ?? "0.00"}
             dinheiroTotal={dinheiroTotalDasContas(contas.dados)}
             momento={momento}
             aoRegistrarGanho={irParaTransacoes}
@@ -140,7 +147,6 @@ export function Inicio({ navegacao }: { navegacao: Navegacao }) {
         </Cartao>
 
         <Cartao variante="destaque" aria-label="Metas do mês" className={estilos.metas}>
-          <h2 className={estilos.titulo}>Metas do mês</h2>
           <MetasDoMes
             resumo={metas.dados}
             carregando={metas.carregando}
@@ -149,24 +155,26 @@ export function Inicio({ navegacao }: { navegacao: Navegacao }) {
           />
         </Cartao>
 
-        <Cartao aria-label="Ritmo do mês">
+        <Cartao aria-label="Ritmo do mês" className={estilos.ritmo}>
           <h2 className={estilos.titulo}>Ritmo do mês</h2>
           {ritmo}
         </Cartao>
 
-        <Cartao>
+        {aviso !== null && (
+          <div className={estilos.aviso}>
+            <AvisoDoMes aviso={aviso} aoVerOrcamento={() => navegacao.aoIrPara("orcamento")} />
+          </div>
+        )}
+
+        <Cartao className={estilos.ultimos}>
           <UltimosGastos
             gastos={gastos.dados}
             carregando={gastos.carregando}
             contas={contas.dados}
-            categorias={categorias.dados}
+            categorias={categoriasDosGastos.dados}
             aoVerTodas={irParaTransacoes}
           />
         </Cartao>
-
-        <div className={estilos.aviso}>
-          <AvisoDoMes aviso={aviso} />
-        </div>
       </div>
     </Pagina>
   );

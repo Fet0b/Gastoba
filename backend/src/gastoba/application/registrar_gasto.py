@@ -1,7 +1,7 @@
 from datetime import date
 from uuid import UUID
 
-from gastoba.domain.categoria import CategoriaDoGasto
+from gastoba.domain.categoria import CategoriaDoGasto, exigir_categoria_ativa
 from gastoba.domain.dinheiro import Dinheiro
 from gastoba.domain.excecoes import ContaNaoEncontrada
 from gastoba.domain.gasto import Gasto
@@ -24,6 +24,8 @@ class RegistrarGasto:
         tags: list[str],
     ) -> Gasto:
         """Grava o gasto e debita a conta numa só transação; se algo falhar, nada é gravado."""
+        if categoria is not None:
+            exigir_categoria_ativa(categoria)
         with self._unidade_de_trabalho as uow:
             conta = uow.contas.obter(usuario_id, conta_id)
             if conta is None:

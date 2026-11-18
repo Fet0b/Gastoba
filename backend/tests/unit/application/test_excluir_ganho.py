@@ -3,11 +3,22 @@ from uuid import uuid4
 
 import pytest
 
+from gastoba.application.aceitar_transacao_importada import AceitarTransacaoImportada
+from gastoba.application.aceitar_transacao_importada_dividida import (
+    AceitarTransacaoImportadaDividida,
+)
 from gastoba.application.excluir_ganho import ExcluirGanho
 from gastoba.application.registrar_ganho import RegistrarGanho
+from gastoba.domain.conta import OrigemDaConta
 from gastoba.domain.dinheiro import Dinheiro
+from gastoba.domain.divisao_da_transacao import ParteDaTransacao
 from gastoba.domain.excecoes import GanhoDeRecorrencia, GanhoNaoEncontrado
 from gastoba.domain.ganho import Ganho
+from gastoba.domain.transacao_importada import (
+    EstadoDaTransacaoImportada,
+    SentidoDaTransacao,
+    TransacaoImportada,
+)
 
 USUARIO_ID = uuid4()
 INICIO = date(2026, 10, 1)
@@ -88,3 +99,114 @@ def test_ganho_gerado_por_recorrencia_nao_pode_ser_excluido(unidade_de_trabalho,
         ExcluirGanho(unidade_de_trabalho).executar(USUARIO_ID, gerado.id)
 
     assert saldo(unidade_de_trabalho, conta.id) == Dinheiro(1000)
+
+
+def semear_transacao_de_entrada(unidade_de_trabalho, semear_conta):
+    conta = semear_conta(
+        usuario_id=USUARIO_ID, saldo=Dinheiro(50000), origem=OrigemDaConta.OPEN_FINANCE
+    )
+    transacao = TransacaoImportada(
+        conta.id,
+        "t-exemplo",
+        date(2026, 10, 5),
+        "Entrada exemplo",
+        Dinheiro(10000),
+        SentidoDaTransacao.ENTRADA,
+    )
+    with unidade_de_trabalho as uow:
+        uow.transacoes_importadas.adicionar_se_nova(transacao)
+        uow.commit()
+    return conta, transacao
+
+
+def estado_da(unidade_de_trabalho, transacao):
+    with unidade_de_trabalho as uow:
+        return uow.transacoes_importadas.obter(USUARIO_ID, transacao.id).estado
+
+
+def test_excluir_ganho_aceito_da_caixa_devolve_a_transacao_a_caixa(
+    unidade_de_trabalho, semear_conta
+):
+    conta, transacao = semear_transacao_de_entrada(unidade_de_trabalho, semear_conta)
+    ganho = AceitarTransacaoImportada(unidade_de_trabalho).executar(
+        USUARIO_ID, transacao.id, None, []
+    )
+    assert estado_da(unidade_de_trabalho, transacao) == EstadoDaTransacaoImportada.ACEITA
+
+    ExcluirGanho(unidade_de_trabalho).executar(USUARIO_ID, ganho.id)
+
+    assert estado_da(unidade_de_trabalho, transacao) == EstadoDaTransacaoImportada.PENDENTE
+    # O saldo de conta importada é do banco: nem aceitar nem excluir o altera.
+    assert saldo(unidade_de_trabalho, conta.id) == Dinheiro(50000)
+    # A pessoa pode decidir de novo: aceitar outra vez funciona.
+    AceitarTransacaoImportada(unidade_de_trabalho).executar(USUARIO_ID, transacao.id, None, [])
+
+
+def test_excluir_ganho_manual_nao_mexe_em_transacao_nenhuma(unidade_de_trabalho, semear_conta):
+    _, transacao = semear_transacao_de_entrada(unidade_de_trabalho, semear_conta)
+    AceitarTransacaoImportada(unidade_de_trabalho).executar(USUARIO_ID, transacao.id, None, [])
+    conta = semear_conta(usuario_id=USUARIO_ID, saldo=Dinheiro(0))
+    manual = registrar(unidade_de_trabalho, conta.id, 700)
+
+    ExcluirGanho(unidade_de_trabalho).executar(USUARIO_ID, manual.id)
+
+    assert estado_da(unidade_de_trabalho, transacao) == EstadoDaTransacaoImportada.ACEITA
+
+
+def test_excluir_uma_parte_de_transacao_dividida_nao_reabre_enquanto_sobra_parte(
+    unidade_de_trabalho, semear_conta
+):
+    _, transacao = semear_transacao_de_entrada(unidade_de_trabalho, semear_conta)
+    criados = AceitarTransacaoImportadaDividida(unidade_de_trabalho).executar(
+        USUARIO_ID,
+        transacao.id,
+        [ParteDaTransacao(None, (), 60), ParteDaTransacao(None, (), 40)],
+    )
+
+    ExcluirGanho(unidade_de_trabalho).executar(USUARIO_ID, criados[0].id)
+    # Reabrir agora deixaria a outra parte contada duas vezes se a pessoa aceitasse de novo.
+    assert estado_da(unidade_de_trabalho, transacao) == EstadoDaTransacaoImportada.ACEITA
+
+    ExcluirGanho(unidade_de_trabalho).executar(USUARIO_ID, criados[1].id)
+    assert estado_da(unidade_de_trabalho, transacao) == EstadoDaTransacaoImportada.PENDENTE
+
+
+def test_excluir_ganho_cuja_transacao_ja_esta_pendente_ou_sumiu_nao_falha(
+    unidade_de_trabalho, semear_conta
+):
+    conta, transacao = semear_transacao_de_entrada(unidade_de_trabalho, semear_conta)
+    ganho = AceitarTransacaoImportada(unidade_de_trabalho).executar(
+        USUARIO_ID, transacao.id, None, []
+    )
+    with unidade_de_trabalho as uow:
+        uow.transacoes_importadas.obter(USUARIO_ID, transacao.id)
+    estado = unidade_de_trabalho.confirmado
+    del estado.transacoes_importadas[transacao.id]
+
+    ExcluirGanho(unidade_de_trabalho).executar(USUARIO_ID, ganho.id)
+
+    with unidade_de_trabalho as uow:
+        assert uow.ganhos.obter(USUARIO_ID, ganho.id) is None
+
+
+def test_falha_ao_reabrir_a_transacao_desfaz_a_exclusao_do_ganho(
+    unidade_de_trabalho, semear_conta, monkeypatch
+):
+    conta, transacao = semear_transacao_de_entrada(unidade_de_trabalho, semear_conta)
+    ganho = AceitarTransacaoImportada(unidade_de_trabalho).executar(
+        USUARIO_ID, transacao.id, None, []
+    )
+
+    def falhar(self, transacao):
+        raise RuntimeError("falha simulada")
+
+    with unidade_de_trabalho as uow:
+        monkeypatch.setattr(type(uow.transacoes_importadas), "atualizar_estado", falhar)
+
+    with pytest.raises(RuntimeError):
+        ExcluirGanho(unidade_de_trabalho).executar(USUARIO_ID, ganho.id)
+
+    monkeypatch.undo()
+    with unidade_de_trabalho as uow:
+        assert uow.ganhos.obter(USUARIO_ID, ganho.id) is not None
+    assert estado_da(unidade_de_trabalho, transacao) == EstadoDaTransacaoImportada.ACEITA

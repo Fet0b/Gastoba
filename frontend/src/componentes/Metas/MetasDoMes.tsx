@@ -1,35 +1,23 @@
-import type { CSSProperties } from "react";
-
-import type { Categoria, ResumoDasMetas } from "../../api/tipos";
-import { formatar } from "../../dinheiro/dinheiro";
-import { Medidor } from "./Medidor";
+import type { AlvoDaMeta, ResumoDasMetas } from "../../api/tipos";
+import { Botao } from "../Botao/Botao";
+import { LinhaDaMeta } from "./LinhaDaMeta";
 import estilos from "./Metas.module.css";
 
 type Propriedades = {
   /** `undefined` enquanto a primeira busca não respondeu (ou se ela falhou). */
   resumo: ResumoDasMetas | undefined;
   carregando: boolean;
-  categorias: Categoria[] | undefined;
+  categorias: AlvoDaMeta[] | undefined;
   /** Leva à aba de orçamento. */
   aoAbrirOrcamento: () => void;
-  /** Filtra a lista de gastos pela categoria (clicar na ativa limpa); sem ele, não há o botão. */
-  aoAlternarCategoria?: (codigo: string) => void;
-  categoriaAtiva?: string | null;
 };
 
 /**
- * "Metas do mês" na tela inicial: a renda do mês e uma barra por categoria que
- * tem meta, para ver de relance quão dentro ou fora da meta a pessoa está. O
- * nome da categoria filtra os gastos; sem metas, um convite para defini-las.
+ * "Metas do mês" na tela inicial: uma linha compacta por categoria que tem meta (barra,
+ * percentual da renda e o que resta), para ver de relance quão dentro ou fora da meta a pessoa
+ * está. Sem metas, um convite para defini-las. A renda do mês fica no resumo, não aqui.
  */
-export function MetasDoMes({
-  resumo,
-  carregando,
-  categorias,
-  aoAbrirOrcamento,
-  aoAlternarCategoria,
-  categoriaAtiva = null,
-}: Propriedades) {
+export function MetasDoMes({ resumo, carregando, categorias, aoAbrirOrcamento }: Propriedades) {
   const nomes = new Map(categorias?.map((categoria) => [categoria.codigo, categoria.nome]));
 
   let conteudo;
@@ -47,29 +35,16 @@ export function MetasDoMes({
     );
   } else {
     conteudo = (
-      <ul className={estilos.lista}>
-        {resumo.metas.map((progresso, indice) => {
-          const nome = nomes.get(progresso.categoria) ?? progresso.categoria;
-          return (
-            <li
-              key={progresso.categoria}
-              className={estilos.itemDoPainel}
-              style={{ "--indice": indice } as CSSProperties}
-            >
-              <Medidor progresso={progresso} nomeDaCategoria={nome} />
-              {aoAlternarCategoria && (
-                <button
-                  type="button"
-                  className={estilos.filtrar}
-                  aria-pressed={categoriaAtiva === progresso.categoria}
-                  onClick={() => aoAlternarCategoria(progresso.categoria)}
-                >
-                  {categoriaAtiva === progresso.categoria ? "Limpar filtro" : `Ver gastos de ${nome}`}
-                </button>
-              )}
-            </li>
-          );
-        })}
+      <ul className={estilos.linhasDoInicio}>
+        {resumo.metas.map((progresso, indice) => (
+          <LinhaDaMeta
+            key={progresso.categoria}
+            progresso={progresso}
+            nome={progresso.nome ?? nomes.get(progresso.categoria) ?? progresso.categoria}
+            indice={indice}
+            compacta
+          />
+        ))}
       </ul>
     );
   }
@@ -77,14 +52,10 @@ export function MetasDoMes({
   return (
     <div className={estilos.metasDoMes} aria-busy={carregando}>
       <div className={estilos.cabecalhoDoBloco}>
-        {resumo !== undefined && (
-          <p className={estilos.renda}>
-            Renda do mês <strong className="valor">{formatar(resumo.renda)}</strong>
-          </p>
-        )}
-        <button type="button" className={estilos.abrir} onClick={aoAbrirOrcamento}>
+        <h2 className={estilos.tituloDoBloco}>Metas do mês</h2>
+        <Botao variante="terciario" seta onClick={aoAbrirOrcamento}>
           Ver orçamento
-        </button>
+        </Botao>
       </div>
       {conteudo}
     </div>

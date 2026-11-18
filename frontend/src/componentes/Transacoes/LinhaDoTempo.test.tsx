@@ -12,14 +12,15 @@ const CONTAS: Conta[] = [
   { id: "c1", nome: "Nubank", saldo: "0.00", origem: "manual", tipo: "corrente" },
 ];
 const CATEGORIAS: Categoria[] = [
-  { codigo: "conforto", nome: "Conforto" },
-  { codigo: "lazer", nome: "Lazer" },
+  { codigo: "conforto", nome: "Conforto", legada: false },
+  { codigo: "lazer", nome: "Lazer", legada: false },
 ];
 
 function gasto(descricao: string, data: string, extra: Partial<Gasto> = {}): Gasto {
   return {
     id: `g-${descricao}`, conta_id: "c1", valor: "10.00", descricao, data, categoria: "conforto",
     tags: [], origem: "manual", recorrencia_id: null, ...extra,
+    valor_coberto: "0.00", coberturas: [],
   };
 }
 
@@ -100,25 +101,44 @@ describe("LinhaDoTempo", () => {
     expect(screen.getByText("Avulso").closest("li")?.textContent).not.toContain("Recorrente");
   });
 
-  it("só o ganho avulso tem o botão Excluir; o de recorrência e o gasto não", () => {
+  it("só o ganho avulso tem o item Excluir no menu da linha; o de recorrência e o gasto não", () => {
     montar(
       [gasto("Aluguel", "2026-10-05")],
       [ganho("Bolsa", "2026-10-05", { recorrencia_id: "r1" }), ganho("Avulso", "2026-10-06")],
     );
 
-    expect(screen.getAllByRole("button", { name: /Excluir/ })).toHaveLength(1);
-    expect(screen.getByRole("button", { name: "Excluir o ganho Avulso" })).toBeTruthy();
+    expect(screen.queryByRole("button", { name: /^Excluir/ })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Mais ações de Bolsa" })).toBeNull();
+    // O gasto tem o menu (reserva), mas sem Excluir.
+    fireEvent.click(screen.getByRole("button", { name: "Mais ações de Aluguel" }));
+    expect(screen.queryByRole("menuitem", { name: /Excluir/ })).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Mais ações de Aluguel" }));
+    fireEvent.click(screen.getByRole("button", { name: "Mais ações de Avulso" }));
+    expect(screen.getAllByRole("menuitem", { name: /Excluir/ })).toHaveLength(1);
+    expect(screen.getByRole("menuitem", { name: "Excluir o ganho Avulso" })).toBeTruthy();
   });
 
-  it("excluir passa o ganho a aoExcluirGanho depois da confirmação", async () => {
+  it("excluir passa o ganho a aoExcluirGanho depois da confirmação no diálogo", async () => {
     const aoExcluirGanho = vi.fn().mockResolvedValue(true);
     const avulso = ganho("Avulso", "2026-10-06");
     montar([], [avulso], { aoExcluirGanho });
 
-    fireEvent.click(screen.getByRole("button", { name: "Excluir o ganho Avulso" }));
+    fireEvent.click(screen.getByRole("button", { name: "Mais ações de Avulso" }));
+    fireEvent.click(screen.getByRole("menuitem", { name: "Excluir o ganho Avulso" }));
+    expect(screen.getByRole("dialog", { name: "Excluir Avulso?" })).toBeTruthy();
+    expect(aoExcluirGanho).not.toHaveBeenCalled();
     fireEvent.click(screen.getByRole("button", { name: "Confirmar exclusão" }));
 
     await vi.waitFor(() => expect(aoExcluirGanho).toHaveBeenCalledWith(expect.objectContaining({ id: avulso.id })));
+  });
+
+  it("Mostrar mais é um botão secundário", () => {
+    const muitos = Array.from({ length: TAMANHO_DA_PAGINA + 1 }, (_, i) =>
+      gasto(`Item ${String(i).padStart(3, "0")}`, "2026-10-10"),
+    );
+    montar(muitos, []);
+
+    expect(screen.getByRole("button", { name: /Mostrar mais/ }).getAttribute("data-papel")).toBe("secundaria");
   });
 
   it("pagina de 100 em 100: Mostrar mais revela o restante", () => {

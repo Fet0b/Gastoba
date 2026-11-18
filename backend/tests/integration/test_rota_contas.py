@@ -131,3 +131,36 @@ def test_listar_contas_ordena_por_nome(cliente_autenticado):
     assert [conta["nome"] for conta in contas] == ["A", "B"]
     assert all(conta["saldo"] == "5.00" for conta in contas)
     assert all(conta["tipo"] == "corrente" for conta in contas)
+
+
+def test_excluir_conta_apaga_a_conta_com_gastos_e_ganhos(cliente_autenticado):
+    conta = _criar_conta(cliente_autenticado, nome="Carteira", saldo_inicial="50.00").json()
+    outra = _criar_conta(cliente_autenticado, nome="Banco", saldo_inicial="10.00").json()
+    gasto = cliente_autenticado.post(
+        "/gastos",
+        json={
+            "conta_id": conta["id"],
+            "valor": "5.00",
+            "descricao": "Pão",
+            "data": "2026-10-10",
+            "categoria": "conforto",
+            "tags": [],
+        },
+    )
+    assert gasto.status_code == 201, gasto.text
+
+    resposta = cliente_autenticado.delete(f"/contas/{conta['id']}")
+
+    assert resposta.status_code == 204
+    assert [c["id"] for c in cliente_autenticado.get("/contas").json()] == [outra["id"]]
+    gastos = cliente_autenticado.get(
+        "/gastos", params={"inicio": "2026-10-01", "fim": "2026-10-31"}
+    )
+    assert gastos.json() == []
+
+
+def test_excluir_conta_inexistente_devolve_404(cliente_autenticado):
+    resposta = cliente_autenticado.delete("/contas/00000000-0000-4000-8000-000000000000")
+
+    assert resposta.status_code == 404
+    _confere_formato_de_erro(resposta, "conta_nao_encontrada")

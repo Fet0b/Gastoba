@@ -26,6 +26,12 @@ describe("BuscaDeTransacoes", () => {
     expect(document.activeElement).toBe(screen.getByLabelText("Buscar transações"));
   });
 
+  it("Limpar é um botão terciário", () => {
+    render(<BuscaDeTransacoes valor="pix" aoMudar={vi.fn()} />);
+
+    expect(screen.getByRole("button", { name: "Limpar busca" }).getAttribute("data-papel")).toBe("terciaria");
+  });
+
   it("o ícone da lupa é decorativo", () => {
     const { container } = render(<BuscaDeTransacoes valor="" aoMudar={vi.fn()} />);
 

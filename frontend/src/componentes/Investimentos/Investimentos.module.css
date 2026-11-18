@@ -1,0 +1,577 @@
+/* Tela de investimentos: posições, aportes e formulários. Cartões em Veludo sobre Ameixa. */
+
+.categorias {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espaco-4);
+  min-width: 0;
+}
+
+.categoria {
+  min-width: 0;
+  border: var(--borda-de-camada);
+  border-radius: var(--raio-painel);
+  background: var(--cor-ameixa);
+}
+
+.resumoDaCategoria {
+  padding: var(--espaco-3) var(--espaco-4);
+  cursor: pointer;
+  overflow-wrap: anywhere;
+}
+
+.resumoDaCategoria::marker {
+  color: var(--cor-ametista);
+}
+
+.resumoDaCategoria:focus-visible {
+  outline: var(--anel-de-foco);
+  outline-offset: var(--afastamento-do-foco);
+  border-radius: var(--raio-painel);
+}
+
+.nomeDaCategoria {
+  margin-inline-end: var(--espaco-3);
+  font-weight: var(--peso-secao);
+}
+
+.totalDaCategoria {
+  display: block;
+  margin-top: var(--espaco-1);
+  font-family: var(--fonte-titulo);
+  font-weight: var(--peso-secao);
+}
+
+/* Renda fixa: um cartão recolhível por tipo de título, dentro da categoria. */
+.subcategorias {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espaco-3);
+  padding: var(--espaco-3) var(--espaco-4) var(--espaco-4);
+  border-top: var(--borda-de-camada);
+}
+
+.subcategoria {
+  min-width: 0;
+  border: var(--borda-de-camada);
+  border-radius: var(--raio-cartao);
+  background: var(--cor-noite);
+}
+
+.subcategoria > .resumoDaCategoria:focus-visible {
+  border-radius: var(--raio-cartao);
+}
+
+.categoria > .posicoes,
+.subcategoria > .posicoes {
+  display: flex;
+  flex-direction: column;
+  padding: 0 var(--espaco-4);
+  border-top: var(--borda-de-camada);
+}
+
+/* P3: cabeçalho visual das colunas, só no computador; a linha da posição tem o mesmo molde. */
+.cabecalhoDaLista {
+  display: none;
+}
+
+@media (min-width: 48rem) {
+  .cabecalhoDaLista {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--espaco-3);
+    padding: var(--espaco-3) var(--espaco-4) 0;
+    color: var(--cor-bruma);
+    font-size: var(--texto-minimo);
+    line-height: var(--texto-minimo-linha);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+}
+
+.movimentos {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espaco-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.movimento {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espaco-2);
+  padding: var(--espaco-3) var(--espaco-4);
+  border-radius: var(--raio-cartao);
+  background: var(--cor-veludo);
+}
+
+/* Posição como linha da lista (P3): só divisor, sem fundo nem sombra (P6). */
+.posicao {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espaco-3);
+  min-width: 0;
+  padding: var(--espaco-4) 0;
+  border-top: var(--borda-de-camada);
+}
+
+.posicao:first-child {
+  border-top: 0;
+}
+
+.identificacao {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--espaco-1);
+  min-width: 0;
+}
+
+.selo {
+  padding: 2px var(--espaco-2);
+  border: 1px solid var(--cor-bruma);
+  border-radius: var(--raio-chip);
+  color: var(--cor-nevoa);
+  font-size: var(--texto-minimo);
+  line-height: var(--texto-minimo-linha);
+}
+
+.topoDaPosicao {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--espaco-3);
+}
+
+.topoDaPosicao > :first-child {
+  flex: 1 1 10rem;
+  min-width: 0;
+}
+
+.nomeDaPosicao {
+  font-weight: var(--peso-secao);
+  overflow-wrap: anywhere;
+}
+
+.nomeDoMovimento {
+  font-weight: var(--peso-secao);
+  overflow-wrap: anywhere;
+}
+
+.saldoDaPosicao {
+  flex: none;
+  font-variant-numeric: tabular-nums;
+  font-family: var(--fonte-titulo);
+  font-size: var(--texto-titulo);
+  font-weight: var(--peso-secao);
+}
+
+.apoio {
+  color: var(--cor-bruma);
+  font-size: var(--texto-pequeno);
+}
+
+.destinacoes {
+  width: 100%;
+  font-variant-numeric: tabular-nums;
+  border-collapse: collapse;
+  font-size: var(--texto-pequeno);
+}
+
+.destinacoes th,
+.destinacoes td {
+  padding: var(--espaco-1) var(--espaco-2);
+  text-align: left;
+}
+
+.destinacoes thead th {
+  color: var(--cor-bruma);
+  font-weight: 500;
+}
+
+.historico {
+  color: var(--cor-bruma);
+  font-size: var(--texto-pequeno);
+}
+
+.historico summary {
+  cursor: pointer;
+}
+
+.historico summary:focus-visible,
+.entrada:focus-visible,
+.primario:focus-visible,
+.secundario:focus-visible,
+.alternador:focus-visible {
+  outline: var(--anel-de-foco);
+  outline-offset: var(--afastamento-do-foco);
+}
+
+.realocacoes {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espaco-1);
+  margin-top: var(--espaco-2);
+  color: var(--cor-nevoa);
+}
+
+.formulario {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espaco-2);
+}
+
+.campo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espaco-1);
+}
+
+.rotulo {
+  color: var(--cor-bruma);
+  font-size: var(--texto-pequeno);
+}
+
+.entrada {
+  min-height: var(--alvo-de-toque);
+  padding: var(--espaco-1) var(--espaco-3);
+  border: 1px solid var(--cor-ameixa);
+  border-radius: var(--raio-campo);
+  background: var(--cor-noite);
+  color: var(--cor-nevoa);
+  font: inherit;
+}
+
+.opcoes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--espaco-2) var(--espaco-4);
+}
+
+.opcao {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--espaco-2);
+}
+
+.erro {
+  color: var(--cor-brasa);
+  font-size: var(--texto-corpo);
+}
+
+.motivos {
+  padding-left: var(--espaco-4);
+  color: var(--cor-bruma);
+  font-size: var(--texto-corpo);
+  list-style: disc;
+}
+
+.acoes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--espaco-2);
+}
+
+.primario,
+.secundario {
+  align-self: flex-start;
+  min-height: var(--alvo-de-toque);
+  padding: var(--espaco-1) var(--espaco-4);
+  border: 1px solid var(--cor-veludo);
+  border-radius: var(--raio-campo);
+  background: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.primario {
+  border-color: transparent;
+  background: var(--cor-ametista);
+  color: var(--cor-noite);
+  font-weight: var(--peso-secao);
+}
+
+.primario:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+/* Alternador de visão (destinação / tipo) e de janela (30 dias...). */
+.alternadores {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--espaco-2);
+}
+
+.alternador {
+  min-height: 2rem;
+  padding: var(--espaco-1) var(--espaco-3);
+  border: 1px solid var(--cor-veludo);
+  border-radius: var(--raio-chip);
+  background: none;
+  color: var(--cor-bruma);
+  font: inherit;
+  font-size: var(--texto-pequeno);
+  cursor: pointer;
+}
+
+.alternador[aria-pressed="true"] {
+  border-color: var(--cor-ametista);
+  color: var(--cor-lavanda);
+}
+
+/* Aplicado, rendimento e rentabilidade: o que a instituição informa. */
+.rentabilidade {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(8rem, 1fr));
+  gap: var(--espaco-2);
+  font-size: var(--texto-pequeno);
+}
+
+.rentabilidade > div {
+  padding: var(--espaco-2) var(--espaco-3);
+  border-radius: var(--raio-campo);
+  background: var(--cor-noite);
+}
+
+.ganho {
+  color: var(--cor-positivo);
+}
+
+.perda {
+  color: var(--cor-brasa);
+}
+
+.rolagem {
+  overflow-x: auto;
+}
+
+.trilho {
+  display: block;
+  height: var(--espaco-1);
+  margin-top: var(--espaco-1);
+  border-radius: var(--raio-chip);
+  background: var(--cor-noite);
+}
+
+.preenchimento {
+  display: block;
+  height: 100%;
+  border-radius: var(--raio-campo);
+  background: var(--cor-ametista);
+}
+
+.preenchimento[data-neutra="true"] {
+  background: var(--cor-bruma);
+}
+
+.rentabilidade dt {
+  color: var(--cor-bruma);
+}
+
+.rentabilidade dd {
+  margin: 0;
+  font-weight: var(--peso-secao);
+}
+
+/* A taxa contratada (ex.: 101,2% CDI), logo abaixo do tipo. */
+.taxa {
+  font-weight: var(--peso-secao);
+}
+
+/* "Desfazer" em dois passos: botão discreto, pergunta e confirmação. */
+.discreto,
+.perigo {
+  min-height: 2rem;
+  padding: var(--espaco-1) var(--espaco-3);
+  border: 1px solid var(--cor-veludo);
+  border-radius: var(--raio-chip);
+  background: none;
+  color: var(--cor-bruma);
+  font: inherit;
+  font-size: var(--texto-pequeno);
+  cursor: pointer;
+}
+
+.perigo {
+  border-color: var(--cor-brasa);
+  color: var(--cor-brasa);
+}
+
+.discreto:focus-visible,
+.perigo:focus-visible {
+  outline: var(--anel-de-foco);
+  outline-offset: var(--afastamento-do-foco);
+}
+
+.discreto:disabled,
+.perigo:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.confirmacao {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--espaco-2);
+  color: var(--cor-nevoa);
+}
+
+.linhaDesfazivel {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--espaco-2);
+}
+
+/* Posições: destinações compactas e colunas alinhadas entre as posições. */
+.destinacoes {
+  table-layout: fixed;
+}
+
+.destinacoes td,
+.destinacoes thead th:not(:first-child) {
+  text-align: right;
+}
+
+.colunaDoNome {
+  width: 40%;
+}
+
+.nomeEBotao {
+  display: flex;
+  align-items: center;
+  gap: var(--espaco-2);
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.acoesDaPosicao {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: var(--espaco-2) var(--espaco-3);
+}
+
+.acoesDaPosicao > .historico[open],
+.acoesDaPosicao > form,
+.acoesDaPosicao > :not(button):not(details) {
+  flex: 1 1 100%;
+}
+
+.acoesDaPosicao .historico summary {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--alvo-de-toque);
+}
+
+.dadosEmLinha {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--espaco-1) var(--espaco-3);
+}
+
+/* Em tela estreita (abaixo de 37.5rem) a tabela vira lista de blocos: nome e barra em cima, os
+   três valores em pares rótulo-valor embaixo. */
+.destinacoesEmLista {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.destinacaoEmLista {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espaco-2);
+  padding: var(--espaco-2) 0;
+  border-top: var(--borda-de-camada);
+}
+
+.destinacaoEmLista:first-child {
+  border-top: 0;
+}
+
+.nomeDaDestinacao {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espaco-1);
+  min-width: 0;
+  font-weight: var(--peso-secao);
+}
+
+.paresDaDestinacao {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espaco-1);
+  margin: 0;
+  font-size: var(--texto-pequeno);
+  font-variant-numeric: tabular-nums;
+}
+
+.paresDaDestinacao > div {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 0 var(--espaco-3);
+}
+
+.paresDaDestinacao dt {
+  color: var(--cor-bruma);
+}
+
+.paresDaDestinacao dd {
+  margin: 0;
+  white-space: nowrap;
+}
+
+/* Celular: cada nível (categoria, tipo de título, posição) não soma margem lateral nem vira um cartão
+   dentro de outro; o tipo de título vira um bloco separado só por uma linha. */
+@media (max-width: 37.5rem) {
+  .resumoDaCategoria {
+    padding-inline: var(--espaco-3);
+  }
+
+  .subcategorias {
+    gap: 0;
+    padding: 0;
+  }
+
+  .subcategoria {
+    border: 0;
+    border-top: var(--borda-de-camada);
+    border-radius: 0;
+    background: none;
+  }
+
+  .subcategoria > .resumoDaCategoria:focus-visible {
+    border-radius: var(--raio-campo);
+  }
+
+  .categoria > .posicoes,
+  .subcategoria > .posicoes {
+    padding-inline: var(--espaco-3);
+  }
+}
+
+.cabecalhoDaListaNova { display: grid; grid-template-columns: minmax(0, 1fr) 7rem 7rem 7rem 2.75rem; gap: var(--espaco-3); padding: var(--espaco-3) var(--espaco-4); color: var(--cor-bruma); font-size: var(--texto-rotulo); }
+.cabecalhoDaListaNova > :not(:first-child) { text-align: end; }
+.resumoDoGrupo { display: flex; flex: 1; align-items: center; flex-wrap: wrap; gap: var(--espaco-2); padding: var(--espaco-2) var(--espaco-3); font-size: var(--texto-rotulo); }
+.resumoDoGrupo strong { font-size: var(--texto-base); }
+.totalDoGrupo { margin-inline-start: auto; font-family: var(--fonte-titulo); font-variant-numeric: tabular-nums; }
+@media (max-width: 45rem) { .cabecalhoDaListaNova { display: none; } }
+
+.categorias { container-type: inline-size; }
+@container (max-width: 37.5rem) { .cabecalhoDaListaNova { display: none; } }
+.identificacaoDoMovimento { min-width: 0; }
+.nomeDoMovimento, .descricaoDoBanco { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.saldoDaPosicao[data-sentido="entrada"] { color: var(--cor-positivo); }
+.saldoDaPosicao[data-sentido="saida"] { color: var(--cor-negativo); }
+

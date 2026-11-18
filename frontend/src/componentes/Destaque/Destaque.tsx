@@ -9,18 +9,20 @@ type Propriedades = {
   /** Valor já formatado (quem chama formata o dinheiro). */
   valor: string;
   tom?: Tom;
+  /** Escala de números: um herói por tela; o padrão é grande. */
+  tamanho?: "heroi" | "grande" | "medio";
 };
 
 const PALAVRA_DO_TOM = { positivo: "Positivo", negativo: "Negativo" } as const;
 
 /** Rótulo e número grande, com algarismos proporcionais. O tom sempre vem com ícone e palavra. */
-export function Destaque({ rotulo, valor, tom = "neutro" }: Propriedades) {
+export function Destaque({ rotulo, valor, tom = "neutro", tamanho = "grande" }: Propriedades) {
   const nome =
     tom === "neutro"
       ? `${rotulo}: ${valor}`
       : `${rotulo}: ${valor}, ${PALAVRA_DO_TOM[tom].toLowerCase()}`;
   return (
-    <div className={estilos.destaque} data-tom={tom} role="group" aria-label={nome}>
+    <div className={estilos.destaque} data-tom={tom} data-tamanho={tamanho} role="group" aria-label={nome}>
       <span className={estilos.rotulo}>{rotulo}</span>
       <span className={estilos.valor}>{valor}</span>
       {tom !== "neutro" && (

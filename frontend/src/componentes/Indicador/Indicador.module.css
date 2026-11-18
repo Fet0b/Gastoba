@@ -1,0 +1,43 @@
+.indicador {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  gap: var(--espaco-3);
+  padding: var(--espaco-4);
+  background: var(--cor-veludo);
+  border: var(--borda-de-camada);
+  border-radius: var(--raio-cartao);
+}
+
+.rotulo {
+  display: flex;
+  align-items: center;
+  gap: var(--espaco-2);
+  font-size: var(--texto-rotulo);
+  color: var(--cor-bruma);
+}
+
+.valor {
+  margin-top: auto;
+  font-family: var(--fonte-titulo);
+  font-size: var(--numero-medio);
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+
+.nota {
+  font-size: var(--texto-pequeno);
+  color: var(--cor-bruma);
+}
+
+.indicador[data-tom="positivo"] .valor {
+  color: var(--cor-positivo);
+}
+
+.indicador[data-tom="negativo"] .valor {
+  color: var(--cor-negativo);
+}
+
+.indicador[data-tom="atencao"] .valor {
+  color: var(--cor-atencao);
+}

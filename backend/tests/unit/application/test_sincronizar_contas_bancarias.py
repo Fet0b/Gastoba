@@ -6,7 +6,7 @@ from gastoba.domain.conta import Conta, OrigemDaConta, TipoDaConta
 from gastoba.domain.dinheiro import Dinheiro
 from gastoba.domain.email import Email
 from gastoba.domain.excecoes import ProvedorIndisponivel
-from gastoba.domain.portas import ContaExterna, TransacaoExterna
+from gastoba.domain.portas import ContaExterna, InvestimentoExterno, TransacaoExterna
 from gastoba.domain.transacao_importada import EstadoDaTransacaoImportada, SentidoDaTransacao
 from gastoba.domain.usuario import Usuario
 
@@ -22,16 +22,36 @@ class RelogioFixo:
 class ProvedorFalso:
     """Satisfaz a porta ProvedorOpenFinance com dados fixos e registra as chamadas."""
 
-    def __init__(self, contas_por_item=None, transacoes_por_conta=None, falhar_item=()):
+    def __init__(
+        self,
+        contas_por_item=None,
+        transacoes_por_conta=None,
+        falhar_item=(),
+        investimentos_por_item=None,
+        falhar_investimentos=False,
+    ):
         self.contas_por_item = contas_por_item or {}
+        self.investimentos_por_item = investimentos_por_item or {}
+        self.falhar_investimentos = falhar_investimentos
         self.transacoes_por_conta = transacoes_por_conta or {}
         self.falhar_item = set(falhar_item)
         self.desde_pedido: dict[str, date] = {}
 
     def listar_contas(self, id_do_item):
         if id_do_item in self.falhar_item:
-            raise ProvedorIndisponivel("fora do ar")
+            raise ProvedorIndisponivel("fora do ar", motivo="contas http 404")
         return self.contas_por_item.get(id_do_item, [])
+
+    def listar_investimentos(self, id_do_item):
+        if self.falhar_investimentos:
+            raise ProvedorIndisponivel("fora do ar", motivo="investimentos http 500")
+        return self.investimentos_por_item.get(id_do_item, [])
+
+    def listar_faturas(self, id_da_conta):
+        return []
+
+    def listar_operacoes_do_investimento(self, id_do_investimento):
+        return []
 
     def listar_transacoes(self, id_da_conta, desde):
         self.desde_pedido[id_da_conta] = desde
@@ -129,7 +149,7 @@ def test_conta_manual_com_o_mesmo_nome_nao_impede_a_importada(unidade_de_trabalh
     assert resultado.falhas == 0
     with unidade_de_trabalho as uow:
         nomes = sorted(c.nome for c in uow.contas.listar(dono.id))
-    assert nomes == ["Nubank", "Nubank (abcdef)"]
+    assert nomes == ["Nubank", "Nubank (2)"]
 
 
 def test_falha_do_provedor_em_um_item_nao_impede_os_outros(unidade_de_trabalho):
@@ -240,3 +260,174 @@ def test_conta_existente_corrente_vira_cartao_na_rodada_seguinte(unidade_de_trab
     with unidade_de_trabalho as uow:
         [conta] = uow.contas.listar(dono.id)
     assert (conta.tipo, conta.saldo) == (TipoDaConta.CARTAO, Dinheiro(-500))
+
+
+def test_o_aviso_de_falha_traz_o_motivo_e_nenhum_identificador(unidade_de_trabalho, caplog):
+    criar_dono(unidade_de_trabalho)
+    provedor = ProvedorFalso(falhar_item={"item-secreto"})
+
+    with caplog.at_level("WARNING"):
+        sincronizador(unidade_de_trabalho, provedor, itens=("item-secreto",)).executar()
+
+    assert "contas http 404" in caplog.text
+    assert "item-secreto" not in caplog.text
+
+
+def cdb(id_externo="i1", centavos=200010, dados="{}"):
+    return InvestimentoExterno(
+        id_externo, "CDB Banco X", "FIXED_INCOME", "CDB", Dinheiro(centavos), dados
+    )
+
+
+def investimentos(unidade_de_trabalho, usuario_id):
+    with unidade_de_trabalho as uow:
+        return uow.investimentos.listar(usuario_id)
+
+
+def test_guarda_os_investimentos_sem_criar_conta_nem_alterar_o_resto(unidade_de_trabalho):
+    dono = criar_dono(unidade_de_trabalho)
+    provedor = ProvedorFalso(investimentos_por_item={"item-1": [cdb(dados='{"owner": "x"}')]})
+
+    resultado = sincronizador(unidade_de_trabalho, provedor).executar()
+
+    assert (resultado.contas, resultado.novas, resultado.falhas) == (0, 0, 0)
+    [posicao] = investimentos(unidade_de_trabalho, dono.id)
+    assert posicao.id_externo == "i1"
+    assert posicao.saldo == Dinheiro(200010)
+    assert posicao.dados == '{"owner": "x"}'
+    with unidade_de_trabalho as uow:
+        assert uow.contas.listar(dono.id) == []
+
+
+def test_rodar_de_novo_atualiza_a_posicao_sem_duplicar(unidade_de_trabalho):
+    dono = criar_dono(unidade_de_trabalho)
+    provedor = ProvedorFalso(investimentos_por_item={"item-1": [cdb()]})
+    sincronizador(unidade_de_trabalho, provedor).executar()
+    provedor.investimentos_por_item["item-1"] = [cdb(centavos=250000)]
+
+    sincronizador(unidade_de_trabalho, provedor).executar()
+
+    [posicao] = investimentos(unidade_de_trabalho, dono.id)
+    assert posicao.saldo == Dinheiro(250000)
+
+
+def test_falha_nos_investimentos_conta_uma_falha_e_nao_impede_contas_e_transacoes(
+    unidade_de_trabalho,
+):
+    dono = criar_dono(unidade_de_trabalho)
+    provedor = ProvedorFalso(
+        {"item-1": [ContaExterna("c1", "Conta Corrente", Dinheiro(100))]},
+        {"c1": [saida("t1")]},
+        falhar_investimentos=True,
+    )
+
+    resultado = sincronizador(unidade_de_trabalho, provedor).executar()
+
+    assert (resultado.contas, resultado.novas, resultado.falhas) == (1, 1, 1)
+    assert investimentos(unidade_de_trabalho, dono.id) == []
+
+
+def test_contas_do_banco_com_o_mesmo_nome_ganham_numero_sequencial_sem_vazar_o_id(
+    unidade_de_trabalho,
+):
+    dono = criar_dono(unidade_de_trabalho)
+    provedor = ProvedorFalso(
+        {
+            "item-1": [
+                ContaExterna("abc123-x", "BTG Banking", Dinheiro(0)),
+                ContaExterna("def456-y", "BTG Banking", Dinheiro(0)),
+                ContaExterna("fed789-z", "BTG Banking", Dinheiro(0)),
+            ]
+        }
+    )
+
+    resultado = sincronizador(unidade_de_trabalho, provedor).executar()
+
+    assert (resultado.contas, resultado.falhas) == (3, 0)
+    with unidade_de_trabalho as uow:
+        nomes = sorted(c.nome for c in uow.contas.listar(dono.id))
+    assert nomes == ["BTG Banking", "BTG Banking (2)", "BTG Banking (3)"]
+
+
+def test_nome_longo_repetido_continua_dentro_do_limite_com_o_numero(unidade_de_trabalho):
+    dono = criar_dono(unidade_de_trabalho)
+    nome = "N" * 100
+    provedor = ProvedorFalso(
+        {"item-1": [ContaExterna("a-1", nome, Dinheiro(0)), ContaExterna("b-2", nome, Dinheiro(0))]}
+    )
+
+    sincronizador(unidade_de_trabalho, provedor).executar()
+
+    with unidade_de_trabalho as uow:
+        nomes = sorted(c.nome for c in uow.contas.listar(dono.id))
+    assert len(nomes) == 2 and all(len(n) <= 100 for n in nomes)
+    assert nome in nomes and any(n.endswith(" (2)") for n in nomes)
+
+
+def test_conta_remunerada_nao_fabrica_posicao_a_partir_do_saldo_total(unidade_de_trabalho):
+    dono = criar_dono(unidade_de_trabalho)
+    provedor = ProvedorFalso(
+        {"item-1": [ContaExterna("c1", "BTG Investimentos", Dinheiro(96217))]},
+        {"c1": [saida("t1", 95645, descricao="CONTA REMUNERADA - APLICAÇÃO AUTOMÁTICA")]},
+    )
+
+    sincronizador(unidade_de_trabalho, provedor).executar()
+    sincronizador(unidade_de_trabalho, provedor).executar()
+
+    with unidade_de_trabalho as uow:
+        [conta] = uow.contas.listar(dono.id)
+        caixinhas = [p for p in uow.investimentos.listar_posicoes(dono.id) if p.tipo == "CAIXINHA"]
+    assert caixinhas == []
+    assert conta.saldo == Dinheiro(96217)
+
+
+def test_conta_sem_conta_remunerada_nao_ganha_caixinha(unidade_de_trabalho):
+    dono = criar_dono(unidade_de_trabalho)
+    provedor = ProvedorFalso(
+        {"item-1": [ContaExterna("c1", "Corrente", Dinheiro(100))]}, {"c1": [saida("t1")]}
+    )
+    sincronizador(unidade_de_trabalho, provedor).executar()
+    with unidade_de_trabalho as uow:
+        assert uow.investimentos.listar_posicoes(dono.id) == []
+
+
+def test_movimento_da_conta_remunerada_nunca_e_descartado_na_importacao(unidade_de_trabalho):
+    dono = criar_dono(unidade_de_trabalho)
+    provedor = ProvedorFalso(
+        {"item-1": [ContaExterna("c1", "BTG", Dinheiro(0))]},
+        {
+            "c1": [
+                saida(
+                    "t1",
+                    14100,
+                    operacao="TRANSFERENCIA_MESMA_INSTITUICAO",
+                    descricao="CONTA REMUNERADA - RESGATE AUTOMÁTICO",
+                )
+            ]
+        },
+    )
+    sincronizador(unidade_de_trabalho, provedor).executar()
+    assert [t.id_externo for t in caixa(unidade_de_trabalho, dono.id)] == ["t1"]
+
+
+def test_conta_com_caixinha_vira_remunerada_e_continua_nas_rodadas_seguintes(
+    unidade_de_trabalho,
+):
+    dono = criar_dono(unidade_de_trabalho)
+    provedor = ProvedorFalso(
+        {"item-1": [ContaExterna("c1", "BTG", Dinheiro(96217))]},
+        {"c1": [saida("t1", 95645, descricao="CONTA REMUNERADA - APLICAÇÃO AUTOMÁTICA")]},
+    )
+    sincronizador(unidade_de_trabalho, provedor).executar()
+    from gastoba.application.definir_caixinha import DefinirCaixinha
+
+    with unidade_de_trabalho as u:
+        [conta] = u.contas.listar(dono.id)
+    DefinirCaixinha(unidade_de_trabalho).executar(dono.id, conta.id, Dinheiro(96217), HOJE)
+    provedor.transacoes_por_conta = {}
+    sincronizador(unidade_de_trabalho, provedor).executar()
+
+    with unidade_de_trabalho as uow:
+        [conta] = uow.contas.listar(dono.id)
+    assert conta.tipo == TipoDaConta.REMUNERADA
+    assert conta.saldo == Dinheiro(96217)

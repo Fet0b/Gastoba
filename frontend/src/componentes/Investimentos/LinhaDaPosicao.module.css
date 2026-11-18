@@ -1,0 +1,30 @@
+.linha { display: grid; grid-template-columns: minmax(0, 1fr) 7rem 7rem 7rem 2.75rem; align-items: center; gap: var(--espaco-3); padding: var(--espaco-4); border-top: var(--borda-de-camada); }
+.identificacao { display: grid; gap: var(--espaco-2); min-width: 0; }
+.nome { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.apoio, .rotulo { color: var(--cor-bruma); font-size: var(--texto-rotulo); }
+.aplicado, .saldo, .rendimento { display: flex; flex-direction: column; align-items: flex-end; font-family: var(--fonte-titulo); font-size: var(--numero-pequeno); font-variant-numeric: tabular-nums; }
+.rotulo { display: none; font-family: var(--fonte-corpo); }
+.percentual { font-size: var(--texto-rotulo); }
+.rendimento[data-tom="positivo"] { color: var(--cor-positivo); }
+.rendimento[data-tom="negativo"] { color: var(--cor-negativo); }
+.destinacao { display: inline-flex; gap: var(--espaco-1); align-items: center; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ponto { width: var(--espaco-2); height: var(--espaco-2); border-radius: 50%; flex-shrink: 0; }
+.menu { justify-self: end; }
+@container (max-width: 37.5rem) {
+ .linha { grid-template-columns: minmax(0, 1fr) auto 2.75rem; }
+ .identificacao { grid-column: 1; grid-row: 1; }
+ .saldo { grid-column: 2; grid-row: 1; }
+ .menu { grid-column: 3; grid-row: 1; }
+ .aplicado { grid-column: 1; grid-row: 2; align-items: flex-start; }
+ .rendimento { grid-column: 2 / -1; grid-row: 2; }
+ .rotulo { display: block; }
+}
+
+/* Aviso de histórico incompleto: ocupa a linha inteira da grade e some quando vazio. */
+.pendencia {
+  grid-column: 1 / -1;
+}
+
+.pendencia:empty {
+  display: none;
+}

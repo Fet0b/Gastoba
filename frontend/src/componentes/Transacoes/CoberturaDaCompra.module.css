@@ -1,0 +1,9 @@
+.dialogo { box-sizing: border-box; width: min(34rem, calc(100vw - 2rem)); max-height: calc(100dvh - 2rem); overflow: auto; color: var(--cor-nevoa); background: var(--cor-ameixa); border: 1px solid var(--cor-veludo); border-radius: var(--raio-painel); padding: var(--espaco-5); }
+.dialogo::backdrop { background: var(--cor-noite); }
+.dialogo h2 { font-family: var(--fonte-titulo); margin-top: 0; }
+.reservas { border: 0; padding: 0; margin: var(--espaco-4) 0; }
+.reserva { display: flex; align-items: flex-start; gap: var(--espaco-2); padding: var(--espaco-3) 0; overflow-wrap: anywhere; }
+.amostra { display: inline-block; width: 0.8rem; height: 0.8rem; border-radius: 50%; flex-shrink: 0; margin-top: 0.25rem; }
+.acoes { display: flex; flex-wrap: wrap; gap: var(--espaco-2); margin-top: var(--espaco-4); }
+.numerosDaReserva { display: flex; flex-wrap: wrap; gap: var(--espaco-1) var(--espaco-3); }
+.dialogo [role="alert"] { color: var(--cor-brasa); }

@@ -8,6 +8,7 @@ import { CampoDeValor } from "../Compositor/CampoDeValor";
 import { MENSAGEM_TAG_PENDENTE } from "../Compositor/CompositorDeGasto";
 import { SeletorDeCategoria } from "../Compositor/SeletorDeCategoria";
 import { errosDaApi, lerDiaDoMes } from "./FormularioDeRecorrencia";
+import { Botao } from "../Botao/Botao";
 import estilos from "./Recorrencias.module.css";
 
 type Propriedades = {
@@ -197,17 +198,16 @@ export function EdicaoDeRecorrencia({
       )}
 
       <div className={estilos.acoes}>
-        <button
+        <Botao variante="primario"
           type="submit"
-          className={estilos.primario}
           disabled={motivos.length > 0 || alterar.pendente}
           aria-describedby={motivos.length > 0 ? idMotivos : undefined}
         >
           {alterar.pendente ? "Salvando…" : "Salvar alterações"}
-        </button>
-        <button type="button" className={estilos.secundario} disabled={alterar.pendente} onClick={aoCancelar}>
+        </Botao>
+        <Botao variante="secundario" disabled={alterar.pendente} onClick={aoCancelar}>
           Cancelar
-        </button>
+        </Botao>
       </div>
     </form>
   );

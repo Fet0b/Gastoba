@@ -1,0 +1,125 @@
+/* O sininho de avisos, no canto superior direito da barra de controles. */
+
+.sininho {
+  position: relative;
+  flex: none;
+}
+
+.botao {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: var(--alvo-de-toque);
+  height: var(--alvo-de-toque);
+  padding: 0;
+  border: 1px solid var(--cor-veludo);
+  border-radius: var(--raio-campo);
+  background: var(--cor-ameixa);
+  color: inherit;
+}
+
+.botao:hover {
+  border-color: var(--cor-ametista);
+  background: var(--cor-veludo);
+}
+
+.contador {
+  position: absolute;
+  top: -0.375rem;
+  right: -0.375rem;
+  display: grid;
+  place-items: center;
+  min-width: 1.25rem;
+  height: 1.25rem;
+  padding: 0 var(--espaco-1);
+  border-radius: var(--raio-chip);
+  background: var(--cor-atencao);
+  color: var(--cor-noite);
+  font-size: var(--texto-pequeno);
+  font-weight: var(--peso-titulo);
+  font-variant-numeric: tabular-nums;
+}
+
+.painel {
+  position: absolute;
+  top: calc(100% + var(--espaco-2));
+  right: 0;
+  z-index: 20;
+  box-sizing: border-box;
+  width: min(22rem, calc(100vw - 2 * var(--espaco-4)));
+  max-height: 70vh;
+  overflow-y: auto;
+  padding: var(--espaco-4);
+  border: 1px solid var(--cor-veludo);
+  border-radius: var(--raio-cartao);
+  background: var(--cor-ameixa);
+  box-shadow: var(--sombra-alta);
+}
+
+.painel[hidden] {
+  display: none;
+}
+
+.titulo {
+  margin: 0 0 var(--espaco-2);
+  font-size: var(--texto-base);
+}
+
+.explicacao,
+.vazio {
+  margin: 0 0 var(--espaco-3);
+  color: var(--cor-bruma);
+  font-size: var(--texto-pequeno);
+}
+
+.lista {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espaco-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.item {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: var(--espaco-1) var(--espaco-3);
+  width: 100%;
+  min-height: var(--alvo-de-toque);
+  padding: var(--espaco-2) var(--espaco-3);
+  border: 1px solid var(--cor-veludo);
+  border-radius: var(--raio-campo);
+  background: var(--cor-noite);
+  color: inherit;
+  text-align: start;
+}
+
+.item:hover {
+  border-color: var(--cor-ametista);
+}
+
+.valor {
+  font-weight: var(--peso-secao);
+  font-variant-numeric: tabular-nums;
+}
+
+.data {
+  color: var(--cor-bruma);
+  font-size: var(--texto-pequeno);
+}
+
+.descricao {
+  grid-column: 1 / -1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  font-size: var(--texto-pequeno);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .botao {
+    transition:
+      border-color var(--duracao-curta) var(--curva-saida),
+      background var(--duracao-curta) var(--curva-saida);
+  }
+}

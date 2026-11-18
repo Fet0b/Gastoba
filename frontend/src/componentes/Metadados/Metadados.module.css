@@ -1,0 +1,19 @@
+.metadados {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--espaco-2);
+  color: var(--cor-bruma);
+  font-size: var(--texto-rotulo);
+  line-height: var(--texto-rotulo-linha);
+}
+
+.item {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--espaco-2);
+  min-width: 0;
+}
+
+.item + .item::before {
+  content: "\00B7";
+}

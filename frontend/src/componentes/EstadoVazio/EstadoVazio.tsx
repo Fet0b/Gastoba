@@ -1,3 +1,5 @@
+import type { Ref } from "react";
+import { Botao } from "../Botao/Botao";
 import { Icone, type NomeDoIcone } from "../Icone/Icone";
 
 import estilos from "./EstadoVazio.module.css";
@@ -5,23 +7,23 @@ import estilos from "./EstadoVazio.module.css";
 type Propriedades = {
   icone: NomeDoIcone;
   titulo: string;
-  texto?: string;
-  acao?: { rotulo: string; aoClicar: () => void };
+  descricao?: string;
+  acao?: { ref?: Ref<HTMLButtonElement>; rotulo: string; aoClicar: () => void; variante?: "primario" | "secundario" };
 };
 
-/** O que mostrar quando uma lista ainda não tem nada: ícone, título, texto e uma ação opcional. */
-export function EstadoVazio({ icone, titulo, texto, acao }: Propriedades) {
+/** O que mostrar quando uma lista ainda não tem nada: ícone, uma frase e uma ação opcional. */
+export function EstadoVazio({ icone, titulo, descricao, acao }: Propriedades) {
   return (
     <div className={estilos.vazio}>
       <span className={estilos.icone}>
-        <Icone nome={icone} tamanho={28} />
+        <Icone nome={icone} tamanho={24} />
       </span>
       <p className={estilos.titulo}>{titulo}</p>
-      {texto !== undefined && <p className={estilos.texto}>{texto}</p>}
+      {descricao && <p className={estilos.descricao}>{descricao}</p>}
       {acao && (
-        <button type="button" className={estilos.acao} onClick={acao.aoClicar}>
+        <Botao ref={acao.ref} variante={acao.variante ?? "secundario"} className={estilos.acao} onClick={acao.aoClicar}>
           {acao.rotulo}
-        </button>
+        </Botao>
       )}
     </div>
   );

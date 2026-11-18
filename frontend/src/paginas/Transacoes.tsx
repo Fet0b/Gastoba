@@ -8,10 +8,12 @@ import {
   useExcluirGanho,
   useGanhos,
   useGastos,
+  useMovimentosDeInvestimento,
   useTags,
 } from "../api/consultas";
 import type { MensagemDoAviso } from "../componentes/Aviso/Aviso";
 import type { Navegacao } from "../componentes/Navegacao/telas";
+import { Chip } from "../componentes/Chip/Chip";
 import { Pagina } from "../componentes/Pagina/Pagina";
 import {
   CompositorDeGasto,
@@ -19,14 +21,16 @@ import {
   MENSAGEM_GASTO_REGISTRADO,
   MENSAGEM_SEM_CONTAS,
 } from "../componentes/Compositor/CompositorDeGasto";
-import { useAtalhoDeNovoGasto } from "../componentes/Compositor/useAtalhoDeNovoGasto";
 import { EstadoVazio } from "../componentes/EstadoVazio/EstadoVazio";
 import { FiltroDeCategorias } from "../componentes/Gastos/FiltroDeCategorias";
 import { FiltroDeTags } from "../componentes/Gastos/FiltroDeTags";
 import { CaixaDeEntrada } from "../componentes/Importadas/CaixaDeEntrada";
 import { useEstadoDoOlho } from "../componentes/Olho/useEstadoDoOlho";
+import { AportesEResgates } from "../componentes/Transacoes/AportesEResgates";
 import { BuscaDeTransacoes } from "../componentes/Transacoes/BuscaDeTransacoes";
 import { FiltroDeContasEmChips } from "../componentes/Transacoes/FiltroDeContasEmChips";
+import { FiltrosEmFolha } from "../componentes/Transacoes/FiltrosEmFolha";
+import { useLayoutLargo } from "../componentes/Navegacao/useLayoutLargo";
 import { LinhaDoTempo } from "../componentes/Transacoes/LinhaDoTempo";
 import { TotaisFiltrados } from "../componentes/Transacoes/TotaisFiltrados";
 import { limites, periodoAtual } from "../periodo/periodo";
@@ -40,16 +44,31 @@ import { ehSemResposta, MENSAGEM_SERVIDOR_FORA } from "./mensagens";
  * a dona da importação bancária, a caixa de entrada. A categoria vale só para os gastos (o ganho
  * não tem categoria e some da lista, com uma nota); a tag vale para os dois.
  */
-export function Transacoes({ navegacao }: { navegacao: Navegacao }) {
-  const [periodo, definirPeriodo] = useState(periodoAtual);
+export function Transacoes({
+  navegacao,
+  vistaInicial = "gastos",
+  dataDoMovimento,
+  abrirCompositorAoEntrar = false,
+}: {
+  navegacao: Navegacao;
+  vistaInicial?: "gastos" | "caixa" | "aportes";
+  dataDoMovimento?: string;
+  /** Vindo de "Novo gasto" ou da tecla N em outra tela: abre o compositor assim que as contas chegam. */
+  abrirCompositorAoEntrar?: boolean;
+}) {
+  const podeVerAportes = navegacao.importacaoBancaria === true || navegacao.gestaoDeInvestimentos === true;
+  const [periodo, definirPeriodo] = useState(() => dataDoMovimento ? {ano: Number(dataDoMovimento.slice(0,4)),mes:Number(dataDoMovimento.slice(5,7))} : periodoAtual());
+  useEffect(() => { if (dataDoMovimento) { definirPeriodo({ano:Number(dataDoMovimento.slice(0,4)),mes:Number(dataDoMovimento.slice(5,7))}); if (podeVerAportes) definirVista("aportes"); } }, [dataDoMovimento]);
   const [contaSelecionada, definirContaSelecionada] = useState<string | null>(null);
   const [tag, definirTag] = useState<string | null>(null);
   const [categoria, definirCategoria] = useState<string | null>(null);
-  const [vista, definirVista] = useState<"gastos" | "caixa">("gastos");
+  const [vista, definirVista] = useState<"gastos" | "caixa" | "aportes">(() => vistaInicial === "aportes" && podeVerAportes ? "aportes" : vistaInicial === "caixa" && navegacao.importacaoBancaria === true ? "caixa" : "gastos");
   const [compositorAberto, definirCompositorAberto] = useState(false);
   const [mensagem, definirMensagem] = useState<MensagemDoAviso | null>(null);
   const [estadoDoOlho, sinalizarOlho] = useEstadoDoOlho();
   const [busca, definirBusca] = useState("");
+  // Abaixo de 45rem os filtros viram um botão que abre uma folha, com os ativos em chips.
+  const celular = !useLayoutLargo();
   const idTitulo = useId();
   const titulo = useRef<HTMLHeadingElement>(null);
 
@@ -61,6 +80,7 @@ export function Transacoes({ navegacao }: { navegacao: Navegacao }) {
     categoria: categoria ?? undefined,
   });
   // Os ganhos seguem o mês e a conta; a tag é aplicada aqui no cliente (a API só a filtra nos gastos).
+  const movimentos = useMovimentosDeInvestimento(limites(periodo).inicio,limites(periodo).fim);
   const ganhos = useGanhos({ ...limites(periodo), conta_id: contaSelecionada ?? undefined });
   const excluirGanho = useExcluirGanho();
   const tags = useTags();
@@ -75,8 +95,8 @@ export function Transacoes({ navegacao }: { navegacao: Navegacao }) {
       categoria !== null
         ? []
         : (ganhos.dados ?? []).filter((ganho) => tag === null || ganho.tags.includes(tag));
-    return filtrarPorBusca(juntarTransacoes(gastos.dados, ganhosDaTag), busca);
-  }, [gastos.dados, ganhos.dados, categoria, tag, busca]);
+    return filtrarPorBusca(juntarTransacoes(gastos.dados, ganhosDaTag, (movimentos.dados ?? []).filter(m=>tag===null && (categoria===null || m.categoria===categoria) && (contaSelecionada===null || m.conta_id===contaSelecionada))), busca);
+  }, [gastos.dados, ganhos.dados, movimentos.dados, contaSelecionada, categoria, tag, busca]);
 
   // Cada mensagem é um objeto novo, para o Aviso anunciar mesmo texto repetido.
   function avisar(tipo: MensagemDoAviso["tipo"], texto: string): void {
@@ -111,8 +131,8 @@ export function Transacoes({ navegacao }: { navegacao: Navegacao }) {
     if (excluido) {
       sinalizarOlho("confirmando");
       avisar("confirmacao", "Ganho excluído.");
-      // A linha do ganho some e levaria o foco junto: ele fica no título da lista.
-      titulo.current?.focus();
+      // A linha do ganho some e levaria o foco junto: o diálogo o leva ao título da lista
+      // (`focoAposExcluir`) quando fecha; antes disso o título está inerte por trás do modal.
       return true;
     }
     return false;
@@ -160,11 +180,17 @@ export function Transacoes({ navegacao }: { navegacao: Navegacao }) {
       navegacao.aoIrPara("contas", { abrirFormulario: true });
       return;
     }
+    // Nas vistas da caixa e de aportes o compositor não cabe: volta aos gastos e abre.
+    definirVista("gastos");
     definirCompositorAberto(true);
   }
 
-  // Com o diálogo aberto o atalho fica desligado.
-  useAtalhoDeNovoGasto(abrirNovoGasto, !compositorAberto && vista === "gastos");
+  const [aberturaPendente, definirAberturaPendente] = useState(abrirCompositorAoEntrar);
+  useEffect(() => {
+    if (!aberturaPendente || contas.dados === undefined) return;
+    definirAberturaPendente(false);
+    abrirNovoGasto();
+  }, [aberturaPendente, contas.dados]);
 
   return (
     <Pagina
@@ -172,59 +198,78 @@ export function Transacoes({ navegacao }: { navegacao: Navegacao }) {
       estadoDoOlho={estadoDoOlho}
       mensagem={mensagem}
       aoDispensarMensagem={() => definirMensagem(null)}
-      controles={{ periodo, aoMudarPeriodo: definirPeriodo, aoNovoGasto: abrirNovoGasto }}
+      controles={{ periodo, aoMudarPeriodo: definirPeriodo }}
+      aoNovoGasto={abrirNovoGasto}
+      atalhoDeNovoGasto={!compositorAberto}
+      cabecalho={{ titulo: "Transações", subtitulo: "Tudo o que entrou e saiu, dia a dia.", tituloRef: titulo, tituloId: idTitulo }}
     >
       <div className={estilos.conteudo}>
-        {navegacao.importacaoBancaria === true && (
+        {(navegacao.importacaoBancaria === true || podeVerAportes) && (
           <div className={estilos.alternador} role="group" aria-label="Conteúdo">
-            <button
-              type="button"
-              className={estilos.opcao}
-              aria-pressed={vista === "gastos"}
-              onClick={() => definirVista("gastos")}
-            >
+            <Chip selecionado={vista === "gastos"} aoAlternar={() => definirVista("gastos")}>
               Gastos e ganhos
-            </button>
-            <button
-              type="button"
-              className={estilos.opcao}
-              aria-pressed={vista === "caixa"}
-              onClick={() => definirVista("caixa")}
-            >
-              Caixa de entrada
-            </button>
+            </Chip>
+            {navegacao.importacaoBancaria === true && (
+              <Chip selecionado={vista === "caixa"} aoAlternar={() => definirVista("caixa")}>
+                Caixa de entrada
+              </Chip>
+            )}
+            {podeVerAportes && (
+              <Chip selecionado={vista === "aportes"} aoAlternar={() => definirVista("aportes")}>
+                Aportes e resgates
+              </Chip>
+            )}
           </div>
         )}
 
         {navegacao.importacaoBancaria === true && vista === "caixa" ? (
           <CaixaDeEntrada aoAvisar={avisar} aoSinalizarOlho={sinalizarOlho} />
+        ) : podeVerAportes && vista === "aportes" ? (
+          <>
+            <FiltroDeContasEmChips contas={contas.dados} ativa={contaSelecionada} aoMudar={definirContaSelecionada} />
+            <AportesEResgates periodo={periodo} contaSelecionada={contaSelecionada} navegacao={navegacao} aoAvisar={(texto) => { sinalizarOlho("confirmando"); avisar("confirmacao", texto); }} aoFalhar={avisarFalhaDaConsulta} aoLimparConta={() => definirContaSelecionada(null)} />
+          </>
         ) : (
           <>
-            <FiltroDeContasEmChips
-              contas={contas.dados}
-              ativa={contaSelecionada}
-              aoMudar={definirContaSelecionada}
-            />
             <BuscaDeTransacoes valor={busca} aoMudar={definirBusca} />
-            <div className={estilos.filtros}>
-              <FiltroDeCategorias
+            {celular ? (
+              <FiltrosEmFolha
+                contas={contas.dados}
                 categorias={categorias.dados}
-                ativa={categoria}
-                aoAlternar={alternarCategoria}
-                aoLimpar={() => definirCategoria(null)}
-              />
-              <FiltroDeTags
                 tags={tags.dados}
-                ativa={tag}
-                aoAlternar={alternarTag}
-                aoLimpar={() => definirTag(null)}
+                contaSelecionada={contaSelecionada}
+                categoria={categoria}
+                tag={tag}
+                aoMudarConta={definirContaSelecionada}
+                aoAlternarCategoria={alternarCategoria}
+                aoLimparCategoria={() => definirCategoria(null)}
+                aoAlternarTag={alternarTag}
+                aoLimparTag={() => definirTag(null)}
+                aoLimparTudo={limparFiltros}
               />
-            </div>
+            ) : (
+              <div className={estilos.filtros}>
+                <FiltroDeContasEmChips
+                  contas={contas.dados}
+                  ativa={contaSelecionada}
+                  aoMudar={definirContaSelecionada}
+                />
+                <FiltroDeCategorias
+                  categorias={categorias.dados}
+                  ativa={categoria}
+                  aoAlternar={alternarCategoria}
+                  aoLimpar={() => definirCategoria(null)}
+                />
+                <FiltroDeTags
+                  tags={tags.dados}
+                  ativa={tag}
+                  aoAlternar={alternarTag}
+                  aoLimpar={() => definirTag(null)}
+                />
+              </div>
+            )}
 
             <section className={estilos.secao} aria-labelledby={idTitulo}>
-              <h2 ref={titulo} id={idTitulo} className={estilos.titulo} tabIndex={-1}>
-                Transações
-              </h2>
               {/* Só o resultado de uma busca ou de um filtro é anunciado (e sem repetir a lista). */}
               <p className="visualmente-oculto" aria-live="polite" data-resultado="">
                 {transacoes !== undefined && (buscando || filtrosAtivos)
@@ -251,30 +296,32 @@ export function Transacoes({ navegacao }: { navegacao: Navegacao }) {
                     <EstadoVazio
                       icone="transacoes"
                       titulo="Nada encontrado para a busca"
-                      texto="Confira a grafia ou busque por outra palavra."
                       acao={{ rotulo: "Limpar busca", aoClicar: limparBusca }}
                     />
                   ) : filtrosAtivos ? (
                     <EstadoVazio
                       icone="transacoes"
                       titulo="Nenhuma transação com esses filtros"
-                      texto="Neste mês, nada combina com os filtros escolhidos."
                       acao={{ rotulo: "Limpar filtros", aoClicar: limparFiltros }}
                     />
                   ) : (
                     <EstadoVazio
                       icone="transacoes"
                       titulo="Nenhum gasto ou ganho neste mês"
-                      texto="Registre o primeiro com N ou com o botão Novo gasto."
+        descricao="Registre seu primeiro lançamento para acompanhar o mês."
+                      acao={{ rotulo: "Registrar o primeiro gasto", aoClicar: abrirNovoGasto }}
                     />
                   )
                 ) : (
                   <LinhaDoTempo
+                    aoDesfazerClassificacao={() => definirMensagem({ tipo: "confirmacao", texto: "Transação devolvida à caixa de entrada." })}
+                    podeDesfazerClassificacao={navegacao.importacaoBancaria === true}
                     reiniciarQuando={`${periodo.ano}-${periodo.mes}|${contaSelecionada}|${categoria}|${tag}|${busca}`}
                     transacoes={transacoes}
                     contas={contas.dados}
                     categorias={categorias.dados}
                     aoExcluirGanho={excluirUmGanho}
+                    focoAposExcluir={titulo}
                     aoAlternarCategoria={alternarCategoria}
                     aoAlternarTag={alternarTag}
                     categoriaAtiva={categoria}

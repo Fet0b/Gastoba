@@ -2,6 +2,7 @@ from datetime import date
 from uuid import UUID
 
 from gastoba.domain.categoria import CategoriaDoGasto
+from gastoba.domain.dinheiro import Dinheiro
 from gastoba.domain.distribuicao_por_tags import ResumoPorTags
 from gastoba.domain.excecoes import ContaNaoEncontrada, PeriodoInvalido
 from gastoba.domain.portas import UnidadeDeTrabalho
@@ -28,4 +29,9 @@ class ResumirGastosPorTag:
             gastos = uow.gastos.listar(
                 usuario_id, inicio, fim, conta_id=conta_id, tag=None, categoria=categoria
             )
-            return ResumoPorTags.de_gastos(gastos)
+            coberturas = uow.coberturas.listar_dos_gastos([g.id for g in gastos])
+            coberto = {
+                id: Dinheiro(sum(c.valor.centavos for c in partes))
+                for id, partes in coberturas.items()
+            }
+            return ResumoPorTags.de_gastos(gastos, coberto)

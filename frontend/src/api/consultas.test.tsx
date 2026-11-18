@@ -1,5 +1,11 @@
 import { act, renderHook, waitFor } from "@testing-library/react";
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
+import { chamar } from "./cliente";
+import { fetchSimulado } from "../simulacao/fetchSimulado";
+import { useConsulta } from "./useConsulta";
+import { useDesfazerClassificacao } from "./consultas";
+import type { TransacaoImportada } from "./tipos";
 
 import { entrarNaSimulacao } from "../simulacao/fetchSimulado";
 import {
@@ -128,5 +134,26 @@ describe("chaves de API", () => {
       status: 404,
       codigo: "chave_de_api_nao_encontrada",
     });
+  });
+});
+
+
+describe("cache após desfazer classificação", () => {
+  it.each([false, true])("recarrega os oito prefixos mesmo na falha: %s", async (falhar) => {
+    await chamar("/sincronizacoes", { metodo: "POST" });
+    const caixa = await chamar<TransacaoImportada[]>("/transacoes-importadas");
+    const t = caixa.find((t) => t.sentido === "saida")!;
+    const criado = await chamar<{ id: string }>(`/transacoes-importadas/${t.id}/aceitar`, { metodo: "POST", corpo: { como_investimento: true } });
+    const prefixos = ["movimentos-de-investimento", "transacoes-importadas", "investimentos", "metas", "gastos", "ganhos", "resumos", "tags"];
+    const buscas = prefixos.map(() => vi.fn(async () => "consultado"));
+    const { result } = renderHook(() => ({
+      consultas: prefixos.map((prefixo, i) => useConsulta(`${prefixo}?teste=1`, buscas[i])),
+      desfazer: useDesfazerClassificacao(),
+    }));
+    await waitFor(() => expect(result.current.consultas.every((c) => !c.carregando)).toBe(true));
+    if (falhar) vi.stubGlobal("fetch", (url: RequestInfo | URL, opcoes?: RequestInit) => String(url).includes("desfazer-classificacao") ? Promise.resolve(new Response(JSON.stringify({ erro: { codigo: "principal_insuficiente", mensagem: "Exemplo" } }), { status: 422 })) : fetchSimulado(url, opcoes));
+    await act(async () => { await result.current.desfazer.executar({ movimentoId: criado.id }); });
+    await waitFor(() => buscas.forEach((buscar) => expect(buscar).toHaveBeenCalledTimes(2)));
+    expect(Boolean(result.current.desfazer.erro)).toBe(falhar);
   });
 });

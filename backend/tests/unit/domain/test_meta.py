@@ -5,11 +5,11 @@ import pytest
 from gastoba.domain.categoria import CategoriaDoGasto
 from gastoba.domain.dinheiro import Dinheiro
 from gastoba.domain.excecoes import PercentualInvalido
-from gastoba.domain.meta import Meta, ProgressoDaMeta, SituacaoDaMeta
+from gastoba.domain.meta import AlvoDaMeta, Meta, ProgressoDaMeta, ResumoDasMetas, SituacaoDaMeta
 
 
 def meta(percentual) -> Meta:
-    return Meta(usuario_id=uuid4(), categoria=CategoriaDoGasto.LAZER, percentual=percentual)
+    return Meta(usuario_id=uuid4(), alvo=AlvoDaMeta.LAZER, percentual=percentual)
 
 
 @pytest.mark.parametrize("percentual", [1, 30, 100])
@@ -25,7 +25,7 @@ def test_percentual_fora_de_1_a_100_e_recusado(percentual):
 
 def progresso(percentual=30, renda=100000, gasto=0) -> ProgressoDaMeta:
     return ProgressoDaMeta(
-        categoria=CategoriaDoGasto.LAZER,
+        alvo=AlvoDaMeta.LAZER,
         percentual=percentual,
         renda=Dinheiro(renda),
         gasto=Dinheiro(gasto),
@@ -87,3 +87,35 @@ def test_dinheiro_percentual_arredonda_para_baixo():
     assert Dinheiro(1001).percentual(50) == Dinheiro(500)
     assert Dinheiro(0).percentual(30) == Dinheiro(0)
     assert Dinheiro(100).percentual(100) == Dinheiro(100)
+
+
+@pytest.mark.parametrize("renda", [0, 300000, 700000])
+def test_resumo_sem_base_usa_a_renda_registrada_como_referencia(renda):
+    resumo = ResumoDasMetas(renda=Dinheiro(renda), progressos=())
+
+    assert resumo.renda_base is None
+    assert resumo.renda_de_referencia == Dinheiro(renda)
+
+
+@pytest.mark.parametrize("renda", [0, 300000, 700000])
+def test_resumo_com_base_mantem_renda_real_e_prefere_a_base(renda):
+    resumo = ResumoDasMetas(renda=Dinheiro(renda), progressos=(), renda_base=Dinheiro(500001))
+
+    assert resumo.renda == Dinheiro(renda)
+    assert resumo.renda_base == Dinheiro(500001)
+    assert resumo.renda_de_referencia == Dinheiro(500001)
+
+
+def test_alvos_separam_meta_da_categoria_legada():
+    from gastoba.domain.meta import AlvoDaMeta
+
+    assert [a.value for a in AlvoDaMeta] == [
+        "liberdade_financeira",
+        "lazer",
+        "conhecimento",
+        "conforto",
+        "gasto_fixo",
+    ]
+    assert AlvoDaMeta.LIBERDADE_FINANCEIRA.nome == "Liberdade financeira"
+    assert AlvoDaMeta.de_categoria(CategoriaDoGasto.INVESTIMENTOS) is None
+    assert AlvoDaMeta.de_categoria(CategoriaDoGasto.CONFORTO) == AlvoDaMeta.CONFORTO

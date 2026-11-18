@@ -1,0 +1,70 @@
+.filtros {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--espaco-2);
+  min-width: 0;
+}
+
+/* Os filtros ativos como chips removíveis, quebrando de linha. */
+.ativos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--espaco-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* A folha de baixo: ocupa a largura, no máximo 80% da altura, e rola por dentro. */
+.folha {
+  position: fixed;
+  inset: auto 0 0 0;
+  width: 100%;
+  max-width: none;
+  max-height: 80vh;
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+  border: var(--borda-de-camada);
+  border-radius: var(--raio-painel) var(--raio-painel) 0 0;
+  background: var(--cor-ameixa);
+  color: var(--cor-nevoa);
+  box-shadow: var(--sombra-alta);
+}
+
+.folha::backdrop {
+  background: var(--cor-noite);
+}
+
+.conteudo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espaco-4);
+  padding: var(--espaco-4) var(--espaco-4) calc(var(--espaco-4) + env(safe-area-inset-bottom));
+}
+
+.cabecalho {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--espaco-3);
+}
+
+.titulo {
+  margin: 0;
+  font-size: var(--texto-grande);
+  line-height: var(--texto-grande-linha);
+}
+
+.grupos {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espaco-4);
+  min-width: 0;
+}
+
+.acoes {
+  display: flex;
+  justify-content: flex-end;
+}

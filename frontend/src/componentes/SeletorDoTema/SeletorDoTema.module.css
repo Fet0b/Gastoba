@@ -1,0 +1,80 @@
+.campo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espaco-1);
+  min-width: 0;
+}
+
+.caixa {
+  position: relative;
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  border: 1px solid var(--cor-veludo);
+  border-radius: var(--raio-campo);
+  background: var(--cor-noite);
+}
+
+.caixa:hover {
+  border-color: var(--cor-bruma);
+}
+
+.caixa[data-invalido] {
+  border-color: var(--cor-negativo);
+}
+
+.caixa:has(.seletor:focus-visible) {
+  outline: var(--anel-de-foco);
+  outline-offset: var(--afastamento-do-foco);
+}
+
+.ponto {
+  position: absolute;
+  inset-inline-start: var(--espaco-3);
+  width: 0.625rem;
+  height: 0.625rem;
+  border-radius: var(--raio-chip);
+  pointer-events: none;
+}
+
+.ponto[data-vazio] {
+  border: 1px solid var(--cor-bruma);
+}
+
+.seletor {
+  appearance: none;
+  width: 100%;
+  min-width: 0;
+  min-height: var(--alvo-de-toque);
+  padding: var(--espaco-1) 2rem var(--espaco-1) 2rem;
+  border: 0;
+  border-radius: var(--raio-campo);
+  background: transparent;
+  color: var(--cor-nevoa);
+  font: inherit;
+  text-overflow: ellipsis;
+  cursor: pointer;
+}
+
+.seletor:focus-visible {
+  outline: none;
+}
+
+/* A seta é desenhada por CSS: um chevron de duas bordas, sem imagem nem ícone extra. */
+.caixa::after {
+  position: absolute;
+  inset-inline-end: var(--espaco-3);
+  width: 0.4rem;
+  height: 0.4rem;
+  border-right: 2px solid var(--cor-bruma);
+  border-bottom: 2px solid var(--cor-bruma);
+  content: "";
+  transform: translateY(-0.1rem) rotate(45deg);
+  pointer-events: none;
+}
+
+.erro {
+  margin: 0;
+  color: var(--cor-negativo);
+  font-size: var(--texto-minimo);
+}

@@ -1,7 +1,10 @@
+import { CampoDeTexto } from "../Campo/CampoDeTexto";
+import { Titulo } from "../Titulo/Titulo";
 import { type FormEvent, useId, useRef, useState } from "react";
 
 import { ErroDaApiCliente, MENSAGEM_SEM_RESPOSTA } from "../../api/cliente";
 import type { DadosDeCadastro } from "../../api/sessao";
+import { Botao } from "../Botao/Botao";
 import estilos from "../Entrar/Entrar.module.css";
 import { Olho } from "../Olho/Olho";
 import { useEstadoDoOlho } from "../Olho/useEstadoDoOlho";
@@ -112,10 +115,6 @@ export function Cadastrar({ aoCadastrar, aoVoltar }: Propriedades) {
   const idEmail = `${id}-email`;
   const idSenha = `${id}-senha`;
   const idConfirmacao = `${id}-confirmacao`;
-  const idErroNome = `${id}-erro-nome`;
-  const idErroEmail = `${id}-erro-email`;
-  const idErroSenha = `${id}-erro-senha`;
-  const idErroConfirmacao = `${id}-erro-confirmacao`;
   const idErroGeral = `${id}-erro`;
 
   return (
@@ -123,7 +122,7 @@ export function Cadastrar({ aoCadastrar, aoVoltar }: Propriedades) {
       <div className={estilos.cartao}>
         <div className={estilos.marca}>
           <Olho decorativo estado={estadoDoOlho} className={estilos.olho} />
-          <h1 className={estilos.nome}>Gastoba</h1>
+          <Titulo nivel="pagina" como="h1" className={estilos.nome}>Gastoba</Titulo>
         </div>
         <p className={estilos.chamada}>Crie a sua conta para controlar seus gastos.</p>
 
@@ -134,98 +133,28 @@ export function Cadastrar({ aoCadastrar, aoVoltar }: Propriedades) {
           aria-describedby={erros.geral ? idErroGeral : undefined}
           noValidate
         >
-          <div className={estilos.campo}>
-            <label htmlFor={idNome}>Nome</label>
-            <input
-              ref={campoNome}
-              id={idNome}
-              type="text"
-              className={estilos.entrada}
-              value={nome}
-              onChange={(evento) => definirNome(evento.target.value)}
-              autoComplete="name"
-              autoFocus
-              aria-invalid={erros.nome ? true : undefined}
-              aria-describedby={erros.nome ? idErroNome : undefined}
-            />
-            {erros.nome && (
-              <p id={idErroNome} className={estilos.erroDoCampo}>
-                {erros.nome}
-              </p>
-            )}
-          </div>
+          <CampoDeTexto rotulo="Nome" ref={campoNome} id={idNome} tipo="text" autoComplete="name" erro={erros.nome} valor={nome} aoMudar={definirNome} autoFocus />
 
-          <div className={estilos.campo}>
-            <label htmlFor={idEmail}>E-mail</label>
-            <input
-              ref={campoEmail}
-              id={idEmail}
-              type="email"
-              className={estilos.entrada}
-              value={email}
-              onChange={(evento) => definirEmail(evento.target.value)}
-              autoComplete="username"
-              spellCheck={false}
-              aria-invalid={erros.email ? true : undefined}
-              aria-describedby={erros.email ? idErroEmail : undefined}
-            />
-            {erros.email && (
-              <p id={idErroEmail} className={estilos.erroDoCampo}>
-                {erros.email}
-              </p>
-            )}
-          </div>
+          <CampoDeTexto rotulo="E-mail" ref={campoEmail} id={idEmail} tipo="email" autoComplete="username" erro={erros.email} valor={email} aoMudar={definirEmail} spellCheck={false} />
 
-          <div className={estilos.campo}>
-            <label htmlFor={idSenha}>Senha</label>
-            <input
-              ref={campoSenha}
-              id={idSenha}
-              type="password"
-              className={estilos.entrada}
-              autoComplete="new-password"
-              aria-invalid={erros.senha ? true : undefined}
-              aria-describedby={erros.senha ? idErroSenha : undefined}
-            />
-            {erros.senha && (
-              <p id={idErroSenha} className={estilos.erroDoCampo}>
-                {erros.senha}
-              </p>
-            )}
-          </div>
+          <CampoDeTexto rotulo="Senha" ref={campoSenha} id={idSenha} tipo="password" autoComplete="new-password" erro={erros.senha} />
 
-          <div className={estilos.campo}>
-            <label htmlFor={idConfirmacao}>Confirme a senha</label>
-            <input
-              ref={campoConfirmacao}
-              id={idConfirmacao}
-              type="password"
-              className={estilos.entrada}
-              autoComplete="new-password"
-              aria-invalid={erros.confirmacao ? true : undefined}
-              aria-describedby={erros.confirmacao ? idErroConfirmacao : undefined}
-            />
-            {erros.confirmacao && (
-              <p id={idErroConfirmacao} className={estilos.erroDoCampo}>
-                {erros.confirmacao}
-              </p>
-            )}
-          </div>
+          <CampoDeTexto rotulo="Confirme a senha" ref={campoConfirmacao} id={idConfirmacao} tipo="password" autoComplete="new-password" erro={erros.confirmacao} />
 
           <div id={idErroGeral} className={estilos.erroGeral} aria-live="polite" aria-atomic="true">
             {erros.geral && <p>{erros.geral}</p>}
           </div>
 
-          <button type="submit" className={estilos.entrar} disabled={enviando}>
+          <Botao variante="primario" type="submit" disabled={enviando}>
             Criar conta
-          </button>
+          </Botao>
         </form>
 
         <p className={estilos.alternativa}>
           Já tem conta?{" "}
-          <button type="button" className={estilos.ligacao} onClick={aoVoltar}>
+          <Botao variante="terciario" onClick={aoVoltar}>
             Entrar
-          </button>
+          </Botao>
         </p>
       </div>
     </main>

@@ -17,11 +17,31 @@
   color: var(--cor-bruma);
 }
 
+/* P2: o total do mês é o número principal da tela. */
 .valorDoTotal {
   font-family: var(--fonte-titulo);
-  font-size: var(--texto-titulo);
-  line-height: var(--texto-titulo-linha);
+  font-size: var(--numero-heroi);
+  line-height: var(--texto-destaque-linha);
+  font-variant-numeric: tabular-nums;
   color: var(--cor-nevoa);
+}
+
+/* O gráfico e o detalhe da tag fixada: o detalhe vai abaixo no celular e ao lado no computador. */
+.area {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--espaco-5);
+  align-items: start;
+}
+
+.area > * {
+  min-width: 0;
+}
+
+@media (min-width: 64rem) {
+  .area[data-com-detalhe="true"] {
+    grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+  }
 }
 
 /* Só para o leitor de tela: a região que anuncia a tag fixada. */

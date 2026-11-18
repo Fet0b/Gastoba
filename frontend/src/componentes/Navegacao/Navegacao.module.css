@@ -1,4 +1,4 @@
-/* Navegação: barra lateral (a partir de 48rem) e barra de abas com a folha "Mais" (abaixo). */
+/* Navegação: barra lateral (completa a partir de 64rem, recolhida de 45rem a 64rem) e barra de abas com a folha "Mais" (abaixo). */
 
 .apenasLeitor {
   position: absolute;
@@ -22,8 +22,7 @@
   flex-shrink: 0;
   padding: var(--espaco-5) var(--espaco-4);
   border-right: var(--borda-de-camada);
-  background: var(--cor-ameixa);
-  box-shadow: var(--sombra-baixa);
+  background: var(--cor-noite);
   overflow-y: auto;
 }
 
@@ -35,19 +34,21 @@
 }
 
 .olho {
-  --tamanho-do-olho: 44px;
+  --tamanho-do-olho: 2.75rem;
   flex-shrink: 0;
 }
 
 .nomeDaMarca {
+  text-transform: lowercase;
   font-size: var(--texto-grande);
   line-height: var(--texto-grande-linha);
-  font-weight: 700;
+  font-weight: var(--peso-titulo);
   letter-spacing: -0.02em;
 }
 
 .telasDaLateral {
   display: flex;
+  flex: 1;
   flex-direction: column;
   gap: var(--espaco-1);
 }
@@ -74,20 +75,139 @@
   color: var(--cor-nevoa);
 }
 
-.itemDaLateral[aria-current="page"] {
-  background: var(--cor-veludo);
-  color: var(--cor-lavanda);
-  font-weight: 700;
+.itemDaLateral:hover {
+  background: var(--superficie-badge);
 }
 
-.pessoa {
+.itemDaLateral[aria-current="page"] {
+  background: var(--superficie-tonal);
+  color: var(--cor-lavanda);
+  font-weight: var(--peso-titulo);
+}
+
+/* Rodapé: o item Perfil, com a pessoa conectada. */
+.rodape {
+  display: flex;
+  align-items: center;
+  gap: var(--espaco-3);
+  min-height: var(--alvo-de-toque);
   margin-top: auto;
   padding: var(--espaco-3);
+  border: 0;
   border-top: var(--borda-de-camada);
+  border-radius: var(--raio-campo);
+  background: none;
   color: var(--cor-bruma);
   font-size: var(--texto-pequeno);
   line-height: var(--texto-pequeno-linha);
-  overflow-wrap: anywhere;
+  text-align: left;
+  cursor: pointer;
+}
+
+.rodape:hover {
+  background: var(--superficie-tonal);
+  color: var(--cor-nevoa);
+}
+
+.rodape:focus-visible {
+  outline: var(--anel-de-foco);
+  outline-offset: var(--afastamento-do-foco);
+}
+
+.rodape[aria-current="page"] {
+  background: var(--superficie-tonal);
+  color: var(--cor-lavanda);
+}
+
+.avatar {
+  display: grid;
+  flex-shrink: 0;
+  place-items: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 50%;
+  background: var(--cor-veludo);
+  color: var(--cor-lavanda);
+  font-weight: var(--peso-titulo);
+}
+
+.nomeDoRodape {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--cor-nevoa);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.irParaPerfil {
+  flex-shrink: 0;
+}
+
+/* Recolhida: só ícones, com o nome numa dica à direita ao passar o mouse ou focar. */
+
+.lateral[data-recolhida] {
+  width: var(--largura-da-barra-recolhida);
+  padding-inline: var(--espaco-2);
+  overflow: visible;
+}
+
+.lateral[data-recolhida] .marca {
+  justify-content: center;
+  padding: 0;
+}
+
+.lateral[data-recolhida] .nomeDaMarca,
+.lateral[data-recolhida] .rotuloDoItem,
+.lateral[data-recolhida] .nomeDoRodape,
+.lateral[data-recolhida] .irParaPerfil {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.lateral[data-recolhida] .itemDaLateral,
+.lateral[data-recolhida] .rodape {
+  position: relative;
+  justify-content: center;
+  padding-inline: 0;
+}
+
+.lateral[data-recolhida] [data-rotulo]::after {
+  position: absolute;
+  inset-inline-start: calc(100% + var(--espaco-2));
+  z-index: 20;
+  padding: var(--espaco-1) var(--espaco-3);
+  border: var(--borda-de-camada);
+  border-radius: var(--raio-campo);
+  background: var(--cor-ameixa);
+  box-shadow: var(--sombra-media);
+  color: var(--cor-nevoa);
+  font-size: var(--texto-pequeno);
+  white-space: nowrap;
+  content: attr(data-rotulo);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--duracao-curta) var(--curva-saida);
+}
+
+.lateral[data-recolhida] [data-rotulo]:hover::after,
+.lateral[data-recolhida] [data-rotulo]:focus-visible::after {
+  opacity: 1;
+}
+
+.itemDaLateral:focus-visible {
+  outline: var(--anel-de-foco);
+  outline-offset: var(--afastamento-do-foco);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lateral[data-recolhida] [data-rotulo]::after {
+    transition: none;
+  }
 }
 
 /* Barra de abas */
@@ -112,7 +232,7 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 2px;
+  gap: var(--espaco-1);
   min-width: var(--alvo-de-toque);
   min-height: var(--alvo-de-toque);
   padding: var(--espaco-1) 0;
@@ -128,7 +248,7 @@
 
 .aba[aria-current="page"] {
   color: var(--cor-lavanda);
-  font-weight: 700;
+  font-weight: var(--peso-titulo);
 }
 
 /* Folha "Mais" */
@@ -148,7 +268,7 @@
 }
 
 .folha::backdrop {
-  background: rgb(12 8 20 / 0.7);
+  background: var(--cor-noite);
 }
 
 .conteudoDaFolha {
@@ -208,5 +328,17 @@
 .itemDaFolha[aria-current="page"] {
   background: var(--cor-veludo);
   color: var(--cor-lavanda);
-  font-weight: 700;
+  font-weight: var(--peso-titulo);
+}
+
+/* 20rem: cinco abas de 4rem; "Transações" e "Orçamento" não cabem na fonte normal. */
+@media (max-width: 24rem) {
+  .rotuloDaAba {
+    font-size: var(--texto-minimo);
+    letter-spacing: -0.01em;
+  }
+}
+
+.emBreve {
+  margin-inline-start: auto;
 }

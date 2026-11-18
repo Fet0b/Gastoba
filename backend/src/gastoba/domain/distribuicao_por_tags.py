@@ -1,5 +1,6 @@
-from collections.abc import Iterable
+from collections.abc import Iterable, Mapping
 from dataclasses import dataclass
+from uuid import UUID
 
 from gastoba.domain.dinheiro import Dinheiro
 from gastoba.domain.gasto import Gasto
@@ -35,15 +36,18 @@ class ResumoPorTags:
     fatias: tuple[FatiaPorTag, ...]
 
     @classmethod
-    def de_gastos(cls, gastos: Iterable[Gasto]) -> ResumoPorTags:
+    def de_gastos(
+        cls, gastos: Iterable[Gasto], coberturas: Mapping[UUID, Dinheiro] | None = None
+    ) -> ResumoPorTags:
         por_tag: dict[Tag | None, int] = {}
         total = 0
         for gasto in gastos:
-            total += gasto.valor.centavos
+            liquido = gasto.valor - (coberturas or {}).get(gasto.id, Dinheiro(0))
+            total += liquido.centavos
             if not gasto.tags:
-                por_tag[None] = por_tag.get(None, 0) + gasto.valor.centavos
+                por_tag[None] = por_tag.get(None, 0) + liquido.centavos
                 continue
-            for tag, parte in dividir_entre_tags(gasto.valor, gasto.tags):
+            for tag, parte in dividir_entre_tags(liquido, gasto.tags):
                 por_tag[tag] = por_tag.get(tag, 0) + parte.centavos
         fatias = [
             FatiaPorTag(tag, Dinheiro(centavos)) for tag, centavos in por_tag.items() if centavos

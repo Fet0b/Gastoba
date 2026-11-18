@@ -1,5 +1,5 @@
 // O aviso único do Início: a pior situação entre as metas do mês.
-// Módulo puro; escreve a própria frase (o `textoDaSituacao` do Medidor é de outro plano).
+// Módulo puro; escreve a própria frase da situação.
 
 import type { ProgressoDaMeta, ResumoDasMetas } from "../api/tipos";
 import { deCentavos, formatar, paraCentavos } from "../dinheiro/dinheiro";
@@ -30,7 +30,7 @@ export function avisoDoMes(
     if (pior === null || gravidade(meta) > gravidade(pior)) pior = meta;
   }
   if (pior === null) return null;
-  const nome = nomesDasCategorias[pior.categoria] ?? pior.categoria;
+  const nome = pior.nome ?? nomesDasCategorias[pior.categoria] ?? pior.categoria;
   if (pior.situacao === "estourou") {
     const passou = deCentavos(-paraCentavos(pior.restante));
     return {

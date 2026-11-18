@@ -78,6 +78,9 @@ def test_a_sincronizacao_bancaria_so_roda_ao_subir_com_a_importacao_ligada(
             chamadas.append(id_do_item)
             return []
 
+        def listar_investimentos(self, id_do_item):
+            return []
+
         def listar_transacoes(self, id_da_conta, desde):
             return []
 

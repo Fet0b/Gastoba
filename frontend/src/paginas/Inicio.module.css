@@ -1,20 +1,88 @@
-/* Resumo e metas usam a largura disponível; ritmo e últimos gastos dividem
-   a linha seguinte no computador. No celular, a ordem do DOM continua em uma coluna. */
+/* Início, na ordem do DOM: o número principal, as metas do mês (os anéis, em destaque), o ritmo,
+   os últimos gastos e o aviso do mês. No computador são duas colunas (a ordem de leitura continua
+   a do DOM); no celular, uma só. */
+
+.cabecalho {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espaco-1);
+}
+
+.chamada {
+  font-family: var(--fonte-titulo);
+  font-size: var(--texto-titulo);
+  line-height: var(--texto-titulo-linha);
+  font-weight: var(--peso-titulo);
+  letter-spacing: -0.02em;
+}
+
+.subtitulo {
+  color: var(--cor-bruma);
+  font-size: var(--texto-pequeno);
+  line-height: var(--texto-pequeno-linha);
+}
 
 .conteudo {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr);
   gap: var(--espaco-5);
-  align-items: start;
+  align-items: stretch;
 }
 
 .conteudo > * {
   min-width: 0;
 }
 
-.conteudo > :first-child,
-.metas {
-  grid-column: 1 / -1;
+/* Computador largo: resumo e metas em 3:2, ritmo e aviso em 4:1, últimos gastos abaixo. */
+@media (min-width: 64rem) {
+  .conteudo {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+
+  /* O aviso tem a altura do texto: o gráfico ao lado é bem mais alto. */
+  .aviso {
+    align-self: start;
+  }
+
+  /* O resumo acompanha a altura das metas e espalha os números até a base do cartão. */
+  .resumo {
+    display: flex;
+    flex-direction: column;
+    grid-column: span 3;
+  }
+
+  .resumo > * {
+    flex: 1;
+    align-content: start;
+  }
+
+  .metas {
+    grid-column: span 2;
+  }
+
+  .ritmo {
+    grid-column: 1 / -1;
+  }
+
+  /* O aviso ocupa a linha toda: um quinto da largura (8rem a 64rem) não comporta o texto e o botão. */
+  .aviso {
+    grid-column: 1 / -1;
+  }
+
+  .ultimos {
+    grid-column: 1 / -1;
+  }
+}
+
+/* Só com folga (80rem) o aviso vai ao lado do ritmo, em 4:1. */
+@media (min-width: 80rem) {
+  .conteudo[data-com-aviso="true"] .ritmo {
+    grid-column: span 4;
+  }
+
+  .aviso {
+    grid-column: span 1;
+  }
 }
 
 .metas {
@@ -26,24 +94,10 @@
 .titulo {
   font-size: var(--texto-grande);
   line-height: var(--texto-grande-linha);
-  font-weight: 650;
+  font-weight: var(--peso-secao);
   margin-bottom: var(--espaco-3);
-}
-
-.metas .titulo {
-  margin-bottom: 0;
 }
 
 .estado {
   color: var(--cor-bruma);
-}
-
-.aviso {
-  grid-column: 1 / -1;
-}
-
-@media (max-width: 48rem) {
-  .conteudo {
-    grid-template-columns: minmax(0, 1fr);
-  }
 }

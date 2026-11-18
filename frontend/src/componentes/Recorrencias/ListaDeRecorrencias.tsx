@@ -1,8 +1,12 @@
-import { useEffect, useId, useRef, useState } from "react";
+import { useId, useRef, useState } from "react";
 
 import type { Categoria, Conta, Recorrencia } from "../../api/tipos";
 import { deCentavos, formatar, paraCentavos } from "../../dinheiro/dinheiro";
 import { dataParaExibicao } from "../../periodo/periodo";
+import { Badge } from "../Badge/Badge";
+import { Botao } from "../Botao/Botao";
+import { DialogoDeConfirmacao } from "../DialogoDeConfirmacao/DialogoDeConfirmacao";
+import { MenuDeAcoes } from "../MenuDeAcoes/MenuDeAcoes";
 import { EdicaoDeRecorrencia } from "./EdicaoDeRecorrencia";
 import estilos from "./Recorrencias.module.css";
 
@@ -16,9 +20,13 @@ type PropriedadesDoItem = {
   aoEncerrar: (recorrencia: Recorrencia) => Promise<boolean>;
   aoAlterada: (recorrencia: Recorrencia) => void;
   aoFalhar: (erro: unknown) => void;
+  aoRevisar?: () => void;
 };
 
-/** Uma recorrência: dados e o botão "Encerrar", que pede confirmação na própria linha. */
+/**
+ * Uma recorrência: dados, "Alterar" (edição na própria linha) e o menu "Mais ações", cujo item
+ * "Encerrar" abre a confirmação num diálogo (foco em Cancelar; o foco volta ao gatilho do menu).
+ */
 function ItemDeRecorrencia({
   recorrencia,
   nomeDaConta,
@@ -28,35 +36,19 @@ function ItemDeRecorrencia({
   aoEncerrar,
   aoAlterada,
   aoFalhar,
+  aoRevisar,
 }: PropriedadesDoItem) {
   const [editando, definirEditando] = useState(false);
   const [confirmando, definirConfirmando] = useState(false);
   const [encerrando, definirEncerrando] = useState(false);
   const id = useId();
-  const botaoEncerrar = useRef<HTMLButtonElement>(null);
   const botaoAlterar = useRef<HTMLButtonElement>(null);
-  const botaoCancelar = useRef<HTMLButtonElement>(null);
-  const devolverFoco = useRef(false);
-
-  useEffect(() => {
-    if (confirmando) {
-      botaoCancelar.current?.focus();
-    } else if (devolverFoco.current) {
-      devolverFoco.current = false;
-      botaoEncerrar.current?.focus();
-    }
-  }, [confirmando]);
-
-  function cancelar(): void {
-    devolverFoco.current = true;
-    definirConfirmando(false);
-  }
 
   async function confirmar(): Promise<void> {
     definirEncerrando(true);
-    const encerrada = await aoEncerrar(recorrencia);
+    await aoEncerrar(recorrencia);
     definirEncerrando(false);
-    if (!encerrada) cancelar();
+    definirConfirmando(false);
   }
 
   function fecharEdicao(): void {
@@ -68,7 +60,7 @@ function ItemDeRecorrencia({
   const ganho = recorrencia.tipo === "ganho";
   const valor = formatar(deCentavos(ganho ? paraCentavos(recorrencia.valor) : -paraCentavos(recorrencia.valor)));
   const idTitulo = `${id}-titulo`;
-  const idPergunta = `${id}-pergunta`;
+  const legada = recorrencia.categoria === "investimentos";
 
   return (
     <li
@@ -87,16 +79,22 @@ function ItemDeRecorrencia({
         </span>
       </div>
       <p className={estilos.detalhe}>
-        {ganho ? "Ganho" : `Gasto${nomeDaCategoria ? ` · ${nomeDaCategoria}` : ""}`} · todo dia{" "}
-        {recorrencia.dia_do_mes} · {nomeDaConta || "conta removida"}
+        <span>{ganho ? "Ganho" : "Gasto"}</span>
+        {!ganho && nomeDaCategoria && <span>{nomeDaCategoria}</span>}
+        <span>todo dia {recorrencia.dia_do_mes}</span>
+        <span>{nomeDaConta || "conta removida"}</span>
       </p>
       {recorrencia.tags.length > 0 && (
         <p className={estilos.detalhe}>Tags: {recorrencia.tags.join(", ")}</p>
       )}
       <p className={estilos.detalhe}>
-        Desde {dataParaExibicao(recorrencia.inicio)}
-        {recorrencia.fim ? ` até ${dataParaExibicao(recorrencia.fim)}` : ""} ·{" "}
-        <span className={estilos.situacao}>{recorrencia.ativa ? "Ativa" : "Encerrada"}</span>
+        <span>
+          Desde {dataParaExibicao(recorrencia.inicio)}
+          {recorrencia.fim ? ` até ${dataParaExibicao(recorrencia.fim)}` : ""}
+        </span>
+        <Badge tom={recorrencia.ativa ? "positivo" : "neutro"}>
+          {recorrencia.ativa ? "Ativa" : "Encerrada"}
+        </Badge>
       </p>
 
       {editando && (
@@ -113,56 +111,48 @@ function ItemDeRecorrencia({
         />
       )}
 
-      {recorrencia.ativa &&
-        !editando &&
-        (confirmando ? (
-          <div className={estilos.confirmacao} role="group" aria-labelledby={idPergunta}>
-            <p id={idPergunta}>
-              Encerrar {recorrencia.descricao}? Ela deixa de gerar novos meses; o que já foi criado
-              continua.
-            </p>
-            <div className={estilos.acoes}>
-              <button
-                type="button"
-                className={estilos.perigo}
-                disabled={encerrando}
-                onClick={() => void confirmar()}
-              >
-                Confirmar encerramento
-              </button>
-              <button
-                ref={botaoCancelar}
-                type="button"
-                className={estilos.secundario}
-                disabled={encerrando}
-                onClick={cancelar}
-              >
-                Cancelar
-              </button>
+      {recorrencia.ativa && !editando && (
+        <div className={estilos.acoes}>
+          {legada && (
+            <div>
+              <p id={`${id}-revisao`}>Categoria antiga: revise em Investimentos</p>
+              <Botao variante="terciario" seta onClick={aoRevisar}>
+                Revisar em Investimentos
+              </Botao>
             </div>
-          </div>
-        ) : (
-          <div className={estilos.acoes}>
-            <button
-              ref={botaoAlterar}
-              type="button"
-              className={estilos.encerrar}
-              aria-label={`Alterar a recorrência ${recorrencia.descricao}`}
-              onClick={() => definirEditando(true)}
-            >
-              Alterar
-            </button>
-            <button
-              ref={botaoEncerrar}
-              type="button"
-              className={estilos.encerrar}
-              aria-label={`Encerrar a recorrência ${recorrencia.descricao}`}
-              onClick={() => definirConfirmando(true)}
-            >
-              Encerrar
-            </button>
-          </div>
-        ))}
+          )}
+          <Botao
+            ref={botaoAlterar}
+            variante="secundario"
+            disabled={legada}
+            aria-describedby={legada ? `${id}-revisao` : undefined}
+            aria-label={`Alterar a recorrência ${recorrencia.descricao}`}
+            onClick={() => definirEditando(true)}
+          >
+            Alterar
+          </Botao>
+          <MenuDeAcoes
+            rotulo={`Mais ações da recorrência ${recorrencia.descricao}`}
+            itens={[
+              {
+                rotulo: "Encerrar",
+                nomeAcessivel: `Encerrar a recorrência ${recorrencia.descricao}`,
+                destrutivo: true,
+                aoEscolher: () => definirConfirmando(true),
+              },
+            ]}
+          />
+          <DialogoDeConfirmacao
+            aberto={confirmando}
+            titulo={`Encerrar ${recorrencia.descricao}?`}
+            descricao="Ela deixa de gerar novos meses; o que já foi criado continua."
+            rotuloDaAcao="Confirmar encerramento"
+            pendente={encerrando}
+            aoConfirmar={() => void confirmar()}
+            aoCancelar={() => definirConfirmando(false)}
+          />
+        </div>
+      )}
     </li>
   );
 }
@@ -176,6 +166,7 @@ type Propriedades = {
   aoEncerrar: (recorrencia: Recorrencia) => Promise<boolean>;
   aoAlterada: (recorrencia: Recorrencia) => void;
   aoFalhar: (erro: unknown) => void;
+  aoRevisar?: () => void;
 };
 
 /** As recorrências, ativas e encerradas, na ordem da API (por descrição). */
@@ -188,6 +179,7 @@ export function ListaDeRecorrencias({
   aoEncerrar,
   aoAlterada,
   aoFalhar,
+  aoRevisar,
 }: Propriedades) {
   if (recorrencias === undefined) {
     return (
@@ -197,11 +189,16 @@ export function ListaDeRecorrencias({
     );
   }
   if (recorrencias.length === 0) {
-    return <p className={estilos.estado}>Nenhuma recorrência ainda. Crie o seu salário ou um gasto fixo.</p>;
+    return null;
   }
   const contasPorId = new Map(contas?.map((conta) => [conta.id, conta.nome]));
   const categoriasPorCodigo = new Map(categorias?.map((categoria) => [categoria.codigo, categoria.nome]));
   return (
+    <>
+    <div className={estilos.cabecalhoDaLista} data-cabecalho-da-lista="" aria-hidden="true">
+      <span>Recorrência</span>
+      <span>Valor</span>
+    </div>
     <ul className={estilos.lista} aria-label="Recorrências">
       {recorrencias.map((recorrencia) => (
         <ItemDeRecorrencia
@@ -218,8 +215,10 @@ export function ListaDeRecorrencias({
           aoEncerrar={aoEncerrar}
           aoAlterada={aoAlterada}
           aoFalhar={aoFalhar}
+          aoRevisar={aoRevisar}
         />
       ))}
     </ul>
+    </>
   );
 }

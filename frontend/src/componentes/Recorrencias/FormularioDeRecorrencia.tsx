@@ -5,6 +5,7 @@ import { useCriarRecorrencia } from "../../api/consultas";
 import type { Categoria, Conta, Recorrencia, TipoDeRecorrencia } from "../../api/tipos";
 import { hojeLocal } from "../../periodo/periodo";
 import { aparar, normalizarTag } from "../../tags/tags";
+import { Botao } from "../Botao/Botao";
 import { CampoDeTags } from "../Compositor/CampoDeTags";
 import { MENSAGEM_TAG_PENDENTE } from "../Compositor/CompositorDeGasto";
 import { CampoDeValor } from "../Compositor/CampoDeValor";
@@ -21,6 +22,8 @@ type Propriedades = {
   aoCriar: (recorrencia: Recorrencia) => void;
   /** Toda falha ao criar (a tela pisca o olho e, sem resposta, avisa). */
   aoFalhar: (erro: unknown) => void;
+  /** Fecha o formulário sem criar. Sem ele, não há "Cancelar". */
+  aoCancelar?: () => void;
 };
 
 type Campo = "valor" | "descricao" | "dia" | "inicio" | "fim" | "conta" | "categoria" | "tags";
@@ -83,6 +86,7 @@ export function FormularioDeRecorrencia({
   sugestoesDeTags = [],
   aoCriar,
   aoFalhar,
+  aoCancelar,
 }: Propriedades) {
   const [tipo, definirTipo] = useState<TipoDeRecorrencia>("ganho");
   const [valor, definirValor] = useState("0.00");
@@ -307,14 +311,21 @@ export function FormularioDeRecorrencia({
         </ul>
       )}
 
-      <button
-        type="submit"
-        className={estilos.primario}
-        disabled={motivos.length > 0 || criar.pendente}
-        aria-describedby={motivos.length > 0 ? idMotivos : undefined}
-      >
-        {criar.pendente ? "Criando…" : "Criar recorrência"}
-      </button>
+      <div className={estilos.acoesDoFormulario}>
+        <Botao
+          type="submit"
+          variante="primario"
+          disabled={motivos.length > 0 || criar.pendente}
+          aria-describedby={motivos.length > 0 ? idMotivos : undefined}
+        >
+          {criar.pendente ? "Criando…" : "Criar recorrência"}
+        </Botao>
+        {aoCancelar && (
+          <Botao variante="secundario" onClick={aoCancelar}>
+            Cancelar
+          </Botao>
+        )}
+      </div>
     </form>
   );
 }

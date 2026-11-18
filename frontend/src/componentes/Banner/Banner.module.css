@@ -1,0 +1,34 @@
+.banner {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--espaco-3);
+  padding: var(--espaco-4);
+  border-radius: var(--raio-cartao);
+  font-size: var(--texto-corpo);
+}
+
+.banner[data-tom="atencao"] {
+  background: var(--superficie-atencao);
+  color: var(--cor-atencao);
+}
+
+.banner[data-tom="positivo"] {
+  background: var(--superficie-positiva);
+  color: var(--cor-positivo);
+}
+
+.banner[data-tom="negativo"] {
+  background: var(--superficie-negativa);
+  color: var(--cor-negativo);
+}
+
+.textos {
+  flex: 1;
+  min-width: 0;
+}
+
+.textos p {
+  margin: var(--espaco-1) 0 0;
+  color: var(--cor-nevoa);
+}

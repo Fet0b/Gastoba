@@ -4,6 +4,7 @@ import { ErroDaApiCliente } from "../../api/cliente";
 import { useCriarConta } from "../../api/consultas";
 import type { Conta } from "../../api/tipos";
 import { deMascara, interpretarDigitacao } from "../../dinheiro/dinheiro";
+import { Botao } from "../Botao/Botao";
 import estilos from "./Contas.module.css";
 
 type Propriedades = {
@@ -153,12 +154,12 @@ export function FormularioDeConta({ aoCriar, aoCancelar, aoFalhar }: Propriedade
       )}
 
       <div className={estilos.acoes}>
-        <button type="submit" className={estilos.primario} disabled={criar.pendente}>
+        <Botao type="submit" variante="primario" disabled={criar.pendente}>
           Criar conta
-        </button>
-        <button type="button" className={estilos.secundario} onClick={aoCancelar}>
+        </Botao>
+        <Botao variante="secundario" onClick={aoCancelar}>
           Cancelar
-        </button>
+        </Botao>
       </div>
     </form>
   );

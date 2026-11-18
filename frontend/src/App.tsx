@@ -9,6 +9,7 @@ import { VerificandoASessao } from "./componentes/Sessao/VerificandoASessao";
 import { Contas } from "./paginas/Contas";
 import { Faturas } from "./paginas/Faturas";
 import { Inicio } from "./paginas/Inicio";
+import { Investimentos } from "./paginas/Investimentos";
 import { Orcamento } from "./paginas/Orcamento";
 import { Outros } from "./paginas/Outros";
 import { Perfil } from "./paginas/Perfil";
@@ -20,15 +21,23 @@ import { Transacoes } from "./paginas/Transacoes";
  * sair ou ao perder a sessão, então quem entra de novo começa no Início.
  */
 function AreaAutenticada({ usuario, aoSair }: { usuario: Usuario; aoSair: () => void }) {
+  const [dataDoMovimento, definirDataDoMovimento] = useState<string | undefined>(undefined);
+  const [vistaDeTransacoes, definirVistaDeTransacoes] = useState<"aportes" | undefined>(undefined);
+  // Só a ida a Transações por "Novo gasto"/N abre o compositor; trocar de aba o limpa.
+  const [abrirCompositor, definirAbrirCompositor] = useState(false);
   const [tela, definirTela] = useState<Tela>("inicio");
   // Só a ida de Transações sem contas abre Contas com o formulário; trocar de aba o limpa.
   const [contasComFormulario, definirContasComFormulario] = useState(false);
   const navegacao: Navegacao = {
     nomeDaPessoa: usuario.nome,
     importacaoBancaria: usuario.importacao_bancaria === true,
+    gestaoDeInvestimentos: usuario.gestao_de_investimentos === true,
     tela,
     aoIrPara: (destino, opcoes) => {
       definirContasComFormulario(destino === "contas" && opcoes?.abrirFormulario === true);
+      definirDataDoMovimento(opcoes?.dataDoMovimento);
+      definirVistaDeTransacoes(destino === "transacoes" ? opcoes?.vistaDeTransacoes : undefined);
+      definirAbrirCompositor(destino === "transacoes" && opcoes?.abrirCompositor === true);
       definirTela(destino);
     },
     aoSair,
@@ -37,11 +46,18 @@ function AreaAutenticada({ usuario, aoSair }: { usuario: Usuario; aoSair: () => 
     case "inicio":
       return <Inicio navegacao={navegacao} />;
     case "transacoes":
-      return <Transacoes navegacao={navegacao} />;
+      return <Transacoes
+          navegacao={navegacao}
+          vistaInicial={vistaDeTransacoes}
+          dataDoMovimento={dataDoMovimento}
+          abrirCompositorAoEntrar={abrirCompositor}
+        />;
     case "orcamento":
       return <Orcamento navegacao={navegacao} />;
     case "contas":
       return <Contas navegacao={navegacao} formularioInicialAberto={contasComFormulario} />;
+    case "investimentos":
+      return <Investimentos navegacao={navegacao} />;
     case "faturas":
       return <Faturas navegacao={navegacao} />;
     case "tags":

@@ -10,7 +10,7 @@ from gastoba.domain.dinheiro import Dinheiro
 from gastoba.domain.excecoes import MetaNaoEncontrada
 from gastoba.domain.ganho import Ganho
 from gastoba.domain.gasto import Gasto
-from gastoba.domain.meta import Meta
+from gastoba.domain.meta import AlvoDaMeta, Meta
 from gastoba.domain.recorrencia import Recorrencia, TipoDeRecorrencia
 from gastoba.domain.tag import Tag
 from gastoba.domain.usuario import Usuario
@@ -327,7 +327,7 @@ def test_metas_salvar_obter_listar_na_ordem_do_enum_e_trocar_o_percentual(uow):
     usuario, _ = _usuario_com_conta(uow)
     with uow:
         uow.metas.salvar(Meta(usuario.id, CategoriaDoGasto.GASTO_FIXO, 30))
-        uow.metas.salvar(Meta(usuario.id, CategoriaDoGasto.INVESTIMENTOS, 10))
+        uow.metas.salvar(Meta(usuario.id, AlvoDaMeta.LIBERDADE_FINANCEIRA, 10))
         uow.metas.salvar(Meta(usuario.id, CategoriaDoGasto.LAZER, 20))
         uow.commit()
     with uow:
@@ -339,8 +339,8 @@ def test_metas_salvar_obter_listar_na_ordem_do_enum_e_trocar_o_percentual(uow):
         lista = uow.metas.listar(usuario.id)
         trocada = uow.metas.obter(usuario.id, CategoriaDoGasto.LAZER)
 
-    assert [(m.categoria, m.percentual) for m in lista] == [
-        (CategoriaDoGasto.INVESTIMENTOS, 10),
+    assert [(m.alvo, m.percentual) for m in lista] == [
+        (AlvoDaMeta.LIBERDADE_FINANCEIRA, 10),
         (CategoriaDoGasto.LAZER, 25),
         (CategoriaDoGasto.GASTO_FIXO, 30),
     ]

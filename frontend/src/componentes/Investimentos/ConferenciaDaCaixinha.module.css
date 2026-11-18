@@ -1,0 +1,13 @@
+.secao { display: flex; flex-direction: column; align-items: flex-start; gap: var(--espaco-3); min-width: 0; }
+.campos { display: grid; gap: var(--espaco-4); min-width: 0; }
+.cabecalho, .abas, .situacoes, .situacao { display: flex; align-items: center; flex-wrap: wrap; gap: var(--espaco-2); }
+.apoio { margin: 0; font-size: var(--texto-pequeno); color: var(--cor-bruma); }
+.saldos { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--espaco-3); }
+.situacao { font-size: var(--texto-rotulo); color: var(--cor-atencao); }
+.situacao[data-conferido="true"] { color: var(--cor-positivo); }
+.atencao { color: var(--cor-atencao); font-size: var(--texto-pequeno); }
+.resultado { padding: var(--espaco-4); background: var(--cor-veludo); border: var(--borda-de-camada); border-radius: var(--raio-cartao); }
+.resultado dl { display: grid; gap: var(--espaco-2); }
+.resultado dl > div { display: flex; justify-content: space-between; gap: var(--espaco-3); }
+.resultado dd { margin: 0; text-align: end; font-family: var(--fonte-titulo); font-variant-numeric: tabular-nums; }
+@media (max-width: 30rem) { .saldos { grid-template-columns: minmax(0, 1fr); } }

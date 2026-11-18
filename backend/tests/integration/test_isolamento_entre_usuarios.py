@@ -277,8 +277,12 @@ def test_cada_um_tem_as_proprias_metas_e_a_soma_e_por_pessoa(cliente, ana, bia):
     cliente.put("/metas/lazer", json={"percentual": 100}, headers=ana)
 
     assert cliente.put("/metas/lazer", json={"percentual": 10}, headers=bia).status_code == 200
-    assert cliente.get("/metas", headers=ana).json() == [{"categoria": "lazer", "percentual": 100}]
-    assert cliente.get("/metas", headers=bia).json() == [{"categoria": "lazer", "percentual": 10}]
+    assert cliente.get("/metas", headers=ana).json() == [
+        {"nome": "Lazer", "categoria": "lazer", "percentual": 100}
+    ]
+    assert cliente.get("/metas", headers=bia).json() == [
+        {"nome": "Lazer", "categoria": "lazer", "percentual": 10}
+    ]
     _confere_erro(cliente.delete("/metas/gasto_fixo", headers=bia), 404, "meta_nao_encontrada")
 
 
@@ -292,3 +296,44 @@ def test_o_progresso_nao_mistura_renda_nem_gastos_de_outra_pessoa(cliente, ana, 
 
     assert corpo["renda"] == "0.00"
     assert [m["gasto"] for m in corpo["metas"]] == ["0.00"]
+
+
+def test_rendas_base_independentes_e_progresso_isolado(cliente, ana, bia):
+    assert cliente.put("/renda-base", json={"valor": "5000.00"}, headers=bia).status_code == 200
+    assert cliente.get("/renda-base", headers=ana).json() == {"valor": None}
+    assert cliente.put("/renda-base", json={"valor": "7000.00"}, headers=ana).status_code == 200
+    for pessoa, valor in [(ana, "7000.00"), (bia, "5000.00")]:
+        assert cliente.get("/renda-base", headers=pessoa).json() == {"valor": valor}
+        corpo = cliente.get("/metas/progresso?mes=2026-10", headers=pessoa).json()
+        assert corpo["renda_base"] == corpo["renda_de_referencia"] == valor
+    assert cliente.delete("/renda-base", headers=ana).status_code == 204
+    assert cliente.get("/renda-base", headers=bia).json() == {"valor": "5000.00"}
+
+
+def test_perfil_gestao_de_investimentos_nao_considera_dados_alheios(cliente, ana, bia):
+    from datetime import date
+    from uuid import UUID
+
+    from gastoba.domain.dinheiro import Dinheiro
+    from gastoba.domain.movimento_de_investimento import MovimentoDeInvestimento, TipoDeMovimento
+    from gastoba.domain.portas import InvestimentoExterno
+    from gastoba.infrastructure.persistencia.unidade_de_trabalho import UnidadeDeTrabalhoSqlAlchemy
+
+    conta = _criar_conta(cliente, bia, "Conta exemplo")
+    ana_id = UUID(cliente.get("/auth/eu", headers=ana).json()["id"])
+    assert cliente.get("/auth/eu", headers=ana).json().get("gestao_de_investimentos") is False
+    with UnidadeDeTrabalhoSqlAlchemy(cliente.app.state.fabrica_de_sessoes) as uow:
+        uow.investimentos.salvar_posicao(
+            ana_id, InvestimentoExterno("i1", "Exemplo", "FIXED_INCOME", None, Dinheiro(100), "{}")
+        )
+        uow.commit()
+    assert cliente.get("/auth/eu", headers=ana).json().get("gestao_de_investimentos") is True
+    assert cliente.get("/auth/eu", headers=bia).json().get("gestao_de_investimentos") is False
+    with UnidadeDeTrabalhoSqlAlchemy(cliente.app.state.fabrica_de_sessoes) as uow:
+        uow.movimentos_de_investimento.adicionar(
+            MovimentoDeInvestimento(
+                UUID(conta), TipoDeMovimento.APORTE, Dinheiro(100), "Exemplo", date(2026, 10, 5)
+            )
+        )
+        uow.commit()
+    assert cliente.get("/auth/eu", headers=bia).json().get("gestao_de_investimentos") is True

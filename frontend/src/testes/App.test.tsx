@@ -67,11 +67,11 @@ describe("App", () => {
 
     const paginas: [string, () => HTMLElement][] = [
       ["Transações", () => screen.getByRole("heading", { level: 2, name: "Transações" })],
-      ["Orçamento", () => screen.getByRole("heading", { level: 2, name: "Metas" })],
+      ["Orçamento", () => screen.getByRole("heading", { level: 2, name: "Orçamento" })],
       ["Contas", () => screen.getByRole("heading", { level: 2, name: "Contas" })],
       ["Faturas", () => screen.getByRole("heading", { level: 2, name: "Faturas" })],
       ["Tags", () => screen.getByRole("heading", { name: "Distribuição por tags" })],
-      ["Outros", () => screen.getByRole("heading", { level: 2, name: "Outros" })],
+      ["Recorrências", () => screen.getByRole("heading", { level: 2, name: "Recorrências" })],
       ["Perfil", () => screen.getByRole("heading", { level: 2, name: "Perfil" })],
       ["Início", () => screen.getByRole("heading", { name: "Metas do mês" })],
     ];
@@ -86,7 +86,7 @@ describe("App", () => {
     }
   });
 
-  it("no celular, Faturas, Tags, Outros e Perfil se alcançam por Mais", async () => {
+  it("no celular, Faturas, Tags, Recorrências e Perfil se alcançam por Mais", async () => {
     definirLayoutEstreito(true);
     entrarNaSimulacao();
     render(<App />);
@@ -95,7 +95,7 @@ describe("App", () => {
     const alvos: [string, () => HTMLElement][] = [
       ["Faturas", () => screen.getByRole("heading", { level: 2, name: "Faturas" })],
       ["Tags", () => screen.getByRole("heading", { name: "Distribuição por tags" })],
-      ["Outros", () => screen.getByRole("heading", { level: 2, name: "Outros" })],
+      ["Recorrências", () => screen.getByRole("heading", { level: 2, name: "Recorrências" })],
       ["Perfil", () => screen.getByRole("heading", { level: 2, name: "Perfil" })],
     ];
     for (const [nome, pagina] of alvos) {
@@ -115,8 +115,38 @@ describe("App", () => {
 
     fireEvent.click(await screen.findByRole("button", { name: "Ver orçamento" }));
 
-    expect(await screen.findByRole("heading", { level: 2, name: "Metas" })).not.toBeNull();
+    expect(await screen.findByRole("heading", { level: 2, name: "Orçamento" })).not.toBeNull();
     expect(screen.getByRole("button", { name: "Orçamento" }).getAttribute("aria-current")).toBe("page");
+  });
+
+  it("Novo gasto e N valem em qualquer tela: abrem o compositor em Transações", async () => {
+    entrarNaSimulacao();
+    await chamar("/contas", { metodo: "POST", corpo: { nome: "Carteira", saldo_inicial: "10.00" } });
+    render(<App />);
+    await screen.findByRole("heading", { name: "Metas do mês" });
+
+    fireEvent.keyDown(window, { key: "n" });
+
+    expect(await screen.findByRole("heading", { level: 2, name: "Transações" })).not.toBeNull();
+    expect(await screen.findByRole("dialog", { name: "Novo gasto" })).not.toBeNull();
+  });
+
+  it("de Faturas, o botão Novo gasto também leva ao compositor, e trocar de tela o limpa", async () => {
+    entrarNaSimulacao();
+    await chamar("/contas", { metodo: "POST", corpo: { nome: "Carteira", saldo_inicial: "10.00" } });
+    render(<App />);
+    await screen.findByRole("heading", { name: "Metas do mês" });
+    irPara("Faturas");
+    await screen.findByRole("heading", { level: 2, name: "Faturas" });
+
+    fireEvent.click(screen.getByRole("button", { name: "Novo gasto" }));
+    const dialogo = await screen.findByRole("dialog", { name: "Novo gasto" });
+    fireEvent.click(within(dialogo).getByRole("button", { name: "Cancelar" }));
+    irPara("Início");
+    await screen.findByRole("heading", { name: "Metas do mês" });
+    irPara("Transações");
+    await screen.findByRole("heading", { level: 2, name: "Transações" });
+    expect(screen.queryByRole("dialog", { name: "Novo gasto" })).toBeNull();
   });
 
   it("sem contas, Novo gasto em Transações leva a Contas com o formulário aberto, só daquela vez", async () => {
@@ -153,16 +183,18 @@ describe("App", () => {
 
     // Aba Orçamento: 30% da renda de R$ 1.000,00 para Lazer, ou seja, R$ 300,00.
     irPara("Orçamento");
-    fireEvent.click(await screen.findByRole("button", { name: "Definir meta de Lazer" }));
-    fireEvent.change(screen.getByLabelText("Ajustar o percentual de Lazer"), { target: { value: "30" } });
+    fireEvent.click(await screen.findByRole("button", { name: "Editar metas" }));
+    fireEvent.change(await screen.findByLabelText("Ajustar o percentual de Lazer"), { target: { value: "30" } });
     expect(screen.getByText(/30% equivale a/).textContent).toContain("300,00");
     fireEvent.click(screen.getByRole("button", { name: "Salvar meta" }));
     expect(await screen.findByText("Meta salva.")).not.toBeNull();
 
-    // Início: a meta aparece "Dentro" até o primeiro gasto, e "Estourou" depois do segundo.
+    // Início: a meta aparece dentro do limite (Restam R$ 300,00) até o primeiro gasto e "Estourou"
+    // depois do segundo; a situação fica em data-situacao na linha compacta.
     irPara("Início");
     const metas = await screen.findByRole("region", { name: "Metas do mês" });
-    await waitFor(() => expect(metas.textContent).toContain("Dentro da meta"));
+    await waitFor(() => expect(metas.textContent).toMatch(/Restam R\$.300,00/));
+    expect(metas.querySelector("[data-linha-da-meta]")?.getAttribute("data-situacao")).toBe("dentro");
 
     async function gastarEmLazer(valor: string, descricao: string): Promise<HTMLElement> {
       irPara("Transações");
@@ -178,11 +210,16 @@ describe("App", () => {
     }
 
     let regiaoDeMetas = await gastarEmLazer("25000", "Show"); // R$ 250,00 de R$ 300,00: 83%
-    await waitFor(() => expect(regiaoDeMetas.textContent).toContain("Perto do limite"));
+    await waitFor(() =>
+      expect(regiaoDeMetas.querySelector("[data-linha-da-meta]")?.getAttribute("data-situacao")).toBe("alerta"),
+    );
+    expect(regiaoDeMetas.textContent).toMatch(/Restam R\$.50,00/);
 
     regiaoDeMetas = await gastarEmLazer("10000", "Cinema"); // R$ 350,00 de R$ 300,00
-    await waitFor(() => expect(regiaoDeMetas.textContent).toContain("Estourou em"));
-    expect(within(regiaoDeMetas).getByRole("progressbar").getAttribute("aria-valuenow")).toBe("100");
+    await waitFor(() => expect(regiaoDeMetas.textContent).toMatch(/Estourou R\$.50,00/));
+    const anel = within(regiaoDeMetas).getByRole("img", { name: /^Lazer: / });
+    expect(anel.getAttribute("aria-label")).toContain("116% usado");
+    expect(anel.querySelector("[data-arco]")?.getAttribute("stroke-dasharray")).toBe("100 100");
   });
 
   it("com a sessão válida, abre direto no Início (recarregar não pede a senha)", async () => {
@@ -208,7 +245,7 @@ describe("App", () => {
     // Contas: cria uma conta; Transações: registra um gasto.
     irPara("Contas");
     fireEvent.click(await screen.findByRole("button", { name: "Nova conta" }));
-    fireEvent.change(screen.getByLabelText("Nome"), { target: { value: "Nubank" } });
+    fireEvent.change(await screen.findByLabelText("Nome"), { target: { value: "Nubank" } });
     fireEvent.click(screen.getByRole("button", { name: "Criar conta" }));
     expect(await screen.findByText("Conta criada.")).not.toBeNull();
     expect(await screen.findByText("Nubank")).not.toBeNull();
@@ -279,7 +316,7 @@ describe("App", () => {
     // Entrar de novo leva ao Início, sem os dados da sessão anterior.
     await entrarPelaTela();
     irPara("Contas");
-    expect(await screen.findByText("Nenhuma conta ainda. Crie a primeira.")).not.toBeNull();
+    expect(await screen.findByText("Nenhuma conta ainda")).not.toBeNull();
   });
 
   it("depois de sair e entrar, começa no Início mesmo se saiu do Perfil", async () => {
@@ -307,11 +344,11 @@ describe("App", () => {
     const telas: [string, string][] = [
       ["Início", "Metas do mês"],
       ["Transações", "Transações"],
-      ["Orçamento", "Metas"],
+      ["Orçamento", "Orçamento"],
       ["Contas", "Contas"],
       ["Faturas", "Faturas"],
       ["Tags", "Distribuição por tags"],
-      ["Outros", "Outros"],
+      ["Recorrências", "Recorrências"],
       ["Perfil", "Perfil"],
     ];
     const principais = ["Início", "Transações", "Orçamento", "Contas"];
@@ -330,4 +367,15 @@ describe("App", () => {
     }
     definirLayoutEstreito(false);
   });
+});
+
+it("Investimentos abre Transações em aportes e trocar de aba limpa o pedido", async () => {
+  entrarNaSimulacao(); render(<App />);
+  await screen.findByRole("heading", { name: "Metas do mês" });
+  irPara("Investimentos");
+  fireEvent.click(await screen.findByRole("button", { name: "Ver aportes e resgates em Transações" }));
+  expect(await screen.findByRole("region", { name: "Movimentos de investimento" })).toBeTruthy();
+  expect(screen.getByRole("button", { name: "Aportes e resgates" }).getAttribute("aria-pressed")).toBe("true");
+  irPara("Contas"); irPara("Transações");
+  expect(screen.getByRole("button", { name: "Gastos e ganhos" }).getAttribute("aria-pressed")).toBe("true");
 });

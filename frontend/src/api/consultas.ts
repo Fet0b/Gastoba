@@ -1,3 +1,4 @@
+import type {AlvoDaMeta,ReservaDaDestinacao,PendenciasDeRevisao,RevisaoDoAporte,Cobertura,CorDaDestinacao} from "./tipos";
 // Consultas e mutações da API usadas pelos componentes. Chaves do cache:
 // "contas", "gastos?<filtros>", "resumos/tags?<filtros>", "ganhos?<filtros>", "recorrencias", "metas" e
 // "metas/progresso?mes=AAAA-MM", "tags", "categorias" e "chaves" (as chaves de
@@ -5,10 +6,17 @@
 
 import { chamar } from "./cliente";
 import type {
+  ClassificacaoDesfeita,
   Aceite,
   AceiteDaTransacao,
+  AceiteEmLote,
+  AceiteEmLoteResposta,
+  DivisaoDaTransacao,
+  DivisaoResposta,
   Categoria,
   ChaveDeApi,
+  FaturaDetalhada,
+  ListaDeFaturas,
   ChaveDeApiCriada,
   Conta,
   AlteracaoDeRecorrencia,
@@ -17,17 +25,26 @@ import type {
   FiltrosDeGastos,
   Ganho,
   Gasto,
+  DestinacoesIniciais,
+  Investimento,
   Meta,
+  MovimentoDeInvestimento,
+  NovaRealocacao,
   NovaChaveDeApi,
   NovaConta,
   NovaRecorrencia,
   NovoGanho,
   NovoGasto,
+  PontoDoHistorico,
+  Realocacao,
   Recorrencia,
+  RendaBase,
   ResumoDasMetas,
+  ResumoDeInvestimentos,
   ResumoPorTags,
   Sincronizacao,
   TransacaoImportada,
+  VisaoDosInvestimentos,
 } from "./tipos";
 import { invalidar, useConsulta, useMutacao } from "./useConsulta";
 
@@ -112,10 +129,31 @@ export function useResumoPorTags(filtros: FiltrosDoResumoPorTags) {
 // --- importação bancária ---------------------------------------------------------
 
 /** A caixa de entrada: as transações do banco que esperam o aceite ou o descarte. */
-export function useTransacoesImportadas() {
-  return useConsulta("transacoes-importadas", (signal) =>
-    chamar<TransacaoImportada[]>("/transacoes-importadas", { signal }),
+export function useTransacoesImportadas(estado: "pendente" | "ignorada" = "pendente", motivo?: "transferencia_entre_contas") {
+  return useConsulta(
+    estado === "pendente" ? "transacoes-importadas" : `transacoes-importadas?estado=${estado}&motivo=${motivo ?? ""}`,
+    (signal) =>
+      chamar<TransacaoImportada[]>("/transacoes-importadas", {
+        signal,
+        ...(estado === "pendente" ? {} : { parametros: { estado, ...(motivo ? { motivo } : {}) } }),
+      }),
   );
+}
+
+/** Restaurar só troca o estado (ignorada → pendente): nenhum lançamento nem saldo muda. */
+async function restaurarTransacaoImportada(id: string): Promise<true> {
+  try {
+    await chamar<void>(`/transacoes-importadas/${encodeURIComponent(id)}/restaurar`, {
+      metodo: "POST",
+    });
+    return true;
+  } finally {
+    invalidar("transacoes-importadas");
+  }
+}
+
+export function useRestaurarTransacaoImportada() {
+  return useMutacao(restaurarTransacaoImportada);
 }
 
 /** Aceitar cria um gasto ou um ganho (o saldo é do banco e não muda): refaz o que depende deles. */
@@ -129,16 +167,73 @@ async function aceitarTransacaoImportada(entrada: {
       { metodo: "POST", corpo: entrada.dados },
     );
   } finally {
-    for (const chave of ["transacoes-importadas", "gastos", "ganhos", "resumos", "tags", "metas"]) {
-      invalidar(chave);
-    }
+    invalidarDoAceite();
   }
 }
 
-async function ignorarTransacaoImportada(id: string): Promise<true> {
+/** Aceitar cria gasto, ganho ou aporte: refaz tudo o que depende deles. */
+function invalidarDoAceite(): void {
+  for (const chave of [
+    "transferencias-entre-contas",
+    "transacoes-importadas",
+    "gastos",
+    "ganhos",
+    "resumos",
+    "tags",
+    "metas",
+    "reconciliacao",
+    "investimentos",
+    "movimentos-de-investimento",
+    "resgates-sem-destinacao",
+    "reservas-das-destinacoes",
+    "revisao-de-investimentos",
+    "recorrencias",
+  ]) {
+    invalidar(chave);
+  }
+}
+
+/** Divide a transação em partes, cada uma um gasto ou ganho (tudo ou nada). */
+async function dividirTransacaoImportada(entrada: {
+  id: string;
+  divisao: DivisaoDaTransacao;
+}): Promise<DivisaoResposta> {
+  try {
+    return await chamar<DivisaoResposta>(
+      `/transacoes-importadas/${encodeURIComponent(entrada.id)}/dividir`,
+      { metodo: "POST", corpo: entrada.divisao },
+    );
+  } finally {
+    invalidarDoAceite();
+  }
+}
+
+export function useDividirTransacaoImportada() {
+  return useMutacao(dividirTransacaoImportada);
+}
+
+/** Aceita várias saídas de uma vez (tudo ou nada). */
+async function aceitarEmLote(dados: AceiteEmLote): Promise<AceiteEmLoteResposta> {
+  try {
+    return await chamar<AceiteEmLoteResposta>("/transacoes-importadas/aceitar-em-lote", {
+      metodo: "POST",
+      corpo: dados,
+    });
+  } finally {
+    invalidarDoAceite();
+  }
+}
+
+export function useAceitarEmLote() {
+  return useMutacao(aceitarEmLote);
+}
+
+async function ignorarTransacaoImportada(entrada: string | { id: string; motivo: "transferencia_entre_contas" }): Promise<true> {
+  const id = typeof entrada === "string" ? entrada : entrada.id;
   try {
     await chamar<void>(`/transacoes-importadas/${encodeURIComponent(id)}/ignorar`, {
       metodo: "POST",
+      ...(typeof entrada === "string" ? {} : { corpo: { motivo: entrada.motivo } }),
     });
     return true;
   } finally {
@@ -153,6 +248,7 @@ async function sincronizarContasBancarias(_entrada: void): Promise<Sincronizacao
   } finally {
     invalidar("transacoes-importadas");
     invalidar("contas");
+    invalidar("faturas");
   }
 }
 
@@ -201,6 +297,22 @@ async function registrarGanho(novo: NovoGanho): Promise<Ganho> {
   return ganho;
 }
 
+/** Apagar a conta leva junto gastos, ganhos e recorrências: tudo que depende dela se refaz. */
+async function excluirConta(id: string): Promise<true> {
+  try {
+    await chamar<void>(`/contas/${encodeURIComponent(id)}`, { metodo: "DELETE" });
+    return true;
+  } finally {
+    for (const chave of ["contas", "gastos", "ganhos", "resumos", "tags", "metas", "recorrencias"]) {
+      invalidar(chave);
+    }
+  }
+}
+
+export function useExcluirConta() {
+  return useMutacao(excluirConta);
+}
+
 export function useCriarConta() {
   return useMutacao(criarConta);
 }
@@ -209,7 +321,7 @@ export function useRegistrarGasto() {
   return useMutacao(registrarGasto);
 }
 
-/** Excluir devolve o saldo da conta e muda a renda do mês: contas, ganhos e metas se refazem. */
+/** Excluir devolve o saldo da conta e muda a renda do mês: contas, ganhos, metas e a caixa se refazem. */
 async function excluirGanho(id: string): Promise<true> {
   try {
     await chamar<void>(`/ganhos/${encodeURIComponent(id)}`, { metodo: "DELETE" });
@@ -218,6 +330,8 @@ async function excluirGanho(id: string): Promise<true> {
     invalidar("contas");
     invalidar("ganhos");
     invalidar("metas");
+    // Um ganho aceito da caixa de entrada devolve a transação à caixa ao ser excluído.
+    invalidar("transacoes-importadas");
   }
 }
 
@@ -321,6 +435,32 @@ export function useEncerrarRecorrencia() {
 
 // --- metas -----------------------------------------------------------------------
 
+export function useRendaBase() {
+  return useConsulta("renda-base", (signal) => chamar<RendaBase>("/renda-base", { signal }));
+}
+
+async function definirRendaBase(valor: string): Promise<RendaBase> {
+  const base = await chamar<RendaBase>("/renda-base", { metodo: "PUT", corpo: { valor } });
+  invalidar("renda-base");
+  invalidar("metas");
+  return base;
+}
+
+async function removerRendaBase(_entrada: void): Promise<true> {
+  await chamar<void>("/renda-base", { metodo: "DELETE" });
+  invalidar("renda-base");
+  invalidar("metas");
+  return true;
+}
+
+export function useDefinirRendaBase() {
+  return useMutacao(definirRendaBase);
+}
+
+export function useRemoverRendaBase() {
+  return useMutacao(removerRendaBase);
+}
+
 /** As metas (categoria e percentual), na ordem das categorias. */
 export function useMetas() {
   return useConsulta("metas", (signal) => chamar<Meta[]>("/metas", { signal }));
@@ -333,7 +473,7 @@ export function useProgressoDasMetas(mes: string) {
   );
 }
 
-async function definirMeta(meta: Meta): Promise<Meta> {
+async function definirMeta(meta: Omit<Meta,"nome">): Promise<Meta> {
   try {
     return await chamar<Meta>(`/metas/${encodeURIComponent(meta.categoria)}`, {
       metodo: "PUT",
@@ -362,3 +502,393 @@ export function useRemoverMeta() {
   return useMutacao(removerMeta);
 }
 
+
+// --- investimentos ----------------------------------------------------------------
+
+/** As posições, cada uma com o saldo rateado entre as destinações. */
+export function useInvestimentos() {
+  return useConsulta("investimentos", (signal) =>
+    chamar<Investimento[]>("/investimentos", { signal }),
+  );
+}
+
+export function useResumoDeInvestimentos(visao: VisaoDosInvestimentos) {
+  return useConsulta(`investimentos/resumo?visao=${visao}`, (signal) =>
+    chamar<ResumoDeInvestimentos>("/investimentos/resumo", { parametros: { visao }, signal }),
+  );
+}
+
+/** Saldos diários guardados no período; só existem desde que o Gastoba começou a guardar. */
+export function useHistoricoDeInvestimentos(inicio: string, fim: string) {
+  return useConsulta(`investimentos/historico?inicio=${inicio}&fim=${fim}`, (signal) =>
+    chamar<PontoDoHistorico[]>("/investimentos/historico", { parametros: { inicio, fim }, signal }),
+  );
+}
+
+export function useRealocacoes(investimentoId: string) {
+  return useConsulta(`investimentos/${investimentoId}/realocacoes`, (signal) =>
+    chamar<Realocacao[]>(`/investimentos/${encodeURIComponent(investimentoId)}/realocacoes`, {
+      signal,
+    }),
+  );
+}
+
+export function useMovimentosDeInvestimento(inicio: string, fim: string, habilitada = true) {
+  return useConsulta(habilitada ? `movimentos-de-investimento?inicio=${inicio}&fim=${fim}` : "movimentos-de-investimento-desabilitados", async signal =>
+    habilitada ? chamar<MovimentoDeInvestimento[]>("/movimentos-de-investimento", { parametros: { inicio, fim }, signal }) : []);
+}
+
+async function realocar(entrada: { investimentoId: string; dados: NovaRealocacao }) {
+  try {
+    return await chamar<Realocacao>(
+      `/investimentos/${encodeURIComponent(entrada.investimentoId)}/realocacoes`,
+      { metodo: "POST", corpo: entrada.dados },
+    );
+  } finally {
+    invalidar("investimentos");
+  }
+}
+
+export function useRealocar() {
+  return useMutacao(realocar);
+}
+
+async function associarMovimento(entrada: {
+  movimentoId: string;
+  investimentoId: string;
+  destinacoes: { tag: string; percentual: number }[];
+}) {
+  try {
+    return await chamar<MovimentoDeInvestimento>(
+      `/movimentos-de-investimento/${encodeURIComponent(entrada.movimentoId)}/destinacoes`,
+      {
+        metodo: "POST",
+        corpo: { investimento_id: entrada.investimentoId, destinacoes: entrada.destinacoes },
+      },
+    );
+  } finally {
+    invalidar("investimentos");
+    invalidar("movimentos-de-investimento");
+    invalidar("resgates-sem-destinacao");
+    invalidar("metas");
+    invalidar("aportes-sem-investimento");
+  }
+}
+
+export function useAssociarMovimento() {
+  return useMutacao(associarMovimento);
+}
+
+/**
+ * Define as destinações da parte da posição ainda sem principal (o saldo inicial): cria um aporte
+ * sem conta, então refaz as posições, os movimentos e a caixa (a sugestão depende dos movimentos).
+ */
+async function definirDestinacoesDoInvestimento(entrada: {
+  alocar?: boolean;
+  investimentoId: string;
+  dados: DestinacoesIniciais;
+}) {
+  try {
+    await chamar<MovimentoDeInvestimento>(
+      `/investimentos/${encodeURIComponent(entrada.investimentoId)}/${entrada.alocar ? "alocar-sem-caixinha" : "destinacoes"}`,
+      { metodo: "POST", corpo: entrada.dados },
+    );
+    return true;
+  } finally {
+    invalidar("reservas-das-destinacoes");
+    invalidar("investimentos");
+    invalidar("movimentos-de-investimento");
+    invalidar("transacoes-importadas");
+  }
+}
+
+export function useDefinirDestinacoesDoInvestimento() {
+  return useMutacao(definirDestinacoesDoInvestimento);
+}
+
+/** Apaga uma realocação feita por engano: o principal volta à origem. */
+async function desfazerRealocacao(entrada: { investimentoId: string; realocacaoId: string }) {
+  try {
+    await chamar<void>(
+      `/investimentos/${encodeURIComponent(entrada.investimentoId)}/realocacoes/${encodeURIComponent(entrada.realocacaoId)}`,
+      { metodo: "DELETE" },
+    );
+    return true as const;
+  } finally {
+    invalidar("investimentos");
+  }
+}
+
+export function useDesfazerRealocacao() {
+  return useMutacao(desfazerRealocacao);
+}
+
+/** Apaga um saldo inicial definido por engano; o valor volta a ficar sem destinação. */
+async function desfazerSaldoInicial(movimentoId: string) {
+  try {
+    await chamar<void>(`/movimentos-de-investimento/${encodeURIComponent(movimentoId)}`, {
+      metodo: "DELETE",
+    });
+    return true as const;
+  } finally {
+    invalidar("investimentos");
+    invalidar("movimentos-de-investimento");
+    invalidar("transacoes-importadas");
+  }
+}
+
+export function useDesfazerSaldoInicial() {
+  return useMutacao(desfazerSaldoInicial);
+}
+
+/** Recarrega também os gastos e ganhos que podem pertencer à divisão desfeita. */
+async function desfazerClassificacao(entrada: { movimentoId: string; desfazerDivisaoInteira?: boolean }): Promise<ClassificacaoDesfeita> {
+  try {
+    return await chamar<ClassificacaoDesfeita>(`/movimentos-de-investimento/${encodeURIComponent(entrada.movimentoId)}/desfazer-classificacao`, {
+      metodo: "POST", corpo: { desfazer_divisao_inteira: entrada.desfazerDivisaoInteira ?? false },
+    });
+  } finally {
+    invalidarDoAceite();
+  }
+}
+export function useDesfazerClassificacao() { return useMutacao(desfazerClassificacao); }
+
+
+export function useAlvosDasMetas() {
+  return useConsulta("metas/alvos", signal => chamar<AlvoDaMeta[]>("/metas/alvos",{signal}));
+}
+export function useReservasDasDestinacoes(categoria: string) {
+  return useConsulta(`reservas-das-destinacoes?categoria=${categoria}`,signal => chamar<ReservaDaDestinacao[]>("/reservas-das-destinacoes",{parametros:{categoria},signal}));
+}
+export function usePendenciasDeRevisao() {
+  return useConsulta("revisao-de-investimentos",signal => chamar<PendenciasDeRevisao>("/revisao-de-investimentos",{signal}));
+}
+function invalidarDespesasEInvestimentos() {
+  for (const prefixo of ["gastos","movimentos-de-investimento","metas","recorrencias","revisao-de-investimentos","reservas-das-destinacoes","investimentos","resumos","resgates-sem-destinacao"]) invalidar(prefixo);
+}
+export function useAssociarCompra() {
+  return useMutacao(async (e: {gastoId:string;tag:string;valor:string;movimentoId?:string}) => {
+    try {return await chamar<Cobertura>(`/gastos/${encodeURIComponent(e.gastoId)}/coberturas`,{metodo:"POST",corpo:{tag:e.tag,valor:e.valor,...(e.movimentoId?{movimento_id:e.movimentoId}:{})}});} finally {invalidarDespesasEInvestimentos();}
+  });
+}
+export function useDesassociarCompra() {
+  return useMutacao(async (e: {gastoId:string;coberturaId:string}) => {
+    try {await chamar(`/gastos/${encodeURIComponent(e.gastoId)}/coberturas/${encodeURIComponent(e.coberturaId)}`,{metodo:"DELETE"}); return true;} finally {invalidarDespesasEInvestimentos();}
+  });
+}
+export function useRevisarAporte() {
+  return useMutacao(async(e:{id:string;dados:RevisaoDoAporte})=>{
+    try {return await chamar<MovimentoDeInvestimento>(`/revisao-de-investimentos/aportes/${encodeURIComponent(e.id)}`,{metodo:"POST",corpo:e.dados});}finally{invalidarDespesasEInvestimentos();}
+  });
+}
+export function useRevisarGastoLegado() {
+  return useMutacao(async(e:{id:string;categoria:string})=>{
+    try{return await chamar<Gasto>(`/revisao-de-investimentos/gastos/${encodeURIComponent(e.id)}`,{metodo:"POST",corpo:{categoria:e.categoria}});}finally{invalidarDespesasEInvestimentos();}
+  });
+}
+export function useRevisarRecorrenciaLegada() {
+  return useMutacao(async(e:{id:string;categoria:string})=>{
+    try{return await chamar<Recorrencia>(`/revisao-de-investimentos/recorrencias/${encodeURIComponent(e.id)}`,{metodo:"POST",corpo:{categoria:e.categoria}});}finally{invalidarDespesasEInvestimentos();}
+  });
+}
+/** Saques de investimento sem tag: alimentam o sininho. */
+export function useResgatesSemDestinacao() {
+  return useConsulta("resgates-sem-destinacao",signal => chamar<import("./tipos").AvisoDeResgate[]>("/resgates-sem-destinacao",{signal}));
+}
+export function useDefinirCorDaDestinacao(){
+  return useMutacao(async(e:{tag:string;cor:CorDaDestinacao})=>{
+    try{return await chamar("/cores-das-destinacoes",{metodo:"PUT",corpo:e});}finally{invalidar("investimentos");invalidar("reservas-das-destinacoes");}
+  });
+}
+export function useRemoverCorDaDestinacao(){
+  return useMutacao(async(tag:string)=>{
+    try{await chamar("/cores-das-destinacoes",{metodo:"DELETE",parametros:{tag}});return true;}finally{invalidar("investimentos");invalidar("reservas-das-destinacoes");}
+  });
+}
+
+/** Os cartões com suas faturas; `hoje` ("AAAA-MM-DD") define a situação de cada uma. Só a dona da importação. */
+export function useFaturas(hoje: string) {
+  return useConsulta(`faturas?hoje=${hoje}`, (signal) =>
+    chamar<ListaDeFaturas>("/faturas", { parametros: { hoje }, signal }),
+  );
+}
+
+/** Uma fatura com as compras e os pagamentos; só se monta quando a fatura é aberta na tela. */
+export function useFatura(id: string, hoje: string) {
+  return useConsulta(`faturas/${id}?hoje=${hoje}`, (signal) =>
+    chamar<FaturaDetalhada>(`/faturas/${encodeURIComponent(id)}`, { parametros: { hoje }, signal }),
+  );
+}
+
+
+async function consultarImpactoDaReversao(id: string): Promise<import("./tipos").ImpactoDaReversao> {
+  return chamar(`/transacoes-importadas/${encodeURIComponent(id)}/impacto-da-reversao`);
+}
+export function useConsultarImpactoDaReversao() { return useMutacao(consultarImpactoDaReversao); }
+async function desfazerClassificacaoImportada(entrada: { transacaoId: string; versaoEsperada: string; desfazerDivisaoInteira: boolean; desfazerDependencias: boolean }): Promise<ClassificacaoDesfeita> {
+  try {
+    return await chamar(`/transacoes-importadas/${encodeURIComponent(entrada.transacaoId)}/desfazer-classificacao`, {
+      metodo: "POST", corpo: { versao_esperada: entrada.versaoEsperada, desfazer_divisao_inteira: entrada.desfazerDivisaoInteira, desfazer_dependencias: entrada.desfazerDependencias },
+    });
+  } finally { invalidarDoAceite(); }
+}
+export function useDesfazerClassificacaoImportada() { return useMutacao(desfazerClassificacaoImportada); }
+
+
+async function definirPapelDaConta(entrada: { id: string; papel: "corrente" | "investimento" }): Promise<Conta> {
+ try { return await chamar(`/contas/${encodeURIComponent(entrada.id)}/papel`, { metodo: "PUT", corpo: { papel: entrada.papel } }); }
+ finally { invalidar("contas"); }
+}
+export function useDefinirPapelDaConta() { return useMutacao(definirPapelDaConta); }
+async function classificarTransferencia(entrada: { id: string; conta_contraparte_id: string; par_transacao_id: string | null }): Promise<import("./tipos").TransferenciaEntreContas> {
+ try { return await chamar(`/transacoes-importadas/${encodeURIComponent(entrada.id)}/aceitar-como-transferencia`, {
+  metodo: "POST", corpo: { conta_contraparte_id: entrada.conta_contraparte_id, par_transacao_id: entrada.par_transacao_id },
+ }); } finally { invalidarDoAceite(); invalidar("transferencias-entre-contas"); }
+}
+export function useClassificarTransferencia() { return useMutacao(classificarTransferencia); }
+export function useTransferencias(inicio: string, fim: string, habilitada = true) {
+ return useConsulta<import("./tipos").TransferenciaEntreContas[]>(habilitada ? `transferencias-entre-contas?inicio=${inicio}&fim=${fim}` : "transferencias-desabilitadas", async sinal => habilitada ? chamar("/transferencias-entre-contas", { parametros: { inicio, fim }, signal: sinal }) : []);
+}
+async function completarPar(entrada: { id: string; transacao_id: string }): Promise<import("./tipos").TransferenciaEntreContas> {
+ try { return await chamar(`/transferencias-entre-contas/${encodeURIComponent(entrada.id)}/completar-par`, { metodo: "POST", corpo: { transacao_id: entrada.transacao_id } }); }
+ finally { invalidarDoAceite(); invalidar("transferencias-entre-contas"); }
+}
+export function useCompletarParDaTransferencia() { return useMutacao(completarPar); }
+
+async function definirCaixinha(entrada: { conta_id: string; saldo_remunerado: string; data_do_saldo: string }): Promise<{ id: string; nome: string; saldo: string }> {
+ try { return await chamar("/caixinhas", { metodo: "POST", corpo: entrada }); }
+ finally { invalidarDoAceite(); }
+}
+export function useDefinirCaixinha() { return useMutacao(definirCaixinha); }
+async function definirReferenciaDaCaixinha(entrada: { investimentoId: string; mes: string; saldo_inicial: string; saldo_final: string; periodo_completo: boolean }): Promise<true> {
+ await chamar(`/investimentos/${encodeURIComponent(entrada.investimentoId)}/referencias-da-caixinha/${entrada.mes}`, { metodo: "PUT", corpo: { saldo_inicial: entrada.saldo_inicial, saldo_final: entrada.saldo_final, periodo_completo: entrada.periodo_completo } });
+ invalidar("reconciliacao"); return true;
+}
+export function useDefinirReferenciaDaCaixinha() { return useMutacao(definirReferenciaDaCaixinha); }
+export function useReconciliacaoDaCaixinha(investimentoId: string, mes: string) {
+  return useConsulta<import("./tipos").ReconciliacaoDaCaixinha | null>(`reconciliacao?investimento=${investimentoId}&mes=${mes}`, async signal => {
+    if (!investimentoId) return null;
+    // Uma montagem cancelada não deve iniciar uma consulta que já perdeu seu consumidor.
+    await Promise.resolve();
+    if (signal.aborted) return null;
+    return chamar(`/investimentos/${encodeURIComponent(investimentoId)}/reconciliacao`, { parametros: { mes }, signal });
+  });
+}
+
+
+export function useReaplicacoesDeResgates() {
+  return useConsulta("reaplicacoes-de-resgates", signal => chamar<import("./tipos").ReaplicacaoDeResgate[]>("/reaplicacoes-de-resgates", {signal}));
+}
+export function useResgatesParaReaplicar(aporteId: string) {
+  return useConsulta(`resgates-para-reaplicar/${aporteId}`, signal => chamar<import("./tipos").ResgateParaReaplicar[]>(`/movimentos-de-investimento/${encodeURIComponent(aporteId)}/resgates-para-reaplicar`, {signal}));
+}
+function invalidarReaplicacoes() {
+  for (const prefixo of ["metas", "movimentos-de-investimento", "reaplicacoes-de-resgates", "resgates-para-reaplicar", "reservas-das-destinacoes"]) invalidar(prefixo);
+}
+export function useConfirmarReaplicacao() {
+  return useMutacao(async (corpo: import("./tipos").ConfirmarReaplicacao) => {
+    try { return await chamar<import("./tipos").ReaplicacaoDeResgate>("/reaplicacoes-de-resgates", {metodo:"POST", corpo}); }
+    finally { invalidarReaplicacoes(); }
+  });
+}
+export function useRemoverReaplicacao() {
+  return useMutacao(async (id: string) => {
+    try { await chamar(`/reaplicacoes-de-resgates/${encodeURIComponent(id)}`, {metodo:"DELETE"}); return true; }
+    finally { invalidarReaplicacoes(); }
+  });
+}
+
+export function useClassificarNaturezaDoResgate() {
+ return useMutacao(async (e:{id:string;tipo:"resgate"|"vencimento"}) => {
+  await chamar(`/movimentos-de-investimento/${encodeURIComponent(e.id)}/natureza-do-resgate`,{metodo:"PUT",corpo:{tipo:e.tipo}});
+  invalidar("movimentos-de-investimento"); invalidar("resgates-sem-destinacao");
+  return true;
+ });
+}
+
+
+async function reclassificarTransacaoImportada(entrada: {
+  transacaoId: string; rotulo: import("./tipos").RotuloDeReclassificacao; versaoEsperada: string;
+  investimentoId: string | null; movimentoRelacionadoId?: string; desfazerDivisaoInteira: boolean; desfazerDependencias: boolean;
+}): Promise<{ tipo: string; id: string }> {
+  try {
+    return await chamar(`/transacoes-importadas/${encodeURIComponent(entrada.transacaoId)}/reclassificar`, {
+      metodo: "POST",
+      corpo: {
+        rotulo: entrada.rotulo, versao_esperada: entrada.versaoEsperada, investimento_id: entrada.investimentoId, movimento_relacionado_id: entrada.movimentoRelacionadoId,
+        desfazer_divisao_inteira: entrada.desfazerDivisaoInteira, desfazer_dependencias: entrada.desfazerDependencias,
+      },
+    });
+  } finally { invalidarDoAceite(); invalidar("investimentos"); invalidar("metas"); invalidar("movimentos-de-investimento"); }
+}
+export function useReclassificarTransacaoImportada() { return useMutacao(reclassificarTransacaoImportada); }
+
+async function desfazerCasamento(id: string): Promise<boolean> {
+  try { await chamar(`/casamentos/${encodeURIComponent(id)}`, { metodo: "DELETE" }); return true; }
+  finally { invalidarDaRevisaoDaBolsa(); }
+}
+export function useDesfazerCasamento() { return useMutacao(desfazerCasamento); }
+
+function invalidarDaRevisaoDaBolsa(): void {
+  invalidarDoAceite();
+  for (const chave of ["revisao-da-bolsa", "casamentos", "movimentos-de-investimento", "transacoes-importadas", "investimentos", "metas", "ganhos", "gastos", "resumos"]) invalidar(chave);
+}
+export function useRevisaoDaBolsa(habilitada = true) {
+  return useConsulta<import("./tipos").RevisaoDaBolsa>(habilitada ? "revisao-da-bolsa" : "revisao-da-bolsa-desabilitada", async sinal => {
+    if (!habilitada) return { propostas: [], sem_par: [], confirmados: [] };
+    const resposta = await chamar<Partial<import("./tipos").RevisaoDaBolsa>>("/revisao-da-bolsa", { signal: sinal });
+    return { propostas: resposta.propostas ?? [], sem_par: resposta.sem_par ?? [], confirmados: resposta.confirmados ?? [] };
+  });
+}
+async function confirmarPropostasDaBolsa(itens: import("./tipos").ItemDeConfirmacao[]): Promise<import("./tipos").LigacaoConfirmada[]> {
+  try {
+    const resposta = await chamar<{ confirmados: import("./tipos").LigacaoConfirmada[] }>("/revisao-da-bolsa/confirmar", { metodo: "POST", corpo: { itens } });
+    return resposta.confirmados;
+  } finally { invalidarDaRevisaoDaBolsa(); }
+}
+export function useConfirmarPropostasDaBolsa() { return useMutacao(confirmarPropostasDaBolsa); }
+async function refazerCasamento(id: string): Promise<import("./tipos").LigacaoConfirmada> {
+  try { return await chamar(`/casamentos/${encodeURIComponent(id)}/refazer`, { metodo: "POST" }); }
+  finally { invalidarDaRevisaoDaBolsa(); }
+}
+export function useRefazerCasamento() { return useMutacao(refazerCasamento); }
+
+export function useOperacoes(investimentoId: string) {
+  return useConsulta(`investimentos/${investimentoId}/operacoes`, signal =>
+    chamar<import("./tipos").Operacao[]>(`/investimentos/${encodeURIComponent(investimentoId)}/operacoes`, { signal }));
+}
+async function salvarOperacao(entrada: { investimentoId: string; operacaoId?: string; dados: import("./tipos").NovaOperacao }) {
+  try {
+    const { tipo: _tipo, operacao_relacionada_id: _relacao, confirmar_duplicidade: _duplicidade, ...alteracao } = entrada.dados;
+    return await chamar<import("./tipos").Operacao>(entrada.operacaoId
+      ? `/operacoes/${encodeURIComponent(entrada.operacaoId)}`
+      : `/investimentos/${encodeURIComponent(entrada.investimentoId)}/operacoes`, {
+      metodo: entrada.operacaoId ? "PUT" : "POST", corpo: entrada.operacaoId ? alteracao : entrada.dados,
+    });
+  } finally {
+    invalidar("investimentos"); invalidar("reservas-das-destinacoes");
+  }
+}
+export function useSalvarOperacao() { return useMutacao(salvarOperacao); }
+async function excluirOperacao(id: string) {
+  try {
+    await chamar(`/operacoes/${encodeURIComponent(id)}`, { metodo: "DELETE" });
+    return true;
+  } finally {
+    invalidar("investimentos"); invalidar("reservas-das-destinacoes");
+  }
+}
+export function useExcluirOperacao() { return useMutacao(excluirOperacao); }
+
+export function useAportesSemInvestimento() {
+  return useConsulta("aportes-sem-investimento", signal => chamar<import("./tipos").AporteSemInvestimento[]>("/aportes-sem-investimento", { signal }));
+}
+async function tratarAporte(entrada: { id: string; acao: "mesclar" | "excluir" | "desfazer"; mantidoId?: string }) {
+  try {
+    await chamar(`/aportes-sem-investimento/${encodeURIComponent(entrada.id)}/${entrada.acao}`, { metodo: "POST", corpo: entrada.mantidoId ? { mantido_id: entrada.mantidoId } : undefined });
+    return true;
+  } finally {
+    for (const p of ["aportes-sem-investimento", "investimentos", "movimentos-de-investimento", "metas", "transacoes-importadas"]) invalidar(p);
+  }
+}
+export function useTratarAporte() { return useMutacao(tratarAporte); }

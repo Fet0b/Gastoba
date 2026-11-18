@@ -11,7 +11,7 @@ import {
 } from "./linhaDoTempo";
 
 function gasto(id: string, data: string, valor: string, descricao = "Gasto", tags: string[] = []): Gasto {
-  return { id, conta_id: "c1", valor, descricao, data, categoria: "conforto", tags, origem: "manual", recorrencia_id: null };
+  return { id, conta_id: "c1", valor, descricao, data, categoria: "conforto", valor_coberto:"0.00", coberturas:[], tags, origem: "manual", recorrencia_id: null };
 }
 
 function ganho(id: string, data: string, valor: string, descricao = "Ganho", tags: string[] = []): Ganho {

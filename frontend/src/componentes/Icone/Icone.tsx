@@ -15,10 +15,20 @@ export type NomeDoIcone =
   | "mais"
   | "fechar"
   | "adicionar"
+  | "filtro"
   | "entrada"
   | "saida"
   | "alerta"
-  | "ok";
+  | "ok"
+  | "info"
+  | "repetir"
+  | "verificado"
+  | "sino"
+  | "dividir"
+  | "chevron"
+  | "calendario"
+  | "chave"
+  | "banco";
 
 /** Caminhos SVG (viewBox 24x24, só traço), desenhados para o projeto: sem biblioteca de ícones. */
 export const CAMINHOS_DOS_ICONES: Readonly<Record<NomeDoIcone, readonly string[]>> = {
@@ -38,10 +48,20 @@ export const CAMINHOS_DOS_ICONES: Readonly<Record<NomeDoIcone, readonly string[]
   mais: ["M5 12h.01", "M12 12h.01", "M19 12h.01"],
   fechar: ["M6 6l12 12", "M18 6 6 18"],
   adicionar: ["M12 5v14", "M5 12h14"],
+  filtro: ["M4 6h16", "M7 12h10", "M10 18h4"],
   entrada: ["M12 4v14", "M6 12l6 6 6-6"],
   saida: ["M12 20V6", "M6 12l6-6 6 6"],
   alerta: ["M12 3 2.5 20h19z", "M12 10v4", "M12 17h.01"],
   ok: ["M5 12.5l4.5 4.5L19 7.5"],
+  info: ["M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18z", "M12 11v5", "M12 8h.01"],
+  repetir: ["M4 12a6 6 0 0 1 6-6h9", "M16 3l3 3-3 3", "M20 12a6 6 0 0 1-6 6H5", "M8 21l-3-3 3-3"],
+  verificado: ["M5 12.5l4.5 4.5L19 7.5"],
+  dividir: ["M5 12h14", "M12 6h.01", "M12 18h.01"],
+  chevron: ["M6 9l6 6 6-6"],
+  calendario: ["M4 5h16v16H4z", "M8 3v4", "M16 3v4", "M4 10h16"],
+  chave: ["M10 14a5 5 0 1 1 4-4", "M10 14l-6 6", "M4 17l3 3"],
+  banco: ["M3 8l9-5 9 5z", "M5 10v8", "M12 10v8", "M19 10v8", "M3 21h18"],
+  sino: ["M6 17V11a6 6 0 0 1 12 0v6l1.5 2h-15z", "M10 21h4"],
 };
 
 type Propriedades = {

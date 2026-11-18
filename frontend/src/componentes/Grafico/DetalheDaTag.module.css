@@ -6,8 +6,8 @@
   gap: var(--espaco-3);
   padding: var(--espaco-4);
   border: var(--borda-de-camada);
-  border-radius: var(--raio-cartao);
-  background: var(--cor-veludo);
+  border-radius: var(--raio-painel);
+  background: var(--cor-ameixa);
 }
 
 .cabecalho {
@@ -19,36 +19,21 @@
 }
 
 .titulo {
-  font-size: 1.125rem;
-  font-weight: 650;
+  font-size: var(--texto-base);
+  font-weight: var(--peso-secao);
   overflow-wrap: anywhere;
+}
+
+.resumo {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--espaco-1) var(--espaco-3);
 }
 
 .resumo,
 .estado {
   color: var(--cor-bruma);
-  font-size: 0.9375rem;
-}
-
-.fechar,
-.maisGastos {
-  min-height: var(--alvo-de-toque);
-  padding: var(--espaco-1) var(--espaco-4);
-  border: 1px solid var(--cor-bruma);
-  border-radius: var(--raio-campo);
-  background: transparent;
-  color: var(--cor-lavanda);
-  cursor: pointer;
-}
-
-.maisGastos {
-  align-self: flex-start;
-}
-
-.fechar:focus-visible,
-.maisGastos:focus-visible {
-  outline: var(--anel-de-foco);
-  outline-offset: var(--afastamento-do-foco);
+  font-size: var(--texto-corpo);
 }
 
 .lista {
@@ -68,7 +53,7 @@
 
 .data {
   color: var(--cor-bruma);
-  font-size: 0.875rem;
+  font-size: var(--texto-pequeno);
 }
 
 .descricao {
@@ -84,7 +69,7 @@
   display: inline-flex;
   align-items: center;
   gap: var(--espaco-1);
-  font-size: 0.875rem;
+  font-size: var(--texto-pequeno);
 }
 
 /* O nome da categoria sempre em texto claro; só o ícone leva a cor dela. */
@@ -100,7 +85,7 @@
 .parte {
   grid-column: 2 / -1;
   color: var(--cor-bruma);
-  font-size: 0.8125rem;
+  font-size: var(--texto-rotulo);
 }
 
 @media (max-width: 30rem) {

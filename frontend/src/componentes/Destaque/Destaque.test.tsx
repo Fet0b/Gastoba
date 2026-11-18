@@ -44,4 +44,15 @@ describe("Destaque", () => {
     expect(grupo.getAttribute("aria-label")).toBe("Faltou: R$ 10,00, negativo");
     expect(grupo.textContent).toContain("Negativo");
   });
+
+  it("o tamanho padrão é grande e o informado é repassado em data-tamanho", () => {
+    const { container, rerender } = render(<Destaque rotulo="Total" valor="R$ 10,00" />);
+    expect(container.firstElementChild?.getAttribute("data-tamanho")).toBe("grande");
+
+    rerender(<Destaque rotulo="Total" valor="R$ 10,00" tamanho="heroi" />);
+    expect(container.firstElementChild?.getAttribute("data-tamanho")).toBe("heroi");
+
+    rerender(<Destaque rotulo="Total" valor="R$ 10,00" tamanho="medio" />);
+    expect(container.firstElementChild?.getAttribute("data-tamanho")).toBe("medio");
+  });
 });

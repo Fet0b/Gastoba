@@ -1,88 +1,57 @@
-import { useEffect, useId, useRef, useState } from "react";
+import { type ReactNode, type RefObject, useRef, useState } from "react";
 
 import type { Ganho } from "../../api/tipos";
-import estilos from "./AcaoDeExcluirGanho.module.css";
-
-type Propriedades = {
-  ganho: Ganho;
-  /** Exclui; devolve `true` se deu certo. */
-  aoExcluir: (ganho: Ganho) => Promise<boolean>;
-};
+import { DialogoDeConfirmacao } from "../DialogoDeConfirmacao/DialogoDeConfirmacao";
+import type { ItemDoMenu } from "../MenuDeAcoes/MenuDeAcoes";
 
 /**
- * A ação de excluir um ganho, para a linha da transação. O botão pede confirmação na própria
- * linha (com o foco em Cancelar); o ganho gerado por uma recorrência não tem a ação (a
- * recorrência o recriaria): para parar de gerar, altere ou encerre a recorrência.
+ * A exclusão de um ganho, para a linha da transação: devolve o item "Excluir" do menu "Mais
+ * ações" e o diálogo de confirmação que ele abre (foco em Cancelar; o foco volta ao gatilho do
+ * menu ao cancelar ou se a exclusão falhar, e vai para `focoAposExcluir` se der certo). O ganho
+ * gerado por uma recorrência não tem a ação (a recorrência o recriaria): para parar de gerar,
+ * altere ou encerre a recorrência. A mensagem de uma falha vai ao aviso da página, que também
+ * recarrega a lista (a linha pode sumir junto com o diálogo).
  */
-export function AcaoDeExcluirGanho({ ganho, aoExcluir }: Propriedades) {
-  const [confirmando, definirConfirmando] = useState(false);
+export function useExcluirGanho(
+  ganho: Ganho | null,
+  aoExcluir: (ganho: Ganho) => Promise<boolean>,
+  focoAposExcluir?: RefObject<HTMLElement | null>,
+): { item: ItemDoMenu | null; dialogo: ReactNode } {
+  const [aberto, definirAberto] = useState(false);
   const [excluindo, definirExcluindo] = useState(false);
-  const id = useId();
-  const botaoExcluir = useRef<HTMLButtonElement>(null);
-  const botaoCancelar = useRef<HTMLButtonElement>(null);
-  const devolverFoco = useRef(false);
+  const alvoDoFoco = useRef<HTMLElement | null>(null);
 
-  useEffect(() => {
-    if (confirmando) {
-      botaoCancelar.current?.focus();
-    } else if (devolverFoco.current) {
-      devolverFoco.current = false;
-      botaoExcluir.current?.focus();
-    }
-  }, [confirmando]);
+  if (ganho === null || ganho.recorrencia_id !== null) return { item: null, dialogo: null };
 
-  if (ganho.recorrencia_id !== null) return null;
-
-  function cancelar(): void {
-    devolverFoco.current = true;
-    definirConfirmando(false);
-  }
-
-  async function confirmar(): Promise<void> {
+  async function confirmar(alvo: Ganho): Promise<void> {
     definirExcluindo(true);
-    const excluido = await aoExcluir(ganho);
+    const excluido = await aoExcluir(alvo);
+    alvoDoFoco.current = excluido ? (focoAposExcluir?.current ?? null) : null;
     definirExcluindo(false);
-    if (!excluido) cancelar();
+    definirAberto(false);
   }
 
-  const idPergunta = `${id}-pergunta`;
-
-  if (confirmando) {
-    return (
-      <div className={estilos.confirmacao} role="group" aria-labelledby={idPergunta}>
-        <p id={idPergunta}>Excluir {ganho.descricao}? O valor sai do saldo da conta.</p>
-        <div className={estilos.acoes}>
-          <button
-            type="button"
-            className={estilos.perigo}
-            disabled={excluindo}
-            onClick={() => void confirmar()}
-          >
-            Confirmar exclusão
-          </button>
-          <button
-            ref={botaoCancelar}
-            type="button"
-            className={estilos.secundario}
-            disabled={excluindo}
-            onClick={cancelar}
-          >
-            Cancelar
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <button
-      ref={botaoExcluir}
-      type="button"
-      className={estilos.excluir}
-      aria-label={`Excluir o ganho ${ganho.descricao}`}
-      onClick={() => definirConfirmando(true)}
-    >
-      Excluir
-    </button>
-  );
+  return {
+    item: {
+      rotulo: "Excluir",
+      nomeAcessivel: `Excluir o ganho ${ganho.descricao}`,
+      destrutivo: true,
+      aoEscolher: () => {
+        alvoDoFoco.current = null;
+        definirAberto(true);
+      },
+    },
+    dialogo: (
+      <DialogoDeConfirmacao
+        aberto={aberto}
+        titulo={`Excluir ${ganho.descricao}?`}
+        descricao="O valor sai do saldo da conta."
+        rotuloDaAcao="Confirmar exclusão"
+        pendente={excluindo}
+        aoConfirmar={() => void confirmar(ganho)}
+        aoCancelar={() => definirAberto(false)}
+        devolverFocoPara={alvoDoFoco}
+      />
+    ),
+  };
 }

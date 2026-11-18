@@ -105,6 +105,7 @@ function gasto(id: string, valor: string, tags: string[], data = "2026-06-10"): 
     tags,
     origem: "manual",
     recorrencia_id: null,
+    valor_coberto: "0.00", coberturas: [],
   };
 }
 
@@ -179,4 +180,26 @@ describe("barraPelaChave", () => {
     expect(barraPelaChave(barras, "zzz")).toBeUndefined();
     expect(barraPelaChave(barras, null)).toBeUndefined();
   });
+});
+
+it("barras e contagens concordam com as partes líquidas", () => {
+  const g = { ...gasto("c", "80.01", ["loja", "online", "casa"]), valor_coberto: "30.00" };
+  const sem = { ...gasto("s", "80.00", []), valor_coberto: "30.00" };
+  const zero = { ...g, id: "z", valor_coberto: "80.01" };
+  const barras = prepararBarras({
+    inicio: "2026-06-01", fim: "2026-06-30", total: "100.01",
+    fatias: [
+      { tag: "loja", valor: "16.67" },
+      { tag: "online", valor: "16.67" },
+      { tag: "casa", valor: "16.67" },
+      { tag: null, valor: "50.00" },
+    ],
+  }, 1, [g, sem, zero]);
+  expect(barras.map((b) => [b.tipo, b.valor, b.quantidade])).toEqual([
+    ["tag", "16.67", 1], ["outras", "33.34", 1], ["sem_tag", "50.00", 1],
+  ]);
+  expect(barras[0].rotulo).toBe("loja");
+  expect(barras[1].membros?.map((m) => [m.tag, m.valor, m.quantidade])).toEqual([
+    ["online", "16.67", 1], ["casa", "16.67", 1],
+  ]);
 });
