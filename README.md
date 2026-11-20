@@ -24,6 +24,10 @@ A importação real requer uma conta compatível no provedor. Configure `GASTOBA
 
 Para experimentar a revisão com dados fictícios, entre na demonstração local, abra **Transações → Caixa de entrada** e use **Sincronizar agora** se a lista estiver vazia.
 
+![Caixa de entrada do Gastoba com transações pendentes e ações para aceitar ou ignorar](Docs/imagens/caixa-de-entrada.png)
+
+*Caixa de entrada da demonstração local, com transações fictícias.*
+
 ## Recursos
 
 - **Transações e contas** com gastos, ganhos, saldos, recorrências mensais e faturas.

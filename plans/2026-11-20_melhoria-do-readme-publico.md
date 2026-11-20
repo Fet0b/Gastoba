@@ -21,4 +21,8 @@ Quem chega ao projeto deve entender, já na abertura, que pode registrar gastos 
 
 ## Estado da execução
 
-A abertura, a navegação e a seção de Open Finance foram atualizadas no README, com o fluxo de revisão conferido no código e um caminho para experimentá-lo na demonstração. A prévia da aplicação compilou em modo de desenvolvimento. O ambiente bloqueou a abertura da porta local e a inicialização de duas versões do Chromium (EPERM). O README usa a captura existente do painel até que seja possível capturar e inspecionar as duas telas. A verificação de caminhos relativos e o `git diff --check` passaram.
+A abertura, a navegação e a seção de Open Finance foram atualizadas no README. As capturas foram feitas no Chromium com Playwright, usando a prévia compilada em modo de desenvolvimento do frontend da `main` pública e a simulação local. A tela Início foi capturada após o login fictício. A Caixa de entrada foi capturada após clicar em **Sincronizar agora**, com quatro transações fictícias pendentes. As duas imagens foram inspecionadas visualmente.
+
+Os dois caminhos relativos do README apontam para arquivos PNG válidos. A verificação com `git diff --check` passou.
+
+Com as dependências travadas, passaram `pytest` (1.065 testes), `ruff check .` e `ruff format --check .` no backend. No frontend, com Node 24.21.0, passaram `npm run tipos`, `npm test -- --maxWorkers=2` (1.025 testes) e `npm run build`.
