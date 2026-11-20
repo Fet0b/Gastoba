@@ -1,31 +1,35 @@
-<p align="center"><img src="frontend/public/favicon.svg" width="88" alt="Logo Gastoba"></p>
+<p align="center"><img src="frontend/public/favicon.svg" width="72" alt=""></p>
 
-# Gastoba
+<h1 align="center">Gastoba</h1>
 
-Controle de gastos pessoais com uma interface em português: contas, gastos, ganhos, recorrências mensais, orçamento por categoria e distribuição por tags.
+<p align="center">Controle suas finanças pessoais em português. Registre gastos e ganhos manualmente ou importe transações bancárias via <strong>Open Finance com a Pluggy</strong>.</p>
 
-## O que resolve e para quem
+[Open Finance com a Pluggy](#open-finance-com-a-pluggy) · [Demonstração local](#experimente-a-interface) · [Instalação](#backend-real) · [Testes](#desenvolvimento-testes-e-verificação)
 
-Ajuda uma pessoa a entender para onde vai o seu dinheiro, registrando gastos e ganhos por conta, categoria e tag e acompanhando metas mensais. É voltado a quem quer controlar as próprias finanças em uma instalação própria (localhost ou rede privada), com os dados sob seu controle, sem depender de um serviço de terceiros para guardá-los.
+O Gastoba ajuda quem quer entender para onde vai o dinheiro e acompanhar contas, orçamento por categoria e metas mensais. É um projeto individual de uso pessoal, distribuído como código para executar sua própria instância em localhost ou em rede privada.
 
-![Painel do Gastoba com dados fictícios](Docs/imagens/painel.png)
+![Tela Início do Gastoba com o resumo financeiro do mês](Docs/imagens/painel.png)
 
-*Tela Início, capturada na interface real em simulação local. Todas as contas, transações e valores são fictícios.*
+*Painel do Gastoba na demonstração local, com contas e valores fictícios.*
 
-A demonstração executável está em [Experimente a interface](#experimente-a-interface): `npm ci` e `npm run dev` abrem a mesma interface com dados fictícios em memória, sem backend.
+## Open Finance com a Pluggy
 
-## Papel e escopo
+A integração opcional traz movimentações bancárias para a **Caixa de entrada** do Gastoba. Você revisa os itens importados antes de incorporá-los aos seus registros.
 
-O Gastoba é um projeto individual, de uso pessoal. Este repositório é uma cópia pública do código e da documentação, para leitura e reprodução local. Não há serviço hospedado nem promessa de um: cada pessoa executa a sua própria instância.
+1. **Conecte a conta no Meu Pluggy.** A autorização bancária acontece no provedor.
+2. **Sincronize as movimentações.** O backend consulta as contas configuradas e disponibiliza os itens em **Transações → Caixa de entrada**.
+3. **Revise cada item.** Aceite a movimentação para registrá-la no Gastoba ou ignore-a para dispensá-la.
+
+A importação real requer uma conta compatível no provedor. Configure `GASTOBA_PLUGGY_CLIENT_ID`, `GASTOBA_PLUGGY_CLIENT_SECRET`, `GASTOBA_PLUGGY_ITEM_IDS` e `GASTOBA_PLUGGY_EMAIL_DO_DONO` no ambiente do backend. As credenciais ficam no servidor, e a caixa de entrada fica disponível para a pessoa titular configurada. [Variáveis de configuração](backend/.env.example)
+
+Para experimentar a revisão com dados fictícios, entre na demonstração local, abra **Transações → Caixa de entrada** e use **Sincronizar agora** se a lista estiver vazia.
 
 ## Recursos
 
-- Login por e-mail e senha; sessões e chaves de API com escopos de leitura ou escrita.
-- Contas com saldo, gastos e ganhos; valores monetários exatos em centavos.
-- Recorrências mensais, metas percentuais e gráficos por período e tags.
-- Isolamento entre usuários, proteção CSRF, limite de tentativas de login e cadastro fechado por padrão.
-- Importação opcional pela Pluggy, com caixa de entrada para aceitar ou ignorar transações. Requer configuração e conta compatível do provedor.
-- Interface responsiva, navegação por teclado e suporte a movimento reduzido.
+- **Transações e contas** com gastos, ganhos, saldos, recorrências mensais e faturas.
+- **Orçamento e metas** com categorias, acompanhamento mensal e gráficos por período e tags.
+- **Acesso** com login por e-mail, chaves de API com escopos, isolamento entre usuários, proteção CSRF e cadastro fechado por padrão.
+- **Interface responsiva** com navegação por teclado e suporte a movimento reduzido.
 
 ## Decisões técnicas
 
@@ -71,7 +75,7 @@ Esta cópia pública contém código e documentação reproduzíveis, sem config
 
 Use em localhost ou rede privada protegida. A aplicação não fornece HTTPS próprio; acesso remoto exige proxy HTTPS e cookies `Secure`. Não exponha diretamente a porta da API. O cadastro deve permanecer fechado em uma instalação pessoal. O limitador de login e tarefas periódicas foram desenhados para **uma réplica**. Os dados ficam em SQLite local, sem alta disponibilidade.
 
-A integração Pluggy é opcional e fica desligada sem credenciais configuradas no servidor. O Gastoba não recebe credenciais bancárias; a autorização acontece no provedor. Testes usam respostas simuladas e não validam conexão bancária real. Confira os termos e limites atuais do seu plano antes de ativá-la.
+A integração com a Pluggy fica desativada por padrão. A suíte usa respostas simuladas do provedor. Confira os termos e limites do seu plano antes de ativar a importação real.
 
 ## Desenvolvimento, testes e verificação
 
