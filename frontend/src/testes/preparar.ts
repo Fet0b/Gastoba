@@ -1,8 +1,12 @@
-import { cleanup } from "@testing-library/react";
+import { cleanup, configure } from "@testing-library/react";
 import { afterEach, beforeEach, vi } from "vitest";
 
 import { limparCache } from "../api/useConsulta";
 import { fetchSimulado, reiniciarSimulacao } from "../simulacao/fetchSimulado";
+
+// Sob carga (suíte inteira, CI), os 1000 ms padrão de findBy/waitFor faltam; os testes passam em
+// poucos ms quando a máquina está livre, então o limite maior só evita falha intermitente.
+configure({ asyncUtilTimeout: 5000 });
 
 // Preparação comum a todos os testes (setupFiles do Vitest).
 // O jsdom não implementa window.matchMedia nem HTMLDialogElement.showModal/close;
@@ -14,12 +18,14 @@ type OuvinteDeMidia = (evento: MediaQueryListEvent) => void;
 
 let midiaCorresponde = false;
 let layoutEstreito = false;
+let layoutIntermediario = false;
 const listasDeMidia = new Set<MediaQueryList>();
 const ouvintesDeMidia = new Map<MediaQueryList, Set<OuvinteDeMidia>>();
 
 // Consultas de largura (`min-width`) valem para o layout de computador, a não ser que o teste
 // peça o de celular com `definirLayoutEstreito(true)`; as demais seguem `definirMidia`.
 function corresponde(consulta: string): boolean {
+  if (consulta.includes("64rem")) return !layoutEstreito && !layoutIntermediario;
   return consulta.includes("min-width") ? !layoutEstreito : midiaCorresponde;
 }
 
@@ -69,6 +75,16 @@ export function definirLayoutEstreito(estreito: boolean): void {
   avisarMudanca((consulta) => consulta.includes("min-width"));
 }
 
+/**
+ * Simula a largura intermediária (de 45rem a 64rem: barra lateral recolhida): a consulta de 45rem
+ * continua valendo e a de 64rem deixa de valer.
+ */
+export function definirLayoutIntermediario(intermediario: boolean): void {
+  if (layoutIntermediario === intermediario) return;
+  layoutIntermediario = intermediario;
+  avisarMudanca((consulta) => consulta.includes("64rem"));
+}
+
 function avisarMudanca(vale: (consulta: string) => boolean): void {
   for (const lista of listasDeMidia) {
     if (!vale(lista.media)) continue;
@@ -80,6 +96,7 @@ function avisarMudanca(vale: (consulta: string) => boolean): void {
 function instalarMatchMedia(): void {
   midiaCorresponde = false;
   layoutEstreito = false;
+  layoutIntermediario = false;
   listasDeMidia.clear();
   ouvintesDeMidia.clear();
   Object.defineProperty(window, "matchMedia", {
@@ -125,6 +142,8 @@ beforeEach(() => {
 
 afterEach(() => {
   cleanup();
+  // A rota vive no endereço: cada teste começa na raiz, sem mês.
+  window.history.replaceState(null, "", "/");
   reiniciarSimulacao();
   limparCache();
   vi.unstubAllGlobals();

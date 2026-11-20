@@ -1,8 +1,8 @@
-import { type Ref, useId } from "react";
+import type { Ref } from "react";
 
 import type { Categoria } from "../../api/tipos";
 import { corDaCategoria } from "../../categorias/cores";
-import estilos from "./SeletorDeCategoria.module.css";
+import { GrupoDeChips } from "./GrupoDeChips";
 
 type Propriedades = {
   /** Categorias de GET /categorias; `undefined` enquanto não chegam. */
@@ -16,61 +16,26 @@ type Propriedades = {
 };
 
 /**
- * Grupo de opções (radio) com as categorias fixas do backend: ponto colorido e
- * nome em texto, porque a cor nunca substitui o nome. Obrigatório e sem opção
- * marcada por padrão; as setas trocam de opção, como em todo grupo de radio.
+ * Grupo de opções (radio) com as categorias ativas do backend: ponto colorido e nome em texto,
+ * porque a cor nunca substitui o nome. Obrigatório e sem opção marcada por padrão; as setas
+ * trocam de opção, como em todo grupo de radio. A categoria legada nunca é oferecida.
  */
 export function SeletorDeCategoria({ categorias, valor, aoMudar, erro, ref }: Propriedades) {
-  const id = useId();
-  const idRotulo = `${id}-rotulo`;
-  const idErro = `${id}-erro`;
-
   return (
-    <div className={estilos.campo}>
-      <span id={idRotulo} className={estilos.rotulo}>
-        Categoria
-      </span>
-      <div
-        role="radiogroup"
-        className={estilos.opcoes}
-        aria-labelledby={idRotulo}
-        aria-required="true"
-        aria-invalid={erro ? true : undefined}
-        aria-describedby={erro ? idErro : undefined}
-      >
-        {categorias === undefined ? (
-          <p className={estilos.carregando}>Carregando categorias…</p>
-        ) : (
-          categorias.map((categoria, indice) => {
-            const cor = corDaCategoria(categoria.codigo);
-            return (
-              <label key={categoria.codigo} className={estilos.opcao}>
-                <input
-                  ref={indice === 0 ? ref : undefined}
-                  type="radio"
-                  name={id}
-                  value={categoria.codigo}
-                  checked={valor === categoria.codigo}
-                  onChange={() => aoMudar(categoria.codigo)}
-                  className={estilos.radio}
-                />
-                <span
-                  className={estilos.ponto}
-                  style={{ backgroundColor: cor }}
-                  data-cor={cor}
-                  aria-hidden="true"
-                />
-                <span>{categoria.nome}</span>
-              </label>
-            );
-          })
-        )}
-      </div>
-      {erro && (
-        <p id={idErro} className={estilos.erro}>
-          {erro}
-        </p>
-      )}
-    </div>
+    <GrupoDeChips
+      rotulo="Categoria"
+      carregando="Carregando categorias…"
+      opcoes={categorias
+        ?.filter((categoria) => !categoria.legada)
+        .map((categoria) => ({
+          valor: categoria.codigo,
+          nome: categoria.nome,
+          cor: corDaCategoria(categoria.codigo),
+        }))}
+      valor={valor}
+      aoMudar={aoMudar}
+      erro={erro}
+      ref={ref}
+    />
   );
 }

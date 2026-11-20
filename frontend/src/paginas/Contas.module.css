@@ -5,3 +5,17 @@
   flex-direction: column;
   gap: var(--espaco-5);
 }
+
+/* O painel de topo: o destaque ao lado dos indicadores; empilha abaixo de 45rem. */
+.painelDeTopo {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--espaco-4);
+}
+
+@media (min-width: 45rem) {
+  .painelDeTopo[data-com-indicadores] {
+    grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+    align-items: stretch;
+  }
+}

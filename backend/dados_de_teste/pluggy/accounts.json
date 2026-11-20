@@ -1,0 +1,63 @@
+{
+  "results": [
+    {
+      "balance": 8450.37,
+      "currencyCode": "BRL",
+      "id": "conta-corrente-exemplo",
+      "itemId": "item-exemplo-1",
+      "name": "Banco Exemplo Conta corrente",
+      "number": "0001/00000-0",
+      "subtype": "CHECKING_ACCOUNT",
+      "type": "BANK"
+    },
+    {
+      "balance": 1235.9,
+      "currencyCode": "BRL",
+      "id": "cartao-exemplo",
+      "itemId": "item-exemplo-1",
+      "name": "Banco Exemplo Cart\u00e3o Black",
+      "number": "0000",
+      "subtype": "CREDIT_CARD",
+      "type": "CREDIT"
+    },
+    {
+      "balance": 12000.0,
+      "currencyCode": "BRL",
+      "id": "conta-remunerada-exemplo",
+      "itemId": "item-exemplo-1",
+      "name": "Banco Exemplo Conta remunerada",
+      "number": "0001/11111-1",
+      "subtype": "SAVINGS_ACCOUNT",
+      "type": "BANK"
+    },
+    {
+      "balance": 300.0,
+      "currencyCode": "USD",
+      "id": "conta-dolar-exemplo",
+      "itemId": "item-exemplo-1",
+      "name": "Banco Exemplo Conta em d\u00f3lar",
+      "number": "0001/22222-2",
+      "subtype": "CHECKING_ACCOUNT",
+      "type": "BANK"
+    },
+    {
+      "balance": 250.0,
+      "currencyCode": "BRL",
+      "itemId": "item-exemplo-1",
+      "name": "Banco Exemplo Segunda conta",
+      "subtype": "CHECKING_ACCOUNT",
+      "type": "BANK",
+      "id": "segunda-conta-a",
+      "number": "0001/33333-3"
+    },
+    {
+      "balance": 250.0,
+      "currencyCode": "BRL",
+      "itemId": "item-exemplo-1",
+      "name": "Banco Exemplo Segunda conta",
+      "subtype": "CHECKING_ACCOUNT",
+      "type": "BANK",
+      "id": "segunda-conta-b"
+    }
+  ]
+}

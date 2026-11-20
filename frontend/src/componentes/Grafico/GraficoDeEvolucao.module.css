@@ -1,0 +1,112 @@
+/* Evolução do saldo: uma linha de uma matiz só (Ametista), cursor e leitura em texto. */
+
+.grafico {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espaco-2);
+}
+
+.leitura {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--espaco-2);
+  color: var(--cor-bruma);
+  font-size: var(--texto-pequeno);
+}
+
+.saldo {
+  color: var(--cor-nevoa);
+  font-size: var(--texto-base);
+  font-weight: var(--peso-secao);
+}
+
+.svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: var(--raio-campo);
+  background: var(--cor-noite);
+  touch-action: pan-y;
+  cursor: crosshair;
+}
+
+.svg:focus-visible {
+  outline: var(--anel-de-foco);
+  outline-offset: var(--afastamento-do-foco);
+}
+
+.linha {
+  stroke: var(--cor-ametista);
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-dasharray: 1;
+  stroke-dashoffset: 0;
+  animation: desenhar var(--duracao-longa, 600ms) var(--curva-saida, ease-out) both;
+}
+
+@keyframes desenhar {
+  from {
+    stroke-dashoffset: 1;
+  }
+
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .linha {
+    animation: none;
+  }
+}
+
+.cursor {
+  stroke: var(--cor-bruma);
+  stroke-dasharray: 3 3;
+  stroke-width: 1;
+}
+
+.marca {
+  fill: var(--cor-lavanda);
+  stroke: var(--cor-noite);
+  stroke-width: 2;
+}
+
+.primeiroDia {
+  padding: var(--espaco-5) var(--espaco-4);
+  border: 1px dashed var(--cor-veludo);
+  border-radius: var(--raio-campo);
+  color: var(--cor-bruma);
+  font-size: var(--texto-pequeno);
+  text-align: center;
+}
+
+.apoio,
+.tabela {
+  color: var(--cor-bruma);
+  font-size: var(--texto-pequeno);
+}
+
+.tabela summary {
+  cursor: pointer;
+}
+
+.tabela summary:focus-visible {
+  outline: var(--anel-de-foco);
+  outline-offset: var(--afastamento-do-foco);
+}
+
+.tabela table {
+  width: 100%;
+  margin-top: var(--espaco-2);
+  border-collapse: collapse;
+}
+
+.tabela th,
+.tabela td {
+  padding: var(--espaco-1) var(--espaco-2);
+  text-align: left;
+}

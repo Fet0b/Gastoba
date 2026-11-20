@@ -1,0 +1,19 @@
+/* A busca ocupa o que sobra da linha; os três seletores têm a largura do próprio botão. */
+.barra {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espaco-3);
+  min-width: 0;
+}
+
+.linha {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: var(--espaco-2);
+}
+
+.busca {
+  flex: 1 1 16rem;
+  min-width: 0;
+}

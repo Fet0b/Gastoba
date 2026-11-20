@@ -1,0 +1,1 @@
+export const EXPLICACAO_DA_LIBERDADE_FINANCEIRA = "Mede o dinheiro novo: transferências de contas correntes para investimentos menos as retiradas de volta. Aportes não são gastos. Compras de ativos, caixinha, rendimentos e taxas dentro da carteira não contam novamente.";

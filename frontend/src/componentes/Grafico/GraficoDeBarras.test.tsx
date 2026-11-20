@@ -30,6 +30,7 @@ function gasto(id: string, valor: string, tags: string[]): Gasto {
     tags,
     origem: "manual",
     recorrencia_id: null,
+    valor_coberto: "0.00", coberturas: [],
   };
 }
 
@@ -80,8 +81,8 @@ describe("GraficoDeBarras", () => {
 
     const linhas = linhasDaLista();
     expect(linhas).toHaveLength(3);
-    expect(linhas[0].textContent).toContain("mercado");
-    expect(linhas[1].textContent).toContain("pix");
+    expect(linhas[0].textContent).toContain("Mercado");
+    expect(linhas[1].textContent).toContain("Pix");
     expect(linhas[2].textContent).toContain("(sem tag)");
   });
 
@@ -217,7 +218,7 @@ describe("GraficoDeBarras", () => {
 
     rerender(<Controlado dados={resumo(["a", "20.00"], ["b", "10.00"])} />);
 
-    const depois = botoes().find((b) => b.textContent?.includes("b"));
+    const depois = botoes().find((b) => b.textContent?.includes("B"));
     expect(depois).toBe(antes);
     expect(depois?.querySelector("[data-fracao]")?.getAttribute("data-fracao")).toBe("0.5");
   });
@@ -225,11 +226,11 @@ describe("GraficoDeBarras", () => {
   it("a linha acompanha a tag, não a posição, quando a ordem das barras muda", () => {
     definirMidia(true);
     const { rerender } = render(<Controlado dados={resumo(["a", "20.00"], ["b", "10.00"])} />);
-    const linhaDeA = botoes().find((b) => b.textContent?.startsWith("a"));
+    const linhaDeA = botoes().find((b) => b.textContent?.startsWith("A"));
 
     rerender(<Controlado dados={resumo(["b", "20.00"], ["a", "10.00"])} />);
 
-    expect(botoes().find((b) => b.textContent?.startsWith("a"))).toBe(linhaDeA);
+    expect(botoes().find((b) => b.textContent?.startsWith("A"))).toBe(linhaDeA);
     expect(botoes()[1]).toBe(linhaDeA);
   });
 
@@ -247,7 +248,7 @@ describe("GraficoDeBarras", () => {
   it("sem gastos mostra o estado vazio, sem barras nem tabela", () => {
     render(<Controlado dados={resumo()} />);
 
-    expect(screen.getByText("Sem gastos neste período")).toBeTruthy();
+    expect(screen.getByText("Nenhum gasto com tag neste período")).toBeTruthy();
     expect(screen.queryByRole("list", { name: "Gastos por tag" })).toBeNull();
     expect(document.querySelector("table")).toBeNull();
   });
@@ -265,9 +266,25 @@ describe("GraficoDeBarras", () => {
     expect(document.querySelector("section")?.getAttribute("data-atualizando")).toBe("true");
   });
 
-  it("mantém visível a frase da divisão entre tags", () => {
+  it("a frase da divisão entre tags não fica no gráfico: é a Dica do cabeçalho da tela", () => {
     render(<Controlado dados={BASE} />);
 
-    expect(screen.getByText(/se divide em partes iguais entre elas/)).toBeTruthy();
+    expect(screen.queryByText(/se divide em partes iguais entre elas/)).toBeNull();
+  });
+
+  it("sem gastos com tag, o vazio oferece 'Adicionar tag a um gasto' quando há destino", () => {
+    const aoAdicionarTag = vi.fn();
+    render(
+      <GraficoDeBarras
+        resumo={resumo()}
+        carregando={false}
+        selecionada={null}
+        aoSelecionar={() => undefined}
+        aoAdicionarTag={aoAdicionarTag}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Adicionar tag a um gasto" }));
+    expect(aoAdicionarTag).toHaveBeenCalledOnce();
   });
 });

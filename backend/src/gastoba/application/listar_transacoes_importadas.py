@@ -1,13 +1,22 @@
 from dataclasses import dataclass
+from datetime import timedelta
 from uuid import UUID
 
 from gastoba.domain.ganho import OrigemDoGanho
 from gastoba.domain.gasto import OrigemDoGasto
+from gastoba.domain.natureza_do_movimento import NaturezaDoMovimento, natureza_da_descricao
 from gastoba.domain.portas import UnidadeDeTrabalho
+from gastoba.domain.sugestao_de_investimento import sugerir_investimento
 from gastoba.domain.transacao_importada import (
     EstadoDaTransacaoImportada,
+    MotivoDaTransacaoIgnorada,
     SentidoDaTransacao,
     TransacaoImportada,
+)
+from gastoba.domain.transferencia_entre_contas import (
+    DIAS_DE_DIFERENCA,
+    parear_transferencias,
+    sugerir_transferencias_a_completar,
 )
 
 
@@ -17,6 +26,12 @@ class ItemDaCaixaDeEntrada:
     sugerir_descarte: bool
     # Já existe um lançamento manual da mesma conta, no mesmo dia e com o mesmo valor.
     possivel_duplicado: bool
+    # A posição de que a saída parece ser o aporte (a emissão); nulo sem sugestão.
+    investimento_sugerido_id: UUID | None = None
+    # A outra ponta provável de uma transferência entre contas próprias; nulo sem par inequívoco.
+    par_sugerido_id: UUID | None = None
+    # A transferência já classificada com uma ponta que esta transação completaria (069, R5).
+    transferencia_sugerida_id: UUID | None = None
 
 
 class ListarTransacoesImportadas:
@@ -27,17 +42,57 @@ class ListarTransacoesImportadas:
         self,
         usuario_id: UUID,
         estado: EstadoDaTransacaoImportada = EstadoDaTransacaoImportada.PENDENTE,
+        motivo: MotivoDaTransacaoIgnorada | None = None,
     ) -> list[ItemDaCaixaDeEntrada]:
         """A caixa de entrada do usuário no estado dado, da data mais recente para a mais antiga."""
         with self._unidade_de_trabalho as uow:
+            transacoes = uow.transacoes_importadas.listar(usuario_id, estado)
+            if motivo is not None:
+                transacoes = [t for t in transacoes if t.motivo_ignorada == motivo]
+            posicoes = []
+            com_movimento: set[UUID] = set()
+            if any(t.estado == EstadoDaTransacaoImportada.PENDENTE for t in transacoes):
+                posicoes = uow.investimentos.listar_posicoes(usuario_id)
+                com_movimento = uow.movimentos_de_investimento.investimentos_com_movimento(
+                    usuario_id
+                )
+            historico = []
+            if any(
+                natureza_da_descricao(t.descricao) == NaturezaDoMovimento.LIQUIDACAO_DE_BOLSA
+                for t in transacoes
+            ):
+                historico = uow.investimentos.historico(
+                    usuario_id,
+                    min(t.data for t in transacoes) - timedelta(days=30),
+                    max(t.data for t in transacoes) + timedelta(days=7),
+                )
+            pares = parear_transferencias(transacoes)
+            pendentes = [t for t in transacoes if t.estado == EstadoDaTransacaoImportada.PENDENTE]
+            a_completar = (
+                sugerir_transferencias_a_completar(
+                    pendentes,
+                    uow.transferencias.listar(
+                        usuario_id,
+                        min(t.data for t in pendentes) - timedelta(days=DIAS_DE_DIFERENCA),
+                        max(t.data for t in pendentes) + timedelta(days=DIAS_DE_DIFERENCA),
+                    ),
+                )
+                if pendentes
+                else {}
+            )
             itens = []
-            for transacao in uow.transacoes_importadas.listar(usuario_id, estado):
+            for transacao in transacoes:
                 itens.append(
                     ItemDaCaixaDeEntrada(
                         transacao=transacao,
                         sugerir_descarte=transacao.sugerir_descarte,
                         possivel_duplicado=self._ha_lancamento_manual_igual(
                             uow, usuario_id, transacao
+                        ),
+                        par_sugerido_id=pares.get(transacao.id),
+                        transferencia_sugerida_id=a_completar.get(transacao.id),
+                        investimento_sugerido_id=sugerir_investimento(
+                            transacao, posicoes, com_movimento, historico
                         ),
                     )
                 )

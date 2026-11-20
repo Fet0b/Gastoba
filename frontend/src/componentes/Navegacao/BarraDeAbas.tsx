@@ -1,7 +1,10 @@
 import { type SyntheticEvent, useId, useLayoutEffect, useRef, useState } from "react";
 import type { KeyboardEvent } from "react";
 
+import { Badge } from "../Badge/Badge";
 import { Icone } from "../Icone/Icone";
+import { LinkDaTela } from "./LinkDaTela";
+import { Titulo } from "../Titulo/Titulo";
 import estilos from "./Navegacao.module.css";
 import { dividirTelas, type Navegacao } from "./telas";
 
@@ -11,7 +14,7 @@ type Propriedades = {
 
 /**
  * Barra de abas do celular: as quatro telas principais e "Mais", que abre uma folha
- * (`<dialog>` modal) com as outras quatro.
+ * (`<dialog>` modal) com as outras.
  */
 export function BarraDeAbas({ navegacao }: Propriedades) {
   const { principais, emMais } = dividirTelas();
@@ -29,16 +32,16 @@ export function BarraDeAbas({ navegacao }: Propriedades) {
     <>
       <nav className={estilos.abas} aria-label="Telas">
         {principais.map(({ tela, nome, icone }) => (
-          <button
+          <LinkDaTela
             key={tela}
-            type="button"
+            tela={tela}
+            navegacao={navegacao}
             className={estilos.aba}
             aria-current={navegacao.tela === tela ? "page" : undefined}
-            onClick={() => navegacao.aoIrPara(tela)}
           >
             <Icone nome={icone} tamanho={22} />
             <span className={estilos.rotuloDaAba}>{nome}</span>
-          </button>
+          </LinkDaTela>
         ))}
         <button
           ref={botaoMais}
@@ -96,11 +99,6 @@ function FolhaMais({ navegacao, aoFechar }: PropriedadesDaFolha) {
     aoFechar();
   }
 
-  function escolher(tela: (typeof emMais)[number]["tela"]): void {
-    navegacao.aoIrPara(tela);
-    aoFechar();
-  }
-
   return (
     <dialog
       ref={dialogo}
@@ -111,9 +109,9 @@ function FolhaMais({ navegacao, aoFechar }: PropriedadesDaFolha) {
     >
       <div className={estilos.conteudoDaFolha}>
         <div className={estilos.cabecalhoDaFolha}>
-          <h2 id={`${id}-titulo`} className={estilos.tituloDaFolha}>
+          <Titulo nivel="secao" como="h2" id={`${id}-titulo`} className={estilos.tituloDaFolha}>
             Mais telas
-          </h2>
+          </Titulo>
           <button
             type="button"
             className={estilos.fecharDaFolha}
@@ -124,17 +122,25 @@ function FolhaMais({ navegacao, aoFechar }: PropriedadesDaFolha) {
           </button>
         </div>
         <ul className={estilos.listaDaFolha}>
-          {emMais.map(({ tela, nome, icone }) => (
+          {emMais.map(({ tela, nome, icone, emBreve }) => (
             <li key={tela}>
-              <button
-                type="button"
+              <LinkDaTela
+                tela={tela}
+                navegacao={navegacao}
+                aoNavegar={aoFechar}
                 className={estilos.itemDaFolha}
+                aria-label={emBreve ? nome : undefined}
+                aria-describedby={emBreve ? `em-breve-folha-${tela}` : undefined}
                 aria-current={navegacao.tela === tela ? "page" : undefined}
-                onClick={() => escolher(tela)}
               >
                 <Icone nome={icone} tamanho={22} />
                 {nome}
-              </button>
+                {emBreve && (
+                  <span id={`em-breve-folha-${tela}`} className={estilos.emBreve}>
+                    <Badge>em breve</Badge>
+                  </span>
+                )}
+              </LinkDaTela>
             </li>
           ))}
         </ul>

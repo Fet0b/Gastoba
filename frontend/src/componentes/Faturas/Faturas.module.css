@@ -1,0 +1,214 @@
+/* Faturas do cartão: a fatura em destaque, as anteriores recolhidas e as compras em linhas. */
+
+.cabecalhoDaFatura {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--espaco-2);
+}
+
+.tituloDaFatura {
+  font-family: var(--fonte-titulo);
+  font-size: var(--texto-base);
+  font-weight: var(--peso-secao);
+}
+
+.total,
+.totalGrande {
+  margin-block: var(--espaco-2);
+  font-family: var(--fonte-titulo);
+  font-weight: var(--peso-secao);
+  font-variant-numeric: proportional-nums;
+}
+
+.total {
+  font-size: var(--numero-medio);
+}
+
+.totalGrande {
+  font-size: var(--numero-grande);
+}
+
+.dados {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 9rem), 1fr));
+  gap: var(--espaco-3);
+  margin-block-end: var(--espaco-3);
+}
+
+.dados dt {
+  color: var(--cor-bruma);
+  font-size: var(--texto-pequeno);
+}
+
+.dados dd {
+  font-variant-numeric: tabular-nums;
+}
+
+.aviso {
+  margin-block-end: var(--espaco-3);
+  padding: var(--espaco-2) var(--espaco-3);
+  border: var(--borda-de-camada);
+  border-radius: var(--raio-painel);
+  color: var(--cor-atencao);
+  font-size: var(--texto-pequeno);
+}
+
+.pagamentos {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espaco-2);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+/* A célula da compra: a descrição e, embaixo, a parcela e o estado. */
+.compra {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espaco-1);
+  min-width: 0;
+}
+
+.descricaoDaCompra {
+  overflow-wrap: anywhere;
+}
+
+.apoioDaCompra {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--espaco-1) var(--espaco-2);
+  color: var(--cor-bruma);
+  font-size: var(--texto-pequeno);
+}
+
+.pagamentos li {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--espaco-3);
+  color: var(--cor-bruma);
+  font-size: var(--texto-pequeno);
+}
+
+.detalhe {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espaco-3);
+}
+
+.vazio {
+  color: var(--cor-bruma);
+}
+
+.erro {
+  color: var(--cor-negativo);
+}
+
+/* A página: um bloco por cartão. */
+
+.cartao {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espaco-4);
+}
+
+.cabecalhoDoCartao {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--espaco-3);
+}
+
+.identificacao {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espaco-2);
+  min-width: 0;
+}
+
+.nomeESelo {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--espaco-2) var(--espaco-3);
+}
+
+.nomeDoCartao {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* O valor devido hoje do cartão, à direita; é número de apoio, não o destaque da tela. */
+.valorDevido {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: var(--espaco-1);
+  margin: 0;
+}
+
+.rotuloDoValor {
+  color: var(--cor-bruma);
+  font-size: var(--texto-pequeno);
+}
+
+.valorDoCartao {
+  font-family: var(--fonte-titulo);
+  font-size: var(--numero-medio);
+  font-variant-numeric: tabular-nums;
+}
+
+.valorDevido[data-tom="negativo"] .valorDoCartao {
+  color: var(--cor-negativo);
+}
+
+.anteriores {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espaco-3);
+}
+
+/* A barra do ciclo da fatura aberta: quantos dias dele já passaram. */
+.ciclo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espaco-2);
+  margin-block-end: var(--espaco-3);
+}
+
+.trilho {
+  overflow: hidden;
+  height: var(--espaco-2);
+  border-radius: var(--raio-chip);
+  background: var(--cor-veludo);
+}
+
+.preenchimento {
+  display: block;
+  height: 100%;
+  border-radius: var(--raio-chip);
+  background: var(--cor-ametista);
+  transition: width var(--duracao-media) var(--curva-saida);
+}
+
+.legendaDoCiclo {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: var(--espaco-1) var(--espaco-3);
+  margin: 0;
+  color: var(--cor-bruma);
+  font-size: var(--texto-pequeno);
+  font-variant-numeric: tabular-nums;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .preenchimento {
+    transition: none;
+  }
+}

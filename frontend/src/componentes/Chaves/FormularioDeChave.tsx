@@ -3,6 +3,10 @@ import { type FormEvent, useEffect, useId, useRef, useState } from "react";
 import { ErroDaApiCliente } from "../../api/cliente";
 import { useCriarChaveDeApi } from "../../api/consultas";
 import type { ChaveDeApiCriada, EscopoDaChave } from "../../api/tipos";
+import { Botao } from "../Botao/Botao";
+import { Titulo } from "../Titulo/Titulo";
+import { CampoDeTexto } from "../Campo/CampoDeTexto";
+import { GrupoDeOpcoes } from "../Campo/GrupoDeOpcoes";
 import estilos from "./Chaves.module.css";
 
 type Propriedades = {
@@ -80,72 +84,37 @@ export function FormularioDeChave({ aoCriar, aoFalhar }: Propriedades) {
     aoCriar(criada);
   }
 
-  const idNome = `${id}-nome`;
-  const idDicaNome = `${id}-dica-nome`;
-  const idErroNome = `${id}-erro-nome`;
   const idErroEscopo = `${id}-erro-escopo`;
   const idTitulo = `${id}-titulo`;
 
   return (
     <form className={estilos.formulario} onSubmit={enviar} aria-labelledby={idTitulo} noValidate>
-      <h2 id={idTitulo} className={estilos.subtitulo}>
+      <Titulo nivel="secao" como="h2" id={idTitulo} className={estilos.subtitulo}>
         Nova chave
-      </h2>
+      </Titulo>
 
-      <div className={estilos.campo}>
-        <label htmlFor={idNome}>Nome da chave</label>
-        <input
-          ref={campoNome}
-          id={idNome}
-          className={estilos.entrada}
-          value={nome}
-          onChange={(evento) => definirNome(evento.target.value)}
-          autoComplete="off"
-          aria-invalid={erros.nome ? true : undefined}
-          aria-describedby={erros.nome ? `${idErroNome} ${idDicaNome}` : idDicaNome}
-        />
-        <p id={idDicaNome} className={estilos.dica}>
-          Para lembrar onde ela é usada (ex.: planilha, script de backup).
+      <CampoDeTexto
+        ref={campoNome}
+        rotulo="Nome da chave"
+        valor={nome}
+        aoMudar={definirNome}
+        autoComplete="off"
+        ajuda="Para lembrar onde ela é usada (ex.: planilha, script de backup)."
+        erro={erros.nome}
+      />
+
+      <GrupoDeOpcoes
+        legenda="Escopo"
+        valor={escopo}
+        aoMudar={(valor) => definirEscopo(valor as EscopoDaChave)}
+        opcoes={ESCOPOS.map((opcao) => ({ valor: opcao.escopo, titulo: opcao.nome, descricao: opcao.explicacao }))}
+        variante="cartao"
+      />
+      {erros.escopo && (
+        <p id={idErroEscopo} role="alert" className={estilos.erroDoCampo}>
+          {erros.escopo}
         </p>
-        {erros.nome && (
-          <p id={idErroNome} className={estilos.erroDoCampo}>
-            {erros.nome}
-          </p>
-        )}
-      </div>
-
-      <fieldset
-        className={estilos.escopos}
-        aria-describedby={erros.escopo ? idErroEscopo : undefined}
-      >
-        <legend>Escopo</legend>
-        {ESCOPOS.map((opcao) => {
-          const idOpcao = `${id}-escopo-${opcao.escopo}`;
-          const idExplicacao = `${idOpcao}-explicacao`;
-          return (
-            <div key={opcao.escopo} className={estilos.opcao}>
-              <input
-                id={idOpcao}
-                type="radio"
-                name={`${id}-escopo`}
-                value={opcao.escopo}
-                checked={escopo === opcao.escopo}
-                onChange={() => definirEscopo(opcao.escopo)}
-                aria-describedby={idExplicacao}
-              />
-              <label htmlFor={idOpcao}>{opcao.nome}</label>
-              <p id={idExplicacao} className={estilos.dica}>
-                {opcao.explicacao}
-              </p>
-            </div>
-          );
-        })}
-        {erros.escopo && (
-          <p id={idErroEscopo} className={estilos.erroDoCampo}>
-            {erros.escopo}
-          </p>
-        )}
-      </fieldset>
+      )}
 
       {/* Sem campo ao qual ligar a mensagem: o alerta a anuncia. */}
       {erros.geral && (
@@ -154,9 +123,9 @@ export function FormularioDeChave({ aoCriar, aoFalhar }: Propriedades) {
         </p>
       )}
 
-      <button type="submit" className={estilos.primario} disabled={criar.pendente}>
+      <Botao type="submit" variante="primario" disabled={criar.pendente}>
         Criar chave
-      </button>
+      </Botao>
     </form>
   );
 }

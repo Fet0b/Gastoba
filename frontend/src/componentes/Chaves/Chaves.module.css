@@ -2,8 +2,8 @@
    segredo. Campos e itens em Veludo sobre as colunas em Ameixa. */
 
 .subtitulo {
-  font-size: 1.125rem;
-  font-weight: 650;
+  font-size: var(--texto-base);
+  font-weight: var(--peso-secao);
 }
 
 /* Formulário */
@@ -22,7 +22,7 @@
 
 .campo > label {
   color: var(--cor-bruma);
-  font-size: 0.9375rem;
+  font-size: var(--texto-corpo);
 }
 
 .entrada {
@@ -54,7 +54,7 @@
   margin-bottom: var(--espaco-2);
   padding: 0;
   color: var(--cor-bruma);
-  font-size: 0.9375rem;
+  font-size: var(--texto-corpo);
 }
 
 .opcao {
@@ -77,12 +77,12 @@
 
 .dica {
   color: var(--cor-bruma);
-  font-size: 0.875rem;
+  font-size: var(--texto-pequeno);
 }
 
 .erroDoCampo {
   color: var(--cor-brasa);
-  font-size: 0.9375rem;
+  font-size: var(--texto-corpo);
 }
 
 .acoes {
@@ -97,7 +97,7 @@
   padding: var(--espaco-2) var(--espaco-4);
   border: 0;
   border-radius: var(--raio-campo);
-  font-weight: 650;
+  font-weight: var(--peso-secao);
   transition: filter var(--duracao-curta) var(--curva-saida);
 }
 
@@ -155,6 +155,52 @@
   align-items: flex-start;
   gap: var(--espaco-3);
   min-width: 0;
+  padding: var(--espaco-4) 0;
+  border-top: 1px solid var(--cor-veludo);
+}
+
+/* P3: no computador, uma linha por chave, em colunas que casam com o cabeçalho visual. */
+.cabecalhoDaLista {
+  display: none;
+}
+
+@media (min-width: 64rem) {
+  .cabecalhoDaLista,
+  .item {
+    display: grid;
+    grid-template-columns: minmax(0, 2fr) repeat(4, minmax(0, 1.2fr)) 6rem;
+    align-items: center;
+    gap: var(--espaco-3);
+  }
+
+  .cabecalhoDaLista {
+    color: var(--cor-bruma);
+    font-size: var(--texto-minimo);
+    line-height: var(--texto-minimo-linha);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  .dados {
+    display: contents;
+  }
+
+  .dados > div {
+    min-width: 0;
+  }
+
+  .dados dt {
+    position: absolute;
+    inline-size: 1px;
+    block-size: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  .confirmacao {
+    grid-column: 1 / -1;
+  }
 }
 
 .topoDoItem {
@@ -165,8 +211,8 @@
 }
 
 .nomeDaChave {
-  font-size: 1.0625rem;
-  font-weight: 650;
+  font-size: var(--texto-base);
+  font-weight: var(--peso-secao);
   overflow-wrap: anywhere;
 }
 
@@ -175,7 +221,7 @@
   border: 1px solid var(--cor-bruma);
   border-radius: var(--raio-chip);
   color: var(--cor-bruma);
-  font-size: 0.8125rem;
+  font-size: var(--texto-rotulo);
 }
 
 .escopo[data-escopo="escrita"] {
@@ -187,7 +233,7 @@
   padding: 0 var(--espaco-2);
   border: 1px solid var(--cor-alerta);
   border-radius: var(--raio-chip);
-  font-size: 0.8125rem;
+  font-size: var(--texto-rotulo);
 }
 
 .dados {
@@ -200,7 +246,7 @@
 
 .dados dt {
   color: var(--cor-bruma);
-  font-size: 0.8125rem;
+  font-size: var(--texto-rotulo);
 }
 
 .dados dd {
@@ -211,7 +257,7 @@
 
 .prefixo {
   font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
-  font-size: 0.9375rem;
+  font-size: var(--texto-corpo);
 }
 
 .revogar {
@@ -247,7 +293,7 @@
   border-radius: var(--raio-painel);
   background: var(--cor-ameixa);
   color: var(--cor-nevoa);
-  box-shadow: 0 24px 64px rgb(0 0 0 / 0.55);
+  box-shadow: var(--sombra-alta);
 }
 
 .dialogo[open] {
@@ -255,8 +301,8 @@
 }
 
 .dialogo::backdrop {
-  background: rgb(12 8 20 / 0.72);
-  backdrop-filter: blur(3px);
+  background: var(--cor-noite);
+  backdrop-filter: blur(0.1875rem);
 }
 
 .conteudoDoDialogo {
@@ -274,7 +320,7 @@
   background: var(--cor-noite);
   color: var(--cor-lavanda);
   font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
-  font-size: 0.9375rem;
+  font-size: var(--texto-corpo);
   overflow-wrap: anywhere;
   user-select: all;
 }
@@ -282,13 +328,13 @@
 .resultadoDaCopia {
   min-height: 1.5em;
   color: var(--cor-lavanda);
-  font-size: 0.9375rem;
+  font-size: var(--texto-corpo);
 }
 
 @keyframes surgir {
   from {
     opacity: 0;
-    transform: translateY(8px);
+    transform: translateY(var(--espaco-2));
   }
   to {
     opacity: 1;

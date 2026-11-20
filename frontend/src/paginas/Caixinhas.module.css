@@ -1,0 +1,12 @@
+/* Caixinhas: o total em destaque, a grade de cartões de mesma altura e o painel de detalhe. */
+.conteudo {
+  display: grid;
+  gap: var(--espaco-4);
+  min-width: 0;
+}
+
+.grade {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr));
+  gap: var(--espaco-4);
+}

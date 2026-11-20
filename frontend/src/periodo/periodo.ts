@@ -85,11 +85,12 @@ export function ontemLocal(): string {
   return textoDaData(new Date(agora.getFullYear(), agora.getMonth(), agora.getDate() - 1));
 }
 
-/** Cabeçalho de um dia da lista: "Hoje", "Ontem" ou "sexta, 3 de outubro". */
+/** Cabeçalho de um dia da lista: "Hoje", "Ontem" ou "Sexta, 3 de outubro". */
 export function rotuloDoDia(data: string): string {
   if (data === hojeLocal()) return "Hoje";
   if (data === ontemLocal()) return "Ontem";
   const [ano, mes, dia] = data.split("-").map((parte) => Number.parseInt(parte, 10));
   const diaDaSemana = new Date(ano, mes - 1, dia).getDay();
-  return `${DIAS_DA_SEMANA[diaDaSemana]}, ${dia} de ${MESES[mes - 1]}`;
+  const nomeDoDia = DIAS_DA_SEMANA[diaDaSemana];
+  return `${nomeDoDia.charAt(0).toLocaleUpperCase("pt-BR")}${nomeDoDia.slice(1)}, ${dia} de ${MESES[mes - 1]}`;
 }

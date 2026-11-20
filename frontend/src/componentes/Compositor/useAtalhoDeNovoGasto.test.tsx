@@ -1,4 +1,5 @@
 import { fireEvent, render, screen } from "@testing-library/react";
+import { useLayoutEffect } from "react";
 import { describe, expect, it, vi } from "vitest";
 
 import { useAtalhoDeNovoGasto } from "./useAtalhoDeNovoGasto";
@@ -21,6 +22,22 @@ function ComAtalho({ aoAcionar, ativo = true }: { aoAcionar: () => void; ativo?:
 }
 
 describe("useAtalhoDeNovoGasto", () => {
+  it("usa as contas recém-carregadas antes dos efeitos passivos", () => {
+    const abrir = vi.fn();
+    function ContasCarregadas({ carregadas }: { carregadas: boolean }) {
+      useAtalhoDeNovoGasto(() => {
+        if (carregadas) abrir();
+      });
+      useLayoutEffect(() => {
+        if (carregadas) fireEvent.keyDown(window, { key: "n" });
+      }, [carregadas]);
+      return null;
+    }
+    const { rerender } = render(<ContasCarregadas carregadas={false} />);
+    rerender(<ContasCarregadas carregadas />);
+    expect(abrir).toHaveBeenCalledTimes(1);
+  });
+
   it.each(["n", "N"])("a tecla %s fora de campos aciona", (key) => {
     const aoAcionar = vi.fn();
     render(<ComAtalho aoAcionar={aoAcionar} />);

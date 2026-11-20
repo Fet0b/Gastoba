@@ -131,3 +131,15 @@ def test_pacote_nao_usa_imports_relativos():
                 violacoes.append(f"{arquivo.relative_to(RAIZ_DO_PACOTE)} importa {modulo!r}")
 
     assert not violacoes, "imports relativos encontrados:\n" + "\n".join(violacoes)
+
+
+def test_gastoba_nao_importa_o_pacote_de_dados_de_teste():
+    """Os dados fictícios e a revisão de consistência ficam fora do pacote de produção."""
+    violacoes = [
+        f"{arquivo.relative_to(RAIZ_DO_PACOTE)} importa {modulo!r}"
+        for arquivo in sorted(RAIZ_DO_PACOTE.rglob("*.py"))
+        for modulo in _imports_absolutos(arquivo)
+        if _pertence_a(modulo, "dados_de_teste")
+    ]
+
+    assert not violacoes, "gastoba importa dados_de_teste:\n" + "\n".join(violacoes)

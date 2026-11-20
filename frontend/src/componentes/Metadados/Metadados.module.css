@@ -1,0 +1,29 @@
+/* O separador nunca abre uma linha: ele fica no vão antes de cada item (a partir do segundo) e o
+   contêiner recorta o que passa da borda esquerda, onde só cai o separador do item que começou a
+   linha. Assim o "·" some sozinho quando a linha quebra. */
+.metadados {
+  display: flex;
+  flex-wrap: wrap;
+  column-gap: var(--espaco-4);
+  row-gap: var(--espaco-1);
+  overflow-x: clip;
+  color: var(--cor-bruma);
+  font-size: var(--texto-rotulo);
+  line-height: var(--texto-rotulo-linha);
+}
+
+.item {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--espaco-2);
+  min-width: 0;
+}
+
+.item + .item::before {
+  content: "\00B7";
+  position: absolute;
+  inset-inline-end: 100%;
+  width: var(--espaco-4);
+  text-align: center;
+}

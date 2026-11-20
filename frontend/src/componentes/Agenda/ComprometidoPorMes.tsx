@@ -3,6 +3,7 @@ import type { Recorrencia } from "../../api/tipos";
 import { deCentavos, formatar, paraCentavos } from "../../dinheiro/dinheiro";
 import { Icone } from "../Icone/Icone";
 import { ValorAnimado } from "../ValorAnimado/ValorAnimado";
+import { Titulo } from "../Titulo/Titulo";
 import estilos from "./Agenda.module.css";
 
 type Propriedades = {
@@ -17,7 +18,7 @@ export function ComprometidoPorMes({ recorrencias, hoje, carregando }: Proprieda
   if (recorrencias === undefined) {
     return (
       <div className={estilos.comprometido}>
-        <h3 className={estilos.titulo}>Comprometido por mês</h3>
+        <Titulo nivel="cartao" como="h3" className={estilos.titulo}>Comprometido por mês</Titulo>
         <p className={estilos.nota}>{carregando ? "Calculando…" : "Não foi possível calcular"}</p>
       </div>
     );
@@ -39,32 +40,34 @@ export function ComprometidoPorMes({ recorrencias, hoje, carregando }: Proprieda
 
   return (
     <div className={estilos.comprometido}>
-      <h3 className={estilos.titulo}>Comprometido por mês</h3>
-      <div className={estilos.totais} role="group" aria-label={nome} data-tom={tom}>
-        <div className={estilos.total}>
-          <span className={estilos.rotulo}>Ganhos fixos</span>
-          <span className={estilos.valorDoTotal} data-lado="ganho">
-            <span aria-hidden="true">+</span>
-            <ValorAnimado valor={total.ganhos} />
-          </span>
-        </div>
-        <div className={estilos.total}>
-          <span className={estilos.rotulo}>Gastos fixos</span>
-          <span className={estilos.valorDoTotal} data-lado="gasto">
-            <ValorAnimado valor={deCentavos(-gastos)} />
-          </span>
-        </div>
-        <div className={estilos.total}>
-          <span className={estilos.rotulo}>Diferença</span>
-          <span className={estilos.valorDoTotal} data-lado="diferenca">
-            <ValorAnimado valor={total.saldo} />
-          </span>
-          <span className={estilos.situacao}>
-            {tom === "positivo" && <Icone nome="ok" tamanho={16} />}
-            {tom === "negativo" && <Icone nome="alerta" tamanho={16} />}
-            <span>{frase}</span>
-          </span>
-        </div>
+      <Titulo nivel="cartao" como="h3" className={estilos.titulo}>Comprometido por mês</Titulo>
+      <div role="group" aria-label={nome} data-tom={tom} className={estilos.grupo}>
+        <dl className={estilos.totais}>
+          <div className={estilos.total}>
+            <dt className={estilos.rotulo}>Ganhos fixos</dt>
+            <dd className={estilos.valorDoTotal} data-lado="ganho">
+              <span aria-hidden="true">+</span>
+              <ValorAnimado valor={total.ganhos} />
+            </dd>
+          </div>
+          <div className={estilos.total}>
+            <dt className={estilos.rotulo}>Gastos fixos</dt>
+            <dd className={estilos.valorDoTotal} data-lado="gasto">
+              <ValorAnimado valor={deCentavos(-gastos)} />
+            </dd>
+          </div>
+          <div className={estilos.total} data-principal="">
+            <dt className={estilos.rotulo}>Diferença</dt>
+            <dd className={estilos.valorDoTotal} data-lado="diferenca">
+              <ValorAnimado valor={total.saldo} />
+              <span className={estilos.situacao}>
+                {tom === "positivo" && <Icone nome="ok" tamanho={16} />}
+                {tom === "negativo" && <Icone nome="alerta" tamanho={16} />}
+                <span>{frase}</span>
+              </span>
+            </dd>
+          </div>
+        </dl>
       </div>
     </div>
   );

@@ -11,7 +11,8 @@ import { useEstadoDoOlho } from "../componentes/Olho/useEstadoDoOlho";
 import { ValorAnimado } from "../componentes/ValorAnimado/ValorAnimado";
 import { formatar } from "../dinheiro/dinheiro";
 import { barraPelaChave, prepararBarras } from "../graficos/barras";
-import { limites, periodoAtual } from "../periodo/periodo";
+import { limites } from "../periodo/periodo";
+import { usePeriodoDaRota } from "../componentes/Navegacao/useRota";
 import { ehSemResposta, MENSAGEM_SERVIDOR_FORA } from "./mensagens";
 import estilos from "./Tags.module.css";
 
@@ -20,7 +21,7 @@ import estilos from "./Tags.module.css";
  * tela, os gastos dela; a seleção segue de um mês para o outro se a tag existir no mês novo.
  */
 export function Tags({ navegacao }: { navegacao: Navegacao }) {
-  const [periodo, definirPeriodo] = useState(periodoAtual);
+  const [periodo, definirPeriodo] = usePeriodoDaRota();
   const [mensagem, definirMensagem] = useState<MensagemDoAviso | null>(null);
   const [selecionada, definirSelecionada] = useState<string | null>(null);
   const [estadoDoOlho, sinalizarOlho] = useEstadoDoOlho();
@@ -80,6 +81,11 @@ export function Tags({ navegacao }: { navegacao: Navegacao }) {
       mensagem={mensagem}
       aoDispensarMensagem={() => definirMensagem(null)}
       controles={{ periodo, aoMudarPeriodo: definirPeriodo }}
+      cabecalho={{titulo: "Tags", subtitulo: "Como e onde o dinheiro foi gasto.", dica: {
+            assunto: "a divisão por tags",
+            texto:
+              "O valor de um gasto com várias tags se divide em partes iguais entre elas. Toque numa tag para ver os gastos dela.",
+          }}}
     >
       <div className={estilos.conteudo} ref={conteudo}>
         <p className={estilos.somenteLeitor} role="status">
@@ -91,21 +97,24 @@ export function Tags({ navegacao }: { navegacao: Navegacao }) {
             <ValorAnimado valor={resumo.dados.total} className={estilos.valorDoTotal} />
           </p>
         )}
-        <GraficoDeBarras
-          resumo={resumo.dados}
-          carregando={resumo.carregando}
-          gastos={gastosDoMes}
-          selecionada={selecionada}
-          aoSelecionar={definirSelecionada}
-        />
-        {barraFixada && (
-          <DetalheDaTag
-            key={barraFixada.chave}
-            barra={barraFixada}
+        <div className={estilos.area} data-com-detalhe={barraFixada !== undefined}>
+          <GraficoDeBarras
+            resumo={resumo.dados}
+            carregando={resumo.carregando}
             gastos={gastosDoMes}
-            aoFechar={fecharDetalhe}
+            selecionada={selecionada}
+            aoSelecionar={definirSelecionada}
+            aoAdicionarTag={() => navegacao.aoIrPara("transacoes")}
           />
-        )}
+          {barraFixada && (
+            <DetalheDaTag
+              key={barraFixada.chave}
+              barra={barraFixada}
+              gastos={gastosDoMes}
+              aoFechar={fecharDetalhe}
+            />
+          )}
+        </div>
       </div>
     </Pagina>
   );

@@ -18,6 +18,7 @@ import { type Periodo, rotulo as rotuloDoMes } from "../../../periodo/periodo";
 import { EstadoVazio } from "../../EstadoVazio/EstadoVazio";
 import { Icone } from "../../Icone/Icone";
 import { prefereMenosMovimento } from "../../movimento";
+import { Recolhivel } from "../../Recolhivel/Recolhivel";
 import estilos from "./GraficoDeRitmo.module.css";
 import { TabelaDoRitmo } from "./TabelaDoRitmo";
 
@@ -127,7 +128,7 @@ function textoDoDia(dia: number, acumulado: string, ideal: string | undefined): 
 /**
  * Gasto acumulado do mês contra o ritmo ideal (a renda do mês em partes iguais pelos
  * dias). Componente de apresentação: recebe os pontos já calculados. SVG em pixels,
- * com cursor que segue o ponteiro, o toque e o teclado; a tabela em `<details>` traz os
+ * com cursor que segue o ponteiro, o toque e o teclado; a tabela em `Recolhivel` traz os
  * mesmos números, então o cursor nunca é o único caminho.
  */
 export function GraficoDeRitmo({ periodo, acumulado, ideal, mesFuturo, aoRegistrar }: Propriedades) {
@@ -159,7 +160,7 @@ export function GraficoDeRitmo({ periodo, acumulado, ideal, mesFuturo, aoRegistr
       <EstadoVazio
         icone="inicio"
         titulo="Este mês ainda não começou"
-        texto="O ritmo aparece a partir do primeiro dia do mês."
+        descricao="O ritmo do gasto aparece quando o mês começar."
       />
     );
   }
@@ -168,7 +169,7 @@ export function GraficoDeRitmo({ periodo, acumulado, ideal, mesFuturo, aoRegistr
       <EstadoVazio
         icone="transacoes"
         titulo="Nenhum gasto neste mês"
-        texto="Sem gastos nem ganhos, ainda não há ritmo para mostrar."
+        descricao="O gráfico acompanha o gasto acumulado dia a dia."
         acao={aoRegistrar && { rotulo: "Registrar um gasto", aoClicar: aoRegistrar }}
       />
     );
@@ -379,10 +380,9 @@ export function GraficoDeRitmo({ periodo, acumulado, ideal, mesFuturo, aoRegistr
         <span>{estado.texto}</span>
       </p>
 
-      <details className={estilos.detalhes}>
-        <summary>Ver como tabela</summary>
+      <Recolhivel resumo="Ver como tabela">
         <TabelaDoRitmo acumulado={acumulado} ideal={ideal} />
-      </details>
+      </Recolhivel>
     </div>
   );
 }

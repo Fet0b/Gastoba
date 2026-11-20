@@ -5,6 +5,9 @@
   gap: var(--espaco-2);
   padding: var(--espaco-6) var(--espaco-4);
   text-align: center;
+  border: 1px dashed var(--cor-veludo);
+  border-radius: var(--raio-painel);
+  background: var(--cor-ameixa);
 }
 
 .icone {
@@ -23,25 +26,10 @@
   line-height: var(--texto-grande-linha);
 }
 
-.texto {
-  max-width: 28rem;
-  color: var(--cor-bruma);
-  font-size: var(--texto-pequeno);
-  line-height: var(--texto-pequeno-linha);
-}
-
 .acao {
-  min-height: var(--alvo-de-toque);
   margin-top: var(--espaco-2);
-  padding: 0 var(--espaco-5);
-  border: 0;
-  border-radius: var(--raio-campo);
-  background: var(--cor-ametista);
-  color: var(--cor-noite);
-  font-weight: 600;
-  transition: filter var(--duracao-curta) var(--curva-saida);
 }
 
-.acao:hover {
-  filter: brightness(1.1);
-}
+.descricao { margin: 0; font-size: var(--texto-pequeno); color: var(--cor-bruma); }
+
+.vazio[data-sem-moldura] { border: 0; background: none; }

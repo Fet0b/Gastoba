@@ -5,6 +5,7 @@
 export const COR_DE_CATEGORIA_DESCONHECIDA = "#9A8FB8";
 
 const CORES_DAS_CATEGORIAS: Readonly<Record<string, string>> = {
+  liberdade_financeira: "#5BD6B0",
   investimentos: "#5BD6B0",
   lazer: "#E879F9",
   conhecimento: "#60A5FA",

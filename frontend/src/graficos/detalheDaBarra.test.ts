@@ -15,6 +15,7 @@ function gasto(id: string, valor: string, tags: string[], data = "2026-06-10"): 
     tags,
     origem: "manual",
     recorrencia_id: null,
+    valor_coberto: "0.00", coberturas: [],
   };
 }
 
@@ -109,4 +110,16 @@ describe("gastosDaBarra: as partes fecham a conta", () => {
       for (const item of outras) expect(item.parte).toBe(item.gasto.valor);
     }
   });
+});
+
+it("rateia o líquido nas tags da compra sem alterar o gasto",()=>{
+ const g={...gasto("c","80.01",["loja","online"]),valor_coberto:"30.00",coberturas:[{id:"x",tag:"celular",valor:"30.00"}]};
+ expect(gastosDaBarra({tipo:"tag",rotulo:"loja"},[g]).map(i=>i.parte)).toEqual(["25.01"]);
+ expect(gastosDaBarra({tipo:"tag",rotulo:"online"},[g]).map(i=>i.parte)).toEqual(["25.00"]);
+ expect(gastosDaBarra({tipo:"tag",rotulo:"celular"},[g])).toEqual([]);
+ expect(gastosDaBarra({tipo:"sem_tag",rotulo:"Sem tag"},[{...g,valor:"80.00",tags:[]}]).map(i=>i.parte)).toEqual(["50.00"]);
+ expect(gastosDaBarra({tipo:"outras",rotulo:"Outras",membros:[{tag:"online"}]},[g]).map(i=>i.parte)).toEqual(["25.00"]);
+ expect(gastosDaBarra({tipo:"tag",rotulo:"loja"},[{...g,valor_coberto:"80.01"}])).toEqual([]);
+ expect(gastosDaBarra({tipo:"tag",rotulo:"online"},[{...g,valor_coberto:"80.00"}])).toEqual([]);
+ expect(g.valor).toBe("80.01");expect(g.tags).toEqual(["loja","online"]);
 });

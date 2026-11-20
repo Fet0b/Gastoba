@@ -1,0 +1,20 @@
+{
+  "results": [
+    {
+      "_datas": {
+        "dueDate": -7
+      },
+      "id": "fatura-exemplo-0",
+      "minimumPaymentAmount": 185.39,
+      "totalAmount": 1235.9
+    },
+    {
+      "_datas": {
+        "dueDate": 23
+      },
+      "id": "fatura-exemplo-1",
+      "minimumPaymentAmount": 165.0,
+      "totalAmount": 1100.0
+    }
+  ]
+}

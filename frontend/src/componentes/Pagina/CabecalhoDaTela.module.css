@@ -1,0 +1,21 @@
+/* O cabeçalho escolhe o arranjo pelo espaço que tem (a coluna do conteúdo), não pela janela. */
+.moldura { container-type: inline-size; min-width: 0; }
+.cabecalho { position: relative; display: flex; align-items: flex-start; justify-content: space-between; gap: var(--espaco-4); flex-wrap: wrap; min-width: 0; }
+.identificacao { flex: 1 1 16rem; min-width: 0; }
+.linhaDoTitulo { display: flex; align-items: center; gap: var(--espaco-2); }
+.subtitulo { margin: var(--espaco-1) 0 0; color: var(--cor-bruma); font-size: var(--texto-rotulo); line-height: var(--texto-rotulo-linha); }
+.acao { flex: none; min-width: 0; }
+.acoes { display: flex; align-items: center; flex-wrap: wrap; justify-content: flex-end; gap: var(--espaco-2); }
+
+/* Espaço curto: título, subtítulo, a ação da página (terciária, do tamanho do texto) e, por último,
+   os controles numa linha só. O botão "Novo gasto" é flutuante no celular e não ocupa a linha. */
+@container (max-width: 45rem) {
+  .cabecalho { flex-direction: column; align-items: stretch; flex-wrap: nowrap; gap: var(--espaco-3); }
+  .identificacao { flex: none; }
+  .acao { align-self: flex-start; max-width: 100%; }
+  .acao[data-acao-terciaria] :global(button[data-variante="terciario"]) { margin-inline-start: calc(-1 * var(--espaco-4)); }
+  .acoes { flex-wrap: nowrap; justify-content: space-between; width: 100%; }
+  .acoes > :last-child { margin-inline-start: auto; }
+  .cabecalho[data-sininho-unico] .identificacao { padding-inline-end: calc(var(--alvo-de-toque) + var(--espaco-2)); }
+  .cabecalho[data-sininho-unico] .acoes { position: absolute; top: 0; right: 0; width: auto; }
+}

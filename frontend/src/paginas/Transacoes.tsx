@@ -12,6 +12,7 @@ import {
 } from "../api/consultas";
 import type { MensagemDoAviso } from "../componentes/Aviso/Aviso";
 import type { Navegacao } from "../componentes/Navegacao/telas";
+import { Chip } from "../componentes/Chip/Chip";
 import { Pagina } from "../componentes/Pagina/Pagina";
 import {
   CompositorDeGasto,
@@ -19,20 +20,32 @@ import {
   MENSAGEM_GASTO_REGISTRADO,
   MENSAGEM_SEM_CONTAS,
 } from "../componentes/Compositor/CompositorDeGasto";
-import { useAtalhoDeNovoGasto } from "../componentes/Compositor/useAtalhoDeNovoGasto";
 import { EstadoVazio } from "../componentes/EstadoVazio/EstadoVazio";
-import { FiltroDeCategorias } from "../componentes/Gastos/FiltroDeCategorias";
-import { FiltroDeTags } from "../componentes/Gastos/FiltroDeTags";
+import { SeletorMultiplo } from "../componentes/SeletorMultiplo/SeletorMultiplo";
 import { CaixaDeEntrada } from "../componentes/Importadas/CaixaDeEntrada";
 import { useEstadoDoOlho } from "../componentes/Olho/useEstadoDoOlho";
-import { BuscaDeTransacoes } from "../componentes/Transacoes/BuscaDeTransacoes";
-import { FiltroDeContasEmChips } from "../componentes/Transacoes/FiltroDeContasEmChips";
+import { AportesEResgates } from "../componentes/Transacoes/AportesEResgates";
+import { BarraDeFiltros } from "../componentes/Transacoes/BarraDeFiltros";
+import { ContadorDaCaixa } from "../componentes/Transacoes/ContadorDaCaixa";
+import { useLayoutLargo } from "../componentes/Navegacao/useLayoutLargo";
 import { LinhaDoTempo } from "../componentes/Transacoes/LinhaDoTempo";
 import { TotaisFiltrados } from "../componentes/Transacoes/TotaisFiltrados";
-import { limites, periodoAtual } from "../periodo/periodo";
+import { limites } from "../periodo/periodo";
+import { usePeriodoDaRota } from "../componentes/Navegacao/useRota";
+import {
+  alternarNaLista,
+  contarFiltros,
+  FILTROS_VAZIOS,
+  type FiltrosDeTransacoes,
+  type GrupoDeFiltro,
+  passaNosFiltros,
+} from "../transacoes/filtros";
 import { filtrarPorBusca, juntarTransacoes } from "../transacoes/linhaDoTempo";
+import { Esqueleto } from "../componentes/Esqueleto/Esqueleto";
+import { EstadoDeErro } from "../componentes/EstadoDeErro/EstadoDeErro";
 import estilos from "./Transacoes.module.css";
 import { ehSemResposta, MENSAGEM_SERVIDOR_FORA } from "./mensagens";
+import { textoDaConta } from "../contas/identificacao";
 
 /**
  * Transações: a linha do tempo única do mês (gastos e ganhos juntos, por dia), com o total do que
@@ -40,43 +53,58 @@ import { ehSemResposta, MENSAGEM_SERVIDOR_FORA } from "./mensagens";
  * a dona da importação bancária, a caixa de entrada. A categoria vale só para os gastos (o ganho
  * não tem categoria e some da lista, com uma nota); a tag vale para os dois.
  */
-export function Transacoes({ navegacao }: { navegacao: Navegacao }) {
-  const [periodo, definirPeriodo] = useState(periodoAtual);
-  const [contaSelecionada, definirContaSelecionada] = useState<string | null>(null);
-  const [tag, definirTag] = useState<string | null>(null);
-  const [categoria, definirCategoria] = useState<string | null>(null);
-  const [vista, definirVista] = useState<"gastos" | "caixa">("gastos");
+export function Transacoes({
+  navegacao,
+  vistaInicial = "gastos",
+  dataDoMovimento,
+  abrirCompositorAoEntrar = false,
+}: {
+  navegacao: Navegacao;
+  vistaInicial?: "gastos" | "caixa" | "aportes";
+  dataDoMovimento?: string;
+  /** Vindo de "Novo gasto" ou da tecla N em outra tela: abre o compositor assim que as contas chegam. */
+  abrirCompositorAoEntrar?: boolean;
+}) {
+  const podeVerAportes = navegacao.importacaoBancaria === true || navegacao.gestaoDeInvestimentos === true;
+  const [periodo, definirPeriodo] = usePeriodoDaRota();
+  useEffect(() => { if (dataDoMovimento) { definirPeriodo({ano:Number(dataDoMovimento.slice(0,4)),mes:Number(dataDoMovimento.slice(5,7))}, { substituir: true }); if (podeVerAportes) definirVista("aportes"); } }, [dataDoMovimento]);
+  const [filtros, definirFiltros] = useState<FiltrosDeTransacoes>(FILTROS_VAZIOS);
+  const [vista, definirVista] = useState<"gastos" | "caixa" | "aportes">(() => vistaInicial === "aportes" && podeVerAportes ? "aportes" : vistaInicial === "caixa" && navegacao.importacaoBancaria === true ? "caixa" : "gastos");
   const [compositorAberto, definirCompositorAberto] = useState(false);
   const [mensagem, definirMensagem] = useState<MensagemDoAviso | null>(null);
   const [estadoDoOlho, sinalizarOlho] = useEstadoDoOlho();
   const [busca, definirBusca] = useState("");
+  const campoDeBusca = useRef<HTMLInputElement>(null);
+  // Abaixo de 45rem os filtros viram um botão que abre uma folha, com os ativos em chips.
+  const celular = !useLayoutLargo();
   const idTitulo = useId();
   const titulo = useRef<HTMLHeadingElement>(null);
 
   const contas = useContas();
+  // A API filtra por um valor de cada vez: com uma só escolha ela vai na consulta; com várias, a lista
+  // vem inteira e o filtro (`passaNosFiltros`) é aplicado aqui, igual para gastos e ganhos.
+  const unico = (lista: readonly string[]): string | undefined => (lista.length === 1 ? lista[0] : undefined);
   const gastos = useGastos({
     ...limites(periodo),
-    conta_id: contaSelecionada ?? undefined,
-    tag: tag ?? undefined,
-    categoria: categoria ?? undefined,
+    conta_id: unico(filtros.contas),
+    tag: unico(filtros.tags),
+    categoria: unico(filtros.categorias),
   });
-  // Os ganhos seguem o mês e a conta; a tag é aplicada aqui no cliente (a API só a filtra nos gastos).
-  const ganhos = useGanhos({ ...limites(periodo), conta_id: contaSelecionada ?? undefined });
+  const ganhos = useGanhos({ ...limites(periodo), conta_id: unico(filtros.contas) });
   const excluirGanho = useExcluirGanho();
   const tags = useTags();
   const categorias = useCategorias();
-  const filtrosAtivos = contaSelecionada !== null || tag !== null || categoria !== null;
+  const quantidadeDeFiltros = contarFiltros(filtros);
+  const filtrosAtivos = quantidadeDeFiltros > 0;
   const buscando = busca.trim() !== "";
 
   const transacoes = useMemo(() => {
     if (gastos.dados === undefined) return undefined;
-    if (categoria === null && ganhos.dados === undefined) return undefined;
-    const ganhosDaTag =
-      categoria !== null
-        ? []
-        : (ganhos.dados ?? []).filter((ganho) => tag === null || ganho.tags.includes(tag));
-    return filtrarPorBusca(juntarTransacoes(gastos.dados, ganhosDaTag), busca);
-  }, [gastos.dados, ganhos.dados, categoria, tag, busca]);
+    const semGanhos = filtros.categorias.length > 0;
+    if (!semGanhos && ganhos.dados === undefined) return undefined;
+    const juntas = juntarTransacoes(gastos.dados, semGanhos ? [] : (ganhos.dados ?? []));
+    return filtrarPorBusca(juntas.filter((transacao) => passaNosFiltros(transacao, filtros)), busca);
+  }, [gastos.dados, ganhos.dados, filtros, busca]);
 
   // Cada mensagem é um objeto novo, para o Aviso anunciar mesmo texto repetido.
   function avisar(tipo: MensagemDoAviso["tipo"], texto: string): void {
@@ -111,8 +139,8 @@ export function Transacoes({ navegacao }: { navegacao: Navegacao }) {
     if (excluido) {
       sinalizarOlho("confirmando");
       avisar("confirmacao", "Ganho excluído.");
-      // A linha do ganho some e levaria o foco junto: ele fica no título da lista.
-      titulo.current?.focus();
+      // A linha do ganho some e levaria o foco junto: o diálogo o leva ao título da lista
+      // (`focoAposExcluir`) quando fecha; antes disso o título está inerte por trás do modal.
       return true;
     }
     return false;
@@ -123,14 +151,25 @@ export function Transacoes({ navegacao }: { navegacao: Navegacao }) {
     if (excluirGanho.erro) avisarFalhaDaConsulta(excluirGanho.erro);
   }, [excluirGanho.erro]);
 
-  // Clicar no chip ativo limpa; clicar em outro troca.
-  function alternarTag(nova: string): void {
-    definirTag((atual) => (atual === nova ? null : nova));
+  // Ligar ou desligar um valor de um grupo; os outros grupos ficam como estão.
+  function alternarFiltro(grupo: GrupoDeFiltro, valor: string): void {
+    definirFiltros((atuais) => ({ ...atuais, [grupo]: alternarNaLista(atuais[grupo], valor) }));
   }
 
-  function alternarCategoria(nova: string): void {
-    definirCategoria((atual) => (atual === nova ? null : nova));
-  }
+  // Tecla "/": foca a busca, salvo digitando num campo ou com um diálogo aberto (como a tecla N).
+  useEffect(() => {
+    function aoTeclar(evento: KeyboardEvent): void {
+      if (evento.key !== "/" || evento.ctrlKey || evento.metaKey || evento.altKey || evento.defaultPrevented) return;
+      const alvo = evento.target instanceof HTMLElement ? evento.target : null;
+      if (alvo?.closest("input, textarea, select, [contenteditable]")) return;
+      if (document.querySelector("dialog[open]")) return;
+      if (!campoDeBusca.current) return;
+      evento.preventDefault();
+      campoDeBusca.current.focus();
+    }
+    window.addEventListener("keydown", aoTeclar);
+    return () => window.removeEventListener("keydown", aoTeclar);
+  }, []);
 
   // O botão de "Limpar ..." some quando a lista volta; o foco fica no título dela.
   function limparBusca(): void {
@@ -140,9 +179,7 @@ export function Transacoes({ navegacao }: { navegacao: Navegacao }) {
 
   function limparFiltros(): void {
     titulo.current?.focus();
-    definirContaSelecionada(null);
-    definirTag(null);
-    definirCategoria(null);
+    definirFiltros(FILTROS_VAZIOS);
   }
 
   // Os erros de um formulário aparecem junto aos campos; sem resposta, no aviso.
@@ -160,11 +197,17 @@ export function Transacoes({ navegacao }: { navegacao: Navegacao }) {
       navegacao.aoIrPara("contas", { abrirFormulario: true });
       return;
     }
+    // Nas vistas da caixa e de aportes o compositor não cabe: volta aos gastos e abre.
+    definirVista("gastos");
     definirCompositorAberto(true);
   }
 
-  // Com o diálogo aberto o atalho fica desligado.
-  useAtalhoDeNovoGasto(abrirNovoGasto, !compositorAberto && vista === "gastos");
+  const [aberturaPendente, definirAberturaPendente] = useState(abrirCompositorAoEntrar);
+  useEffect(() => {
+    if (!aberturaPendente || contas.dados === undefined) return;
+    definirAberturaPendente(false);
+    abrirNovoGasto();
+  }, [aberturaPendente, contas.dados]);
 
   return (
     <Pagina
@@ -172,59 +215,61 @@ export function Transacoes({ navegacao }: { navegacao: Navegacao }) {
       estadoDoOlho={estadoDoOlho}
       mensagem={mensagem}
       aoDispensarMensagem={() => definirMensagem(null)}
-      controles={{ periodo, aoMudarPeriodo: definirPeriodo, aoNovoGasto: abrirNovoGasto }}
+      controles={{ periodo, aoMudarPeriodo: definirPeriodo }}
+      aoNovoGasto={abrirNovoGasto}
+      atalhoDeNovoGasto={!compositorAberto}
+      cabecalho={{ titulo: "Transações", subtitulo: "Tudo o que entrou e saiu, dia a dia.", tituloRef: titulo, tituloId: idTitulo }}
     >
       <div className={estilos.conteudo}>
-        {navegacao.importacaoBancaria === true && (
+        {(navegacao.importacaoBancaria === true || podeVerAportes) && (
           <div className={estilos.alternador} role="group" aria-label="Conteúdo">
-            <button
-              type="button"
-              className={estilos.opcao}
-              aria-pressed={vista === "gastos"}
-              onClick={() => definirVista("gastos")}
-            >
+            <Chip selecionado={vista === "gastos"} aoAlternar={() => definirVista("gastos")}>
               Gastos e ganhos
-            </button>
-            <button
-              type="button"
-              className={estilos.opcao}
-              aria-pressed={vista === "caixa"}
-              onClick={() => definirVista("caixa")}
-            >
-              Caixa de entrada
-            </button>
+            </Chip>
+            {navegacao.importacaoBancaria === true && (
+              <Chip selecionado={vista === "caixa"} aoAlternar={() => definirVista("caixa")}>
+                Caixa de entrada
+                <ContadorDaCaixa />
+              </Chip>
+            )}
+            {podeVerAportes && (
+              <Chip selecionado={vista === "aportes"} aoAlternar={() => definirVista("aportes")}>
+                Aportes e resgates
+              </Chip>
+            )}
           </div>
         )}
 
         {navegacao.importacaoBancaria === true && vista === "caixa" ? (
           <CaixaDeEntrada aoAvisar={avisar} aoSinalizarOlho={sinalizarOlho} />
-        ) : (
+        ) : podeVerAportes && vista === "aportes" ? (
           <>
-            <FiltroDeContasEmChips
-              contas={contas.dados}
-              ativa={contaSelecionada}
-              aoMudar={definirContaSelecionada}
-            />
-            <BuscaDeTransacoes valor={busca} aoMudar={definirBusca} />
-            <div className={estilos.filtros}>
-              <FiltroDeCategorias
-                categorias={categorias.dados}
-                ativa={categoria}
-                aoAlternar={alternarCategoria}
-                aoLimpar={() => definirCategoria(null)}
-              />
-              <FiltroDeTags
-                tags={tags.dados}
-                ativa={tag}
-                aoAlternar={alternarTag}
-                aoLimpar={() => definirTag(null)}
+            <div className={estilos.filtrosDeAportes}>
+              <SeletorMultiplo
+                rotulo="Contas"
+                opcoes={(contas.dados ?? []).map((conta) => ({ valor: conta.id, rotulo: textoDaConta(conta) }))}
+                selecionados={filtros.contas}
+                aoMudar={(valores) => definirFiltros((atuais) => ({ ...atuais, contas: valores }))}
               />
             </div>
+            <AportesEResgates periodo={periodo} contasSelecionadas={filtros.contas} navegacao={navegacao} aoAvisar={(texto) => { sinalizarOlho("confirmando"); avisar("confirmacao", texto); }} aoFalhar={avisarFalhaDaConsulta} aoLimparContas={() => definirFiltros((atuais) => ({ ...atuais, contas: [] }))} />
+          </>
+        ) : (
+          <>
+            <BarraDeFiltros
+              busca={busca}
+              aoMudarBusca={definirBusca}
+              buscaRef={campoDeBusca}
+              contas={contas.dados}
+              categorias={categorias.dados}
+              tags={tags.dados}
+              filtros={filtros}
+              aoAlternar={alternarFiltro}
+              aoLimparTudo={limparFiltros}
+              celular={celular}
+            />
 
             <section className={estilos.secao} aria-labelledby={idTitulo}>
-              <h2 ref={titulo} id={idTitulo} className={estilos.titulo} tabIndex={-1}>
-                Transações
-              </h2>
               {/* Só o resultado de uma busca ou de um filtro é anunciado (e sem repetir a lista). */}
               <p className="visualmente-oculto" aria-live="polite" data-resultado="">
                 {transacoes !== undefined && (buscando || filtrosAtivos)
@@ -233,52 +278,54 @@ export function Transacoes({ navegacao }: { navegacao: Navegacao }) {
                     : `${transacoes.length} ${transacoes.length === 1 ? "transação encontrada" : "transações encontradas"}.`
                   : ""}
               </p>
-              {transacoes !== undefined && <TotaisFiltrados transacoes={transacoes} />}
-              {categoria !== null && (
+              {transacoes !== undefined && <TotaisFiltrados transacoes={transacoes} filtrada={buscando || filtrosAtivos} />}
+              {filtros.categorias.length > 0 && (
                 <p className={estilos.nota}>
                   Ganhos não têm categoria, por isso ficam fora da lista com este filtro.
                 </p>
               )}
               <div aria-busy={gastos.carregando || ganhos.carregando}>
                 {transacoes === undefined ? (
-                  <p className={estilos.estado}>
-                    {gastos.carregando || ganhos.carregando
-                      ? "Carregando transações…"
-                      : "Não foi possível carregar as transações."}
-                  </p>
+                  gastos.carregando || ganhos.carregando
+                    ? <Esqueleto rotulo="Carregando transações…" />
+                    : <EstadoDeErro mensagem="Não foi possível carregar as transações." />
                 ) : transacoes.length === 0 ? (
                   buscando ? (
                     <EstadoVazio
                       icone="transacoes"
                       titulo="Nada encontrado para a busca"
-                      texto="Confira a grafia ou busque por outra palavra."
+                      descricao="Tente outra palavra, ou limpe a busca para ver tudo."
                       acao={{ rotulo: "Limpar busca", aoClicar: limparBusca }}
                     />
                   ) : filtrosAtivos ? (
                     <EstadoVazio
                       icone="transacoes"
                       titulo="Nenhuma transação com esses filtros"
-                      texto="Neste mês, nada combina com os filtros escolhidos."
+                      descricao="Troque ou limpe os filtros para ver as transações do mês."
                       acao={{ rotulo: "Limpar filtros", aoClicar: limparFiltros }}
                     />
                   ) : (
                     <EstadoVazio
                       icone="transacoes"
                       titulo="Nenhum gasto ou ganho neste mês"
-                      texto="Registre o primeiro com N ou com o botão Novo gasto."
+        descricao="Registre seu primeiro lançamento para acompanhar o mês."
+                      acao={{ rotulo: "Registrar o primeiro gasto", aoClicar: abrirNovoGasto }}
                     />
                   )
                 ) : (
                   <LinhaDoTempo
-                    reiniciarQuando={`${periodo.ano}-${periodo.mes}|${contaSelecionada}|${categoria}|${tag}|${busca}`}
+                    aoDesfazerClassificacao={() => definirMensagem({ tipo: "confirmacao", texto: "Transação devolvida à caixa de entrada." })}
+                    podeDesfazerClassificacao={navegacao.importacaoBancaria === true}
+                    reiniciarQuando={`${periodo.ano}-${periodo.mes}|${filtros.contas.join(",")}|${filtros.categorias.join(",")}|${filtros.tags.join(",")}|${busca}`}
                     transacoes={transacoes}
                     contas={contas.dados}
                     categorias={categorias.dados}
                     aoExcluirGanho={excluirUmGanho}
-                    aoAlternarCategoria={alternarCategoria}
-                    aoAlternarTag={alternarTag}
-                    categoriaAtiva={categoria}
-                    tagAtiva={tag}
+                    focoAposExcluir={titulo}
+                    aoAlternarCategoria={(codigo) => alternarFiltro("categorias", codigo)}
+                    aoAlternarTag={(tag) => alternarFiltro("tags", tag)}
+                    categoriasAtivas={filtros.categorias}
+                    tagsAtivas={filtros.tags}
                   />
                 )}
               </div>
@@ -292,7 +339,7 @@ export function Transacoes({ navegacao }: { navegacao: Navegacao }) {
           contas={contas.dados}
           categorias={categorias.dados}
           sugestoesDeTags={tags.dados ?? []}
-          contaInicial={contaSelecionada}
+          contaInicial={unico(filtros.contas) ?? null}
           aoRegistrar={() => {
             sinalizarOlho("confirmando");
             avisar("confirmacao", MENSAGEM_GASTO_REGISTRADO);

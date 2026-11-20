@@ -23,6 +23,7 @@ function gasto(i: number, tags: string[], valor = "10.00"): Gasto {
     tags,
     origem: "manual",
     recorrencia_id: null,
+    valor_coberto: "0.00", coberturas: [],
   };
 }
 
@@ -38,8 +39,8 @@ describe("DetalheDaTag", () => {
   it("mostra a tag, o total, o percentual e a quantidade no cabeçalho", () => {
     render(<DetalheDaTag barra={BARRA} gastos={[gasto(1, ["mercado"])]} aoFechar={() => {}} />);
 
-    const regiao = screen.getByRole("heading", { name: "mercado" }).parentElement as HTMLElement;
-    expect(regiao.textContent).toContain("mercado");
+    const regiao = screen.getByRole("heading", { name: "Mercado" }).parentElement as HTMLElement;
+    expect(regiao.textContent).toContain("Mercado");
     expect(regiao.textContent).toContain(`R$${NBSP}120,00`);
     expect(regiao.textContent).toContain("40% do total");
   });
@@ -108,4 +109,11 @@ describe("DetalheDaTag", () => {
 
     expect(aoFechar).toHaveBeenCalledTimes(1);
   });
+});
+
+it("mostra total barras tabela e detalhe pelo líquido",async()=>{
+ const g={...gasto(1,["loja"],"80.00"),valor_coberto:"30.00"};
+ render(<DetalheDaTag barra={{tipo:"tag",rotulo:"loja",valor:"50.00",percentual:"100%",quantidade:1}} gastos={[g]} aoFechar={()=>{}}/>);
+ expect(screen.getByRole("list",{name:"Gastos de loja"}).textContent).toContain("50,00");
+ expect(screen.getByRole("list",{name:"Gastos de loja"}).textContent).not.toContain("80,00");
 });

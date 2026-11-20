@@ -1,0 +1,95 @@
+.menu {
+  position: relative;
+  display: inline-flex;
+}
+
+.gatilho {
+  opacity: var(--opacidade-discreta);
+  display: inline-grid;
+  place-items: center;
+  min-width: var(--alvo-de-toque);
+  min-height: var(--alvo-de-toque);
+  padding: 0;
+  border: 0;
+  border-radius: var(--raio-campo);
+  background: transparent;
+  color: var(--cor-lavanda);
+  cursor: pointer;
+}
+
+.gatilho:focus-visible { opacity: 1; }
+
+.gatilho:hover,
+.gatilho[aria-expanded="true"] {
+  opacity: 1;
+  background: var(--superficie-badge);
+}
+
+.gatilho:focus-visible {
+  outline: var(--anel-de-foco);
+  outline-offset: var(--afastamento-do-foco);
+}
+
+.lista {
+  position: absolute;
+  inset-block-start: 100%;
+  z-index: 30;
+  min-width: 12rem;
+  max-width: calc(100vw - 2 * var(--espaco-4));
+  margin: var(--espaco-1) 0 0;
+  padding: var(--espaco-1);
+  list-style: none;
+  border: var(--borda-de-camada);
+  border-radius: var(--raio-campo);
+  background: var(--cor-veludo);
+  box-shadow: var(--sombra-media);
+}
+
+.menu[data-alinhamento="fim"] .lista {
+  inset-inline-end: 0;
+}
+
+.menu[data-alinhamento="inicio"] .lista {
+  inset-inline-start: 0;
+}
+
+.item {
+  display: block;
+  width: 100%;
+  min-height: var(--alvo-de-toque);
+  padding: var(--espaco-2) var(--espaco-3);
+  border: 0;
+  border-radius: var(--raio-campo);
+  background: transparent;
+  color: var(--cor-nevoa);
+  font: inherit;
+  font-size: var(--texto-pequeno);
+  line-height: var(--texto-pequeno-linha);
+  text-align: start;
+  overflow-wrap: anywhere;
+  cursor: pointer;
+}
+
+.item:hover:not(:disabled),
+.item:focus-visible {
+  background: var(--superficie-tonal);
+}
+
+.item:focus-visible {
+  outline: var(--anel-de-foco);
+  outline-offset: -2px;
+}
+
+.item:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.item[data-destrutivo] {
+  color: var(--cor-brasa);
+}
+
+.item[data-destrutivo]:hover:not(:disabled),
+.item[data-destrutivo]:focus-visible {
+  background: var(--superficie-negativa);
+}

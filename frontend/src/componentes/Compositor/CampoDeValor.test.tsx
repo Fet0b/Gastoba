@@ -102,3 +102,65 @@ describe("CampoDeValor", () => {
     expect(campo().hasAttribute("aria-describedby")).toBe(false);
   });
 });
+
+/** Simula o que o navegador entrega quando o cursor não está no fim. */
+function editar(texto: string, cursor: number): void {
+  const entrada = campo();
+  const definir = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")?.set;
+  definir?.call(entrada, texto);
+  entrada.setSelectionRange(cursor, cursor);
+  fireEvent.input(entrada);
+}
+
+describe("CampoDeValor com o cursor fora do fim (U28)", () => {
+  it("clique no início de 0,00: digitar 4590 dá 45,90", () => {
+    render(<ComValor />);
+    // O navegador insere cada dígito na posição do cursor, que fica logo depois dele.
+    editar("40,00", 1);
+    expect(campo().value).toBe("0,04");
+    editar("50,04", 1);
+    expect(campo().value).toBe("0,45");
+    editar("90,45", 1);
+    expect(campo().value).toBe("4,59");
+    editar("04,59", 1);
+    expect(campo().value).toBe("45,90");
+    expect(decimal()).toBe("45.90");
+  });
+
+  it("cursor no meio: o dígito entra como o último", () => {
+    render(<ComValor inicial="12.34" />);
+    editar("125,34", 2);
+    expect(campo().value).toBe("123,45");
+    expect(decimal()).toBe("123.45");
+  });
+
+  it("dígito inserido no início de um valor existente entra pela direita", () => {
+    render(<ComValor inicial="12.34" />);
+    editar("912,34", 1);
+    expect(decimal()).toBe("123.49");
+  });
+
+  it("colar com o cursor no início entra como últimos dígitos", () => {
+    render(<ComValor inicial="12.34" />);
+    editar("R$ 5,6712,34", 7);
+    expect(decimal()).toBe("12345.67");
+  });
+
+  it("seleção total seguida de dígito substitui o valor", () => {
+    render(<ComValor inicial="12.34" />);
+    editar("7", 1);
+    expect(decimal()).toBe("0.07");
+  });
+
+  it("apagar com o teclado virtual (sem tecla Backspace) tira o último dígito", () => {
+    render(<ComValor inicial="12.34" />);
+    editar("1,34", 1);
+    expect(decimal()).toBe("1.23");
+  });
+
+  it("o limite do backend continua recusando o dígito excedente fora do fim", () => {
+    render(<ComValor inicial="1000000000000.00" />);
+    editar("91.000.000.000.000,00", 1);
+    expect(decimal()).toBe("1000000000000.00");
+  });
+});

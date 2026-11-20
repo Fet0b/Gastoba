@@ -2,9 +2,15 @@ from uuid import UUID, uuid4
 
 import pytest
 
-from gastoba.domain.conta import Conta, OrigemDaConta, TipoDaConta
+from gastoba.domain.conta import (
+    Conta,
+    OrigemDaConta,
+    TipoDaConta,
+    final_do_numero_de,
+    validar_apelido,
+)
 from gastoba.domain.dinheiro import Dinheiro
-from gastoba.domain.excecoes import NomeInvalido, ValorInvalido
+from gastoba.domain.excecoes import ApelidoInvalido, NomeInvalido, ValorInvalido
 
 USUARIO_ID = uuid4()
 
@@ -104,3 +110,72 @@ def test_conta_manual_tem_saldo_proprio_e_a_importada_espelha_o_banco():
     assert manual.saldo_e_do_banco is False
     assert importada.saldo_e_do_banco is True
     assert manual.id_externo is None
+
+
+# --- 068: apelido, nome no banco e final do número ---
+
+
+@pytest.mark.parametrize(
+    ("numero", "esperado"),
+    [
+        ("0001/12345-0", "3450"),
+        ("1234", "1234"),
+        ("  **** 9876 ", "9876"),
+        ("123456789012", "9012"),
+        ("123", None),
+        ("ab-1/2", None),
+        ("", None),
+        (None, None),
+        (12345678, None),
+        (b"12345678", None),
+    ],
+)
+def test_final_do_numero_de_usa_so_os_quatro_ultimos_digitos(numero, esperado):
+    assert final_do_numero_de(numero) == esperado
+
+
+def test_final_do_numero_de_com_quatro_digitos_exatos_vale():
+    assert final_do_numero_de("0412") == "0412"
+
+
+def test_rotulo_prefere_apelido_depois_nome_no_banco_depois_nome():
+    conta = Conta(usuario_id=USUARIO_ID, nome="Nubank (2)", saldo=Dinheiro(0))
+    assert conta.rotulo == "Nubank (2)"
+    conta.nome_no_banco = "Nubank"
+    assert conta.rotulo == "Nubank"
+    conta.apelido = "Conta da casa"
+    assert conta.rotulo == "Conta da casa"
+
+
+def test_conta_aceita_apelido_e_final_validos_e_apara_o_apelido():
+    conta = Conta(
+        usuario_id=USUARIO_ID,
+        nome="Nubank",
+        saldo=Dinheiro(0),
+        apelido="  Casa  ",
+        final_do_numero="0412",
+    )
+    assert conta.apelido == "Casa"
+    assert conta.final_do_numero == "0412"
+
+
+@pytest.mark.parametrize("final", ["412", "04123", "04a2", ""])
+def test_conta_recusa_final_que_nao_tem_quatro_digitos(final):
+    with pytest.raises(ValueError):
+        Conta(usuario_id=USUARIO_ID, nome="N", saldo=Dinheiro(0), final_do_numero=final)
+
+
+def test_apelido_vazio_na_entidade_levanta_apelido_invalido():
+    with pytest.raises(ApelidoInvalido):
+        Conta(usuario_id=USUARIO_ID, nome="N", saldo=Dinheiro(0), apelido="   ")
+
+
+def test_validar_apelido_apara_e_aceita_ate_40_caracteres():
+    assert validar_apelido("  Conta da casa ") == "Conta da casa"
+    assert validar_apelido("a" * 40) == "a" * 40
+
+
+@pytest.mark.parametrize("texto", ["", "   ", "a" * 41, "ola\nmundo", "tab\taqui"])
+def test_validar_apelido_recusa(texto):
+    with pytest.raises(ApelidoInvalido):
+        validar_apelido(texto)

@@ -55,7 +55,7 @@ function abrirFormulario(): void {
 }
 
 function campo(rotulo: string): HTMLInputElement {
-  return screen.getByLabelText(rotulo) as HTMLInputElement;
+  return screen.getByLabelText(rotulo === "Saldo devedor" ? /^Saldo devedor/ : rotulo) as HTMLInputElement;
 }
 
 function descricaoDoErro(entrada: HTMLElement): string {
@@ -68,7 +68,7 @@ function descricaoDoErro(entrada: HTMLElement): string {
 }
 
 describe("CartaoDeConta", () => {
-  const conta: Conta = { id: "c1", nome: "Nubank", saldo: "100.00", origem: "manual", tipo: "corrente" };
+  const conta: Conta = { id: "c1", nome: "Nubank", saldo: "100.00", origem: "manual", tipo: "corrente", rotulo: "Nubank", apelido: null, nome_no_banco: null, final_do_numero: null };
 
   function pararAnimacoes(): void {
     vi.stubGlobal("requestAnimationFrame", () => 1);
@@ -115,7 +115,7 @@ describe("CartaoDeConta", () => {
 });
 
 describe("CartaoDeConta (tipo e origem)", () => {
-  const base: Conta = { id: "c1", nome: "Nubank", saldo: "100.00", origem: "manual", tipo: "corrente" };
+  const base: Conta = { id: "c1", nome: "Nubank", saldo: "100.00", origem: "manual", tipo: "corrente", rotulo: "Nubank", apelido: null, nome_no_banco: null, final_do_numero: null };
 
   it("mostra Cartão de crédito só para o tipo cartão", () => {
     const { container, rerender } = render(<CartaoDeConta conta={base} selecionada={false} />);
@@ -141,7 +141,7 @@ describe("CartaoDeConta (tipo e origem)", () => {
 });
 
 describe("CartaoDeConta (carteira)", () => {
-  const base: Conta = { id: "c1", nome: "Nubank", saldo: "100.00", origem: "manual", tipo: "corrente" };
+  const base: Conta = { id: "c1", nome: "Nubank", saldo: "100.00", origem: "manual", tipo: "corrente", rotulo: "Nubank", apelido: null, nome_no_banco: null, final_do_numero: null };
 
   it("selos em texto para banco conectado e cartão de crédito", () => {
     const { container } = render(
@@ -149,6 +149,7 @@ describe("CartaoDeConta (carteira)", () => {
     );
     const selos = [...container.querySelectorAll("[data-selo]")].map((selo) => selo.textContent);
     expect(selos).toEqual(["Cartão de crédito", "Banco conectado"]);
+    expect(container.querySelectorAll("[data-selo] [data-badge]")).toHaveLength(2);
   });
 
   it("conta manual corrente não tem selos", () => {
@@ -156,26 +157,89 @@ describe("CartaoDeConta (carteira)", () => {
     expect(container.querySelector("[data-selo]")).toBeNull();
   });
 
-  it("saldo negativo traz o sinal, o ícone e o texto, nunca só a cor", () => {
+  it("conta corrente negativa traz o sinal, o Badge com ícone e o texto, nunca só a cor", () => {
     const { container } = render(<CartaoDeConta conta={{ ...base, saldo: "-10.00" }} selecionada={false} />);
     const cartao = container.querySelector("[data-tom]");
     expect(cartao?.getAttribute("data-tom")).toBe("negativo");
     expect(container.textContent).toContain(`\u{2212}R$${NBSP}10,00`);
-    expect(container.textContent).toContain("Saldo negativo");
-    expect(container.querySelector("svg")).not.toBeNull();
+    const badge = container.querySelector("[data-badge]");
+    expect(badge?.textContent).toBe("Saldo negativo");
+    expect(badge?.getAttribute("data-tom")).toBe("negativo");
+    expect(badge?.querySelector("svg")).not.toBeNull();
   });
 
-  it("saldo zero é neutro, sem ícone nem texto de tom", () => {
+  it("cartão de crédito mostra Fatura aberta positiva e neutra, sem Saldo negativo", () => {
+    const { container } = render(
+      <CartaoDeConta conta={{ ...base, tipo: "cartao", saldo: "-122.18" }} selecionada={false} />,
+    );
+    expect(container.textContent).toContain("Fatura aberta");
+    expect(container.textContent).toContain(`R$${NBSP}122,18`);
+    expect(container.textContent).not.toContain(`\u{2212}R$`);
+    expect(container.querySelector('[data-tom="negativo"]')).toBeNull();
+    expect(container.textContent).not.toContain("Saldo negativo");
+  });
+
+  it("o rótulo do cartão acompanha a situação da fatura mais recente, sempre neutro", () => {
+    const cartao = { ...base, tipo: "cartao" as const, saldo: "-122.18" };
+    const { container, rerender } = render(
+      <CartaoDeConta conta={cartao} selecionada={false} situacaoDoCartao={{ recente: "fechada", temVencida: false }} />,
+    );
+    expect(container.textContent).toContain("Fatura fechada");
+    expect(container.querySelector('[data-tom="negativo"]')).toBeNull();
+    rerender(
+      <CartaoDeConta conta={cartao} selecionada={false} situacaoDoCartao={{ recente: null, temVencida: false }} />,
+    );
+    expect(container.textContent).toContain("Fatura aberta");
+  });
+
+  it("mostra o selo 'Vencida', com texto e tom negativo, só no cartão com fatura vencida", () => {
+    const cartao = { ...base, tipo: "cartao" as const, saldo: "-122.18" };
+    const { container, rerender } = render(
+      <CartaoDeConta conta={cartao} selecionada={false} situacaoDoCartao={{ recente: "fechada", temVencida: true }} />,
+    );
+    const selo = container.querySelector('[data-selo="vencida"] [data-badge]');
+    expect(selo?.textContent).toBe("Vencida");
+    expect(selo?.getAttribute("data-tom")).toBe("negativo");
+    expect(container.textContent).not.toContain("Saldo negativo");
+
+    rerender(
+      <CartaoDeConta conta={cartao} selecionada={false} situacaoDoCartao={{ recente: "aberta", temVencida: false }} />,
+    );
+    expect(container.querySelector('[data-selo="vencida"]')).toBeNull();
+    rerender(<CartaoDeConta conta={cartao} selecionada={false} />);
+    expect(container.querySelector('[data-selo="vencida"]')).toBeNull();
+  });
+
+  it("conta corrente nunca leva o selo 'Vencida'", () => {
+    const { container } = render(
+      <CartaoDeConta conta={base} selecionada={false} situacaoDoCartao={{ recente: "fechada", temVencida: true }} />,
+    );
+    expect(container.querySelector('[data-selo="vencida"]')).toBeNull();
+  });
+
+  it("cartão de crédito com crédito a favor mostra Saldo a favor", () => {
+    const { container } = render(
+      <CartaoDeConta conta={{ ...base, tipo: "cartao", saldo: "50.00" }} selecionada={false} />,
+    );
+    expect(container.textContent).toContain("Saldo a favor");
+  });
+
+  it("conta corrente rotula o valor como Saldo", () => {
+    const { container } = render(<CartaoDeConta conta={base} selecionada={false} />);
+    expect(container.textContent).toContain("Saldo");
+  });
+
+  it("saldo zero é neutro, sem Badge nem texto de tom", () => {
     const { container } = render(<CartaoDeConta conta={{ ...base, saldo: "0.00" }} selecionada={false} />);
     expect(container.querySelector("[data-tom]")?.getAttribute("data-tom")).toBe("neutro");
     expect(container.textContent).toContain(`R$${NBSP}0,00`);
     expect(container.textContent).not.toContain("Saldo negativo");
-    expect(container.querySelector("svg")).toBeNull();
+    expect(container.querySelector("[data-badge]")).toBeNull();
   });
 
-  it("nome de 100 caracteres aparece inteiro", () => {
+  it("rótulo de 100 caracteres aparece inteiro", () => {
     const nome = "N".repeat(100);
-    const { container } = render(<CartaoDeConta conta={{ ...base, nome }} selecionada={false} />);
+    const { container } = render(<CartaoDeConta conta={{ ...base, nome, rotulo: nome }} selecionada={false} />);
     expect(container.textContent).toContain(nome);
   });
 });
@@ -183,7 +247,7 @@ describe("CartaoDeConta (carteira)", () => {
 describe("ListaDeContas", () => {
   it("sem contas, o estado vazio traz a ação Nova conta, que abre o formulário", async () => {
     render(<ComContas />);
-    await screen.findByText("Nenhuma conta ainda. Crie a primeira.");
+    await screen.findByText("Nenhuma conta ainda");
 
     expect(screen.getAllByRole("button", { name: "Nova conta" })).toHaveLength(1);
     abrirFormulario();
@@ -209,7 +273,9 @@ describe("ListaDeContas", () => {
 
     await screen.findByText("Nubank");
     expect(container.querySelector("[aria-pressed]")).toBeNull();
-    expect(container.querySelectorAll("li button")).toHaveLength(0);
+    // Só o menu "Mais ações da conta" (apelido); o cartão em si não é botão.
+    expect(container.querySelectorAll("li button")).toHaveLength(1);
+    expect(container.querySelector("li button")?.getAttribute("aria-label")).toMatch(/^Mais ações da conta/);
   });
 
   it("lista as contas em ordem de nome com o saldo formatado", async () => {
@@ -224,18 +290,18 @@ describe("ListaDeContas", () => {
     expect(primeiro.textContent).toContain(`R$${NBSP}80,00`);
     expect(segundo.textContent).toContain("Nubank");
     expect(segundo.textContent).toContain(`R$${NBSP}974,10`);
-    expect(screen.getByRole("heading", { name: "Contas" })).not.toBeNull();
+    expect(screen.getByRole("heading", { name: "Suas contas" })).not.toBeNull();
   });
 
   it("sem contas, mostra o estado vazio", async () => {
     render(<ComContas />);
 
-    expect(await screen.findByText("Nenhuma conta ainda. Crie a primeira.")).not.toBeNull();
+    expect(await screen.findByText("Nenhuma conta ainda")).not.toBeNull();
   });
 
   it("todos os campos do formulário são encontráveis pelo rótulo", async () => {
     render(<ComContas />);
-    await screen.findByText("Nenhuma conta ainda. Crie a primeira.");
+    await screen.findByText("Nenhuma conta ainda");
 
     abrirFormulario();
 
@@ -248,7 +314,7 @@ describe("ListaDeContas", () => {
   it("cria a conta com saldo inicial digitado como dígitos, e ela aparece na lista", async () => {
     const aoCriar = vi.fn();
     const { container } = render(<ComContas aoCriar={aoCriar} />);
-    await screen.findByText("Nenhuma conta ainda. Crie a primeira.");
+    await screen.findByText("Nenhuma conta ainda");
 
     abrirFormulario();
     fireEvent.change(campo("Nome"), { target: { value: "Nubank" } });
@@ -267,7 +333,7 @@ describe("ListaDeContas", () => {
     const espiao = vi.fn(fetch);
     vi.stubGlobal("fetch", espiao);
     const { container } = render(<ComContas />);
-    await screen.findByText("Nenhuma conta ainda. Crie a primeira.");
+    await screen.findByText("Nenhuma conta ainda");
 
     abrirFormulario();
     fireEvent.change(campo("Nome"), { target: { value: "Cartão" } });
@@ -285,7 +351,7 @@ describe("ListaDeContas", () => {
     const espiao = vi.fn(fetch);
     vi.stubGlobal("fetch", espiao);
     const { container } = render(<ComContas />);
-    await screen.findByText("Nenhuma conta ainda. Crie a primeira.");
+    await screen.findByText("Nenhuma conta ainda");
 
     abrirFormulario();
     fireEvent.change(campo("Nome"), { target: { value: "Vazia" } });
@@ -316,7 +382,7 @@ describe("ListaDeContas", () => {
 
   it("nome vazio mostra a mensagem da API junto ao nome", async () => {
     render(<ComContas />);
-    await screen.findByText("Nenhuma conta ainda. Crie a primeira.");
+    await screen.findByText("Nenhuma conta ainda");
 
     abrirFormulario();
     fireEvent.change(campo("Nome"), { target: { value: "   " } });
@@ -328,7 +394,7 @@ describe("ListaDeContas", () => {
 
   it("erro sem campo correspondente aparece no formulário como alerta", async () => {
     render(<ComContas />);
-    await screen.findByText("Nenhuma conta ainda. Crie a primeira.");
+    await screen.findByText("Nenhuma conta ainda");
     const corpo = { erro: { codigo: "erro_de_dominio", mensagem: "Regra violada." } };
     vi.stubGlobal("fetch", () =>
       Promise.resolve(
@@ -351,7 +417,7 @@ describe("ListaDeContas", () => {
   it("servidor fora do ar avisa quem chamou, sem erro junto aos campos", async () => {
     const aoFalhar = vi.fn();
     render(<ComContas aoFalhar={aoFalhar} />);
-    await screen.findByText("Nenhuma conta ainda. Crie a primeira.");
+    await screen.findByText("Nenhuma conta ainda");
     vi.stubGlobal("fetch", () => Promise.reject(new TypeError("Failed to fetch")));
 
     abrirFormulario();
@@ -365,7 +431,7 @@ describe("ListaDeContas", () => {
 
   it("Cancelar fecha o formulário e devolve o foco ao botão Nova conta", async () => {
     render(<ComContas />);
-    await screen.findByText("Nenhuma conta ainda. Crie a primeira.");
+    await screen.findByText("Nenhuma conta ainda");
 
     abrirFormulario();
     fireEvent.click(screen.getByRole("button", { name: "Cancelar" }));
@@ -387,5 +453,86 @@ describe("ListaDeContas", () => {
 
     fireEvent.click(cartoes(container)[0]);
     expect(cartoes(container)[0].getAttribute("aria-pressed")).toBe("false");
+  });
+
+  it("o botão Nova conta é secundário e tem ícone, sem o + textual", async () => {
+    await criarConta("Nubank");
+    const { container } = render(<ComContas />);
+    await waitFor(() => expect(cartoes(container)).toHaveLength(1));
+
+    const botao = screen.getByRole("button", { name: "Nova conta" });
+    expect(botao.getAttribute("data-papel")).toBe("secundaria");
+    expect(botao.textContent).toBe("Nova conta");
+    expect(botao.querySelector("svg")).not.toBeNull();
+  });
+});
+
+describe("ListaDeContas (excluir pelo menu)", () => {
+  function ComExclusao({ aoExcluir }: { aoExcluir: (conta: Conta) => Promise<boolean> }) {
+    const { dados, carregando } = useContas();
+    return (
+      <ListaDeContas
+        contas={dados}
+        carregando={carregando}
+        aoSelecionar={() => {}}
+        formularioAberto={false}
+        aoMudarFormulario={() => {}}
+        aoCriar={() => {}}
+        aoFalhar={() => {}}
+        aoExcluir={aoExcluir}
+      />
+    );
+  }
+
+  it("nenhum Excluir fica visível; o menu da conta abre o diálogo de confirmação", async () => {
+    await criarConta("Nubank", "10.00");
+    const aoExcluir = vi.fn(async () => true);
+    render(<ComExclusao aoExcluir={aoExcluir} />);
+    await screen.findByText("Nubank");
+
+    expect(screen.queryByRole("button", { name: /^Excluir/ })).toBeNull();
+    const gatilho = screen.getByRole("button", { name: "Mais ações da conta Nubank, Conta corrente" });
+    fireEvent.click(gatilho);
+    fireEvent.click(screen.getByRole("menuitem", { name: "Excluir a conta Nubank, Conta corrente" }));
+
+    const dialogo = await screen.findByRole("dialog", { name: /Excluir a conta Nubank, Conta corrente/ });
+    expect(dialogo.textContent).toContain("Os gastos, ganhos e recorrências dela também serão apagados.");
+    expect(document.activeElement).toBe(screen.getByRole("button", { name: "Cancelar" }));
+
+    fireEvent.click(screen.getByRole("button", { name: "Confirmar exclusão" }));
+    await waitFor(() => expect(aoExcluir).toHaveBeenCalledTimes(1));
+  });
+
+  it("cancelar devolve o foco ao gatilho do menu", async () => {
+    await criarConta("Nubank");
+    render(<ComExclusao aoExcluir={async () => true} />);
+    await screen.findByText("Nubank");
+
+    const gatilho = screen.getByRole("button", { name: "Mais ações da conta Nubank, Conta corrente" });
+    fireEvent.click(gatilho);
+    fireEvent.click(screen.getByRole("menuitem", { name: "Excluir a conta Nubank, Conta corrente" }));
+    fireEvent.click(await screen.findByRole("button", { name: "Cancelar" }));
+
+    await waitFor(() => expect(document.activeElement).toBe(gatilho));
+  });
+
+  it("o menu é irmão do cartão, nunca aninhado no botão do filtro", async () => {
+    await criarConta("Nubank");
+    const { container } = render(<ComExclusao aoExcluir={async () => true} />);
+    await screen.findByText("Nubank");
+
+    const gatilho = screen.getByRole("button", { name: "Mais ações da conta Nubank, Conta corrente" });
+    expect(gatilho.closest("button[aria-pressed]")).toBeNull();
+    expect(container.querySelectorAll("li")).toHaveLength(1);
+  });
+
+  it("conta importada do banco tem o menu só com o apelido, sem excluir", async () => {
+    await chamar("/sincronizacoes", { metodo: "POST" });
+    render(<ComExclusao aoExcluir={async () => true} />);
+    await screen.findByText("Visa Gold");
+
+    fireEvent.click(screen.getAllByRole("button", { name: /Mais ações da conta Visa Gold/ })[0]);
+    expect(screen.getByRole("menuitem", { name: "Dar apelido" })).toBeTruthy();
+    expect(screen.queryByRole("menuitem", { name: /Excluir/ })).toBeNull();
   });
 });

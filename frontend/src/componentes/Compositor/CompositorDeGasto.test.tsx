@@ -141,6 +141,16 @@ describe("CompositorDeGasto", () => {
     expect(dialogo.textContent).toContain("Esc");
   });
 
+  it("identifica o rodapé de ações para mantê-lo visível enquanto o formulário rola", async () => {
+    await criarConta("Nubank");
+    render(<ComCompositor />);
+    const dialogo = await abrir();
+    const rodape = dialogo.querySelector("footer[data-rodape-dialogo]");
+
+    expect(rodape).not.toBeNull();
+    expect(rodape?.querySelector("button[type='submit']")?.textContent).toContain("Registrar gasto");
+  });
+
   it("começa com a data de hoje e a conta selecionada no painel", async () => {
     vi.useFakeTimers({ toFake: ["Date"] });
     vi.setSystemTime(new Date(2026, 9, 10, 23, 30));
@@ -331,6 +341,10 @@ describe("CompositorDeGasto", () => {
     const fantasma: Conta = {
       id: "00000000-0000-4000-8000-000000000000",
       nome: "Apagada",
+      rotulo: "Apagada",
+      apelido: null,
+      nome_no_banco: null,
+      final_do_numero: null,
       saldo: "0.00",
       origem: "manual",
       tipo: "corrente",
@@ -411,7 +425,7 @@ describe("CompositorDeGasto", () => {
     fireEvent.click(botaoRegistrar());
     const alerta = await screen.findByRole("alert");
     expect(alerta.textContent).toContain("Não foi possível falar com o servidor.");
-    expect(aoFalhar).toHaveBeenCalledTimes(1);
+    await waitFor(() => expect(aoFalhar).toHaveBeenCalledTimes(1));
     expect(screen.getByRole("dialog")).toBeTruthy();
   });
 

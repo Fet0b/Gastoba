@@ -1,0 +1,10 @@
+.dialogo { overflow-y: auto; }
+.explicacao { max-width: 65ch; color: var(--cor-bruma); }
+.formulario { display: grid; gap: var(--espaco-4); }
+.amostraDaCor { display: block; width: var(--espaco-4); height: var(--espaco-4); border-radius: 50%; }
+.amostraAutomatica { display: block; width: var(--espaco-4); height: var(--espaco-4); border: 1px dashed var(--cor-bruma); border-radius: 50%; }
+.erro { margin: var(--espaco-2) 0 0; color: var(--cor-negativo); }
+
+
+/* A explicação do criar tem o mesmo espaço (token) que separa os grupos do formulário. */
+.introducao { max-width: 65ch; margin: 0 0 var(--espaco-4); color: var(--cor-bruma); }

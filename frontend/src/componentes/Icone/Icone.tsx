@@ -15,10 +15,29 @@ export type NomeDoIcone =
   | "mais"
   | "fechar"
   | "adicionar"
+  | "filtro"
   | "entrada"
   | "saida"
   | "alerta"
-  | "ok";
+  | "ok"
+  | "info"
+  | "repetir"
+  | "verificado"
+  | "sino"
+  | "dividir"
+  | "chevron"
+  | "calendario"
+  | "chave"
+  | "banco"
+  | "moeda"
+  | "cofre"
+  | "folha"
+  | "grafico"
+  | "aviao"
+  | "casa"
+  | "carro"
+  | "computador"
+  | "exclamacao";
 
 /** Caminhos SVG (viewBox 24x24, só traço), desenhados para o projeto: sem biblioteca de ícones. */
 export const CAMINHOS_DOS_ICONES: Readonly<Record<NomeDoIcone, readonly string[]>> = {
@@ -38,10 +57,29 @@ export const CAMINHOS_DOS_ICONES: Readonly<Record<NomeDoIcone, readonly string[]
   mais: ["M5 12h.01", "M12 12h.01", "M19 12h.01"],
   fechar: ["M6 6l12 12", "M18 6 6 18"],
   adicionar: ["M12 5v14", "M5 12h14"],
+  filtro: ["M4 6h16", "M7 12h10", "M10 18h4"],
   entrada: ["M12 4v14", "M6 12l6 6 6-6"],
   saida: ["M12 20V6", "M6 12l6-6 6 6"],
   alerta: ["M12 3 2.5 20h19z", "M12 10v4", "M12 17h.01"],
   ok: ["M5 12.5l4.5 4.5L19 7.5"],
+  info: ["M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18z", "M12 11v5", "M12 8h.01"],
+  repetir: ["M4 12a6 6 0 0 1 6-6h9", "M16 3l3 3-3 3", "M20 12a6 6 0 0 1-6 6H5", "M8 21l-3-3 3-3"],
+  verificado: ["M5 12.5l4.5 4.5L19 7.5"],
+  dividir: ["M5 12h14", "M12 6h.01", "M12 18h.01"],
+  chevron: ["M6 9l6 6 6-6"],
+  calendario: ["M4 5h16v16H4z", "M8 3v4", "M16 3v4", "M4 10h16"],
+  chave: ["M10 14a5 5 0 1 1 4-4", "M10 14l-6 6", "M4 17l3 3"],
+  banco: ["M3 8l9-5 9 5z", "M5 10v8", "M12 10v8", "M19 10v8", "M3 21h18"],
+  sino: ["M6 17V11a6 6 0 0 1 12 0v6l1.5 2h-15z", "M10 21h4"],
+  moeda: ["M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18z", "M14.5 9.5c-.5-1-1.4-1.5-2.5-1.5-1.4 0-2.5.8-2.5 2s1 1.7 2.5 2 2.5.8 2.5 2-1.1 2-2.5 2c-1.1 0-2-.5-2.5-1.5", "M12 6.5V8", "M12 16v1.5"],
+  cofre: ["M4 5h16v14H4z", "M7 19v2", "M17 19v2", "M12 14a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5z", "M12 9V7", "M12 16v-2"],
+  folha: ["M5 19C5 10 10 5 20 4c0 9-4 15-13 15", "M5 19c3-5 6-8 10-10"],
+  grafico: ["M4 4v16h16", "M8 16v-4", "M12 16V8", "M16 16v-6"],
+  aviao: ["M12 3c1 0 1.5 1.5 1.5 3v4l7 4v2l-7-2v4l2 1.5V21L12 20l-2.5 1v-1.5l2-1.5v-4l-7 2v-2l7-4V6c0-1.5.5-3 1.5-3z"],
+  casa: ["M3 12l9-8 9 8", "M5 10.5V20h14v-9.5", "M10 20v-6h4v6", "M17 7V4h2v5"],
+  carro: ["M3 16v-4l2-5a2 2 0 0 1 2-1.5h10a2 2 0 0 1 2 1.5l2 5v4z", "M3 12h18", "M7 16v2", "M17 16v2", "M7 14h.01", "M17 14h.01"],
+  computador: ["M5 5h14v10H5z", "M2.5 19h19", "M10 15v4", "M14 15v4"],
+  exclamacao: ["M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18z", "M12 7.5v5.5", "M12 16.5h.01"],
 };
 
 type Propriedades = {

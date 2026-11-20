@@ -18,6 +18,22 @@ class TagInvalida(ErroDeDominio):
     """Tag vazia, longa demais ou com caracteres não imprimíveis, ou gasto com tags demais."""
 
 
+class DestinacaoCadastradaNaoEncontrada(ErroDeDominio):
+    """Caixinha inexistente ou pertencente a outra pessoa."""
+
+
+class IconeInvalido(ErroDeDominio):
+    """Código de ícone de caixinha fora da lista fechada."""
+
+
+class DestinacaoJaCadastrada(ErroDeDominio):
+    """A pessoa já tem uma caixinha com esse nome."""
+
+
+class DestinacaoEmUso(ErroDeDominio):
+    """A caixinha tem saldo derivado ou referência/histórico e não pode ser excluída."""
+
+
 class PeriodoInvalido(ErroDeDominio):
     """Período com a data inicial depois da data final."""
 
@@ -26,8 +42,20 @@ class ContaNaoEncontrada(ErroDeDominio):
     """Conta inexistente ou pertencente a outro usuário."""
 
 
+class ContaImportada(ErroDeDominio):
+    """Conta importada do banco não pode ser excluída: ela segue o que vem do provedor."""
+
+
 class ContaJaExiste(ErroDeDominio):
     """Já existe uma conta com o mesmo nome para o mesmo usuário."""
+
+
+class ApelidoInvalido(ErroDeDominio):
+    """Apelido da conta vazio, longo demais ou com caracteres não imprimíveis."""
+
+
+class ApelidoJaExiste(ErroDeDominio):
+    """Outra conta da mesma pessoa já usa esse apelido."""
 
 
 class EmailInvalido(ErroDeDominio):
@@ -120,7 +148,14 @@ class SincronizacaoEmAndamento(ErroDeDominio):
 
 
 class ProvedorIndisponivel(ErroDeDominio):
-    """O provedor de Open Finance falhou (rede, credencial ou resposta inesperada)."""
+    """O provedor de Open Finance falhou (rede, credencial ou resposta inesperada).
+
+    ``motivo`` é um texto curto e seguro para log (etapa e status, nunca dados nem ids).
+    """
+
+    def __init__(self, mensagem: str, motivo: str = "") -> None:
+        super().__init__(mensagem)
+        self.motivo = motivo
 
 
 class RecorrenciaNaoEncontrada(ErroDeDominio):
@@ -145,3 +180,156 @@ class PercentuaisExcedem100(ErroDeDominio):
 
 class MesInvalido(ErroDeDominio):
     """Mês fora do formato AAAA-MM (mês de 01 a 12, ano de 0001 a 9999)."""
+
+
+class DestinacaoInvalida(ErroDeDominio):
+    """Destinações de um aporte fora das regras (percentual, soma fora de 100, tag repetida)."""
+
+
+class InvestimentoNaoEncontrado(ErroDeDominio):
+    """Investimento inexistente ou de outro usuário."""
+
+
+class MovimentoDeInvestimentoNaoEncontrado(ErroDeDominio):
+    """Aporte ou resgate inexistente ou de outro usuário."""
+
+
+class MovimentoJaAssociado(ErroDeDominio):
+    """O aporte ou resgate já está associado a um investimento."""
+
+
+class PrincipalInsuficiente(ErroDeDominio):
+    """Resgate ou realocação maior que o principal da destinação."""
+
+
+class ResgateMaiorQueOValorDaDestinacao(ErroDeDominio):
+    """A parte do resgate passa do valor que a destinação tinha antes dele."""
+
+
+class RealocacaoNaoEncontrada(ErroDeDominio):
+    """Realocação inexistente, de outro investimento ou de outro usuário."""
+
+
+class MovimentoNaoDesfazivel(ErroDeDominio):
+    """O movimento não cumpre as condições para desfazer com segurança."""
+
+
+class SemValorADestinar(ErroDeDominio):
+    """A posição já tem principal registrado para todo o valor aplicado (ou o saldo)."""
+
+
+class CategoriaInvalida(ErroDeDominio):
+    """A categoria não vale para esta operação (ex.: ``investimentos`` num gasto)."""
+
+
+class DivisaoInvalida(ErroDeDominio):
+    """Divisão de uma transação fora das regras (partes, percentuais, soma, categoria)."""
+
+
+class DivisaoExigeConfirmacao(ErroDeDominio):
+    """Desfazer todas as partes da transação dividida exige confirmação explícita."""
+
+
+class RevisaoNaoPendente(ErroDeDominio):
+    pass
+
+
+class CoberturaInvalida(ErroDeDominio):
+    pass
+
+
+class CoberturaJaExiste(ErroDeDominio):
+    pass
+
+
+class CoberturaNaoEncontrada(ErroDeDominio):
+    pass
+
+
+class GastoNaoEncontrado(ErroDeDominio):
+    pass
+
+
+class RecorrenciaEmRevisao(ErroDeDominio):
+    pass
+
+
+class FaturaNaoEncontrada(ErroDeDominio):
+    """Fatura inexistente ou de uma conta de outro usuário."""
+
+
+class MovimentoIncompativelComInvestimento(ErroDeDominio):
+    """O movimento não pode virar aporte, ou não pode ser ligado ao investimento escolhido
+    (imposto e taxa não são dinheiro investido; conta remunerada não é ação nem título)."""
+
+
+class ReaplicacaoInvalida(ErroDeDominio):
+    pass
+
+
+class ReaplicacaoJaExiste(ErroDeDominio):
+    pass
+
+
+class ReaplicacaoNaoEncontrada(ErroDeDominio):
+    pass
+
+
+class OperacaoNaoEncontrada(ErroDeDominio):
+    pass
+
+
+class OperacaoDaCorretoraImutavel(ErroDeDominio):
+    pass
+
+
+class OperacaoInvalida(ErroDeDominio):
+    pass
+
+
+class TransacaoCasada(ErroDeDominio):
+    """A transação está ligada a uma operação da corretora: desfaça a ligação antes."""
+
+
+class RevisaoDesatualizada(ErroDeDominio):
+    """A proposta mudou desde que a pessoa a leu: leia de novo antes de confirmar."""
+
+
+class CasamentoAmbiguo(ErroDeDominio):
+    pass
+
+
+class CasamentoJaExiste(ErroDeDominio):
+    pass
+
+
+class MigracaoInconsistente(ErroDeDominio):
+    pass
+
+
+class CasamentoNaoEncontrado(ErroDeDominio):
+    pass
+
+
+class OperacaoPossivelmenteDuplicada(ErroDeDominio):
+    pass
+
+
+class AporteJaTratado(ErroDeDominio):
+    pass
+
+
+class MesclaInvalida(ErroDeDominio):
+    pass
+
+
+class TratamentoNaoEncontrado(ErroDeDominio):
+    pass
+
+
+class AparenciaInvalida(ErroDeDominio):
+    """Matiz fora do espectro, ou nome do app vazio, longo demais ou não imprimível."""
+
+
+class GuardadoInvalido(ErroDeDominio):
+    """Marcação do guardado nas metas fora das regras (tag repetida, inexistente, demais)."""

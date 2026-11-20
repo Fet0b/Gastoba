@@ -1,0 +1,61 @@
+/* Item da revisão: identificação | valor | menu (coluna fixa e sempre visível); o resto abaixo. */
+.item {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto var(--alvo-de-toque);
+  align-items: center;
+  gap: var(--espaco-2) var(--espaco-3);
+  padding: var(--espaco-3) var(--espaco-4);
+  border-radius: var(--raio-cartao);
+  background: var(--cor-veludo);
+}
+
+.item > * {
+  grid-column: 1 / -1;
+}
+
+.item > .identificacao {
+  grid-column: 1;
+  min-width: 0;
+}
+
+.item > .valor {
+  grid-column: 2;
+}
+
+.item > .menu {
+  grid-column: 3;
+  justify-self: end;
+}
+
+.valor {
+  text-align: right;
+  font-family: var(--fonte-titulo);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.apoio {
+  color: var(--cor-bruma);
+  font-size: var(--texto-pequeno);
+  line-height: var(--texto-pequeno-linha);
+}
+
+.descricaoDoBanco {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.bloco {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--espaco-2);
+}
+
+/* O aviso é um cartão só: ícone, texto e ação na mesma linha, com respiro quando a ação desce. */
+.aviso { display: flex; flex-wrap: wrap; align-items: center; gap: var(--espaco-4); }
+.iconeDoAviso { display: inline-flex; color: var(--cor-atencao); }
+.textoDoAviso { flex: 1; min-width: 12rem; }
+.textoDoAviso strong { color: var(--cor-atencao); }
+.textoDoAviso p { margin: var(--espaco-1) 0 0; color: var(--cor-nevoa); }

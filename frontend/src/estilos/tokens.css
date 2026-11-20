@@ -10,7 +10,7 @@
   --cor-nevoa: #eee9fb; /* texto principal */
   --cor-bruma: #9a8fb8; /* texto secundário */
   --cor-brasa: #ff7a90; /* valores de gasto (saídas) e erros */
-  --cor-alerta: #f0b429; /* situação de alerta (perto do limite): só em marcas e ícones */
+  --cor-alerta: #f0b429; /* situação de alerta (perto do limite) */
 
   /* Raios: maiores nas superfícies de fora, menores nos elementos de dentro */
   --raio-painel: 20px;
@@ -41,9 +41,38 @@
   --duracao-media: 400ms;
   --curva-saida: cubic-bezier(0.2, 0.8, 0.2, 1);
 
-  /* Situação "dentro" (bom): verde de status do guia dataviz, 5,51:1 sobre a Ameixa e 4,89:1 sobre o Veludo.
-     Sempre acompanha ícone e texto, nunca a cor sozinha. */
-  --cor-dentro: #0ca30c;
+  /* Cores semânticas. Sempre acompanham ícone e texto, nunca a cor sozinha. */
+  --cor-positivo: #4ade80; /* entradas e "dentro": 10,61:1 sobre Ameixa, 9,42:1 sobre Veludo */
+  --cor-negativo: var(--cor-brasa); /* saídas e erros: 7,43:1 sobre Ameixa */
+  --cor-atencao: var(--cor-alerta); /* âmbar; 9,92:1 sobre Ameixa: pode ser texto */
+  --cor-neutra: var(--cor-bruma); /* 6,16:1 sobre Ameixa */
+  --cor-dentro: var(--cor-positivo); /* alias mantido para o CSS existente */
+
+  /* Superfícies tonais (alfa literal; nunca color-mix) */
+  --cor-ametista-hover: #976cf7; /* primário no hover: Noite 5,47:1 */
+  --superficie-tonal: rgb(201 184 255 / 0.18); /* secundário; Névoa 10,69:1 sobre Ameixa */
+  --superficie-tonal-hover: rgb(201 184 255 / 0.26); /* Névoa 8,60:1 sobre Ameixa */
+  --superficie-badge: rgb(201 184 255 / 0.12); /* texto Névoa (Bruma não passa sobre Veludo) */
+  --superficie-positiva: rgb(74 222 128 / 0.14); /* Positivo 8,17:1 sobre Ameixa */
+  --superficie-atencao: rgb(240 180 41 / 0.14); /* Âmbar 7,67:1 sobre Ameixa */
+  --superficie-negativa: rgb(255 122 144 / 0.16); /* Brasa 5,78:1 sobre Ameixa */
+
+  /* Aparência da pessoa (Art. XI.1.9): textura do fundo (valor do catálogo aparencia/texturas.ts)
+     e o gradiente da barra de escolha da cor, o único arco-íris do app. */
+  --textura-da-pagina: none;
+  --gradiente-do-espectro: linear-gradient(
+    90deg,
+    hsl(0 85% 55%),
+    hsl(60 85% 55%),
+    hsl(120 85% 55%),
+    hsl(180 85% 55%),
+    hsl(240 85% 55%),
+    hsl(300 85% 55%),
+    hsl(360 85% 55%)
+  );
+
+  /* Margem interna do cartão (16 px abaixo de 30rem, como o Cartao já faz) */
+  --margem-do-cartao: var(--espaco-5);
 
   /* Escala tipográfica: tamanho e altura de linha */
   --texto-minimo: 0.75rem;
@@ -56,8 +85,25 @@
   --texto-grande-linha: 1.75rem;
   --texto-titulo: 1.75rem;
   --texto-titulo-linha: 2.125rem;
-  --texto-destaque: 2.5rem;
-  --texto-destaque-linha: 2.75rem;
+  --texto-destaque: clamp(2rem, 1.4rem + 2vw, 2.5rem);
+  --texto-destaque-linha: 1.15;
+
+  --texto-rotulo: 0.8125rem;
+  --texto-rotulo-linha: 1.125rem;
+  --texto-corpo: 0.9375rem;
+  --texto-corpo-linha: 1.375rem;
+  --peso-titulo: 700;
+  --peso-secao: 650;
+  --altura-do-campo: 44px;
+  --altura-do-campo-de-valor: 56px;
+  --largura-do-conteudo: 72rem;
+  --opacidade-discreta: 0.5;
+
+  /* Escala de números: um herói por tela, os demais descem de tamanho */
+  --numero-heroi: var(--texto-destaque);
+  --numero-grande: var(--texto-titulo);
+  --numero-medio: var(--texto-grande);
+  --numero-pequeno: var(--texto-base);
 
   /* Elevação: sombras e a borda sutil das superfícies em camadas */
   --sombra-baixa: 0 1px 2px rgb(0 0 0 / 0.35);
@@ -67,6 +113,8 @@
 
   /* Navegação (o ponto de quebra do layout é 48rem, que media query não lê de variável) */
   --largura-da-barra-lateral: 15rem;
+  --largura-da-barra-recolhida: 4.5rem;
   --altura-da-barra-de-abas: 4rem;
   --alvo-de-toque: 44px;
+  --altura-minima-do-botao: 40px;
 }

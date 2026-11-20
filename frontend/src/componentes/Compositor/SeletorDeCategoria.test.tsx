@@ -6,9 +6,9 @@ import type { Categoria } from "../../api/tipos";
 import { SeletorDeCategoria } from "./SeletorDeCategoria";
 
 const CATEGORIAS: Categoria[] = [
-  { codigo: "lazer", nome: "Lazer" },
-  { codigo: "conforto", nome: "Conforto" },
-  { codigo: "nova", nome: "Nova" },
+  { codigo: "lazer", nome: "Lazer", legada: false },
+  { codigo: "conforto", nome: "Conforto", legada: false },
+  { codigo: "nova", nome: "Nova", legada: false },
 ];
 
 function ComCategoria({ erro }: { erro?: string }) {
@@ -60,5 +60,29 @@ describe("SeletorDeCategoria", () => {
     expect(grupo.getAttribute("aria-invalid")).toBe("true");
     const id = grupo.getAttribute("aria-describedby") ?? "";
     expect(document.getElementById(id)?.textContent).toBe("Escolha uma categoria válida.");
+  });
+
+  it("não oferece investimentos: aporte não é gasto", () => {
+    render(
+      <SeletorDeCategoria
+        categorias={[{ codigo: "investimentos", nome: "Investimentos", legada: true }, ...CATEGORIAS]}
+        valor={null}
+        aoMudar={() => {}}
+      />,
+    );
+
+    expect(radios().map((radio) => radio.value)).toEqual(["lazer", "conforto", "nova"]);
+  });
+
+  it("mantém a categoria legada fora de qualquer seletor", () => {
+    render(
+      <SeletorDeCategoria
+        categorias={[{ codigo: "investimentos", nome: "Investimentos", legada: true }, ...CATEGORIAS]}
+        valor={null}
+        aoMudar={() => {}}
+      />,
+    );
+
+    expect(radios().map((radio) => radio.value)).toEqual(["lazer", "conforto", "nova"]);
   });
 });

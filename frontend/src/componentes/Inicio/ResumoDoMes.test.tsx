@@ -14,8 +14,11 @@ function desenhar(extras: Extras = {}) {
     <ResumoDoMes
       renda="1000.10"
       gasto="25.95"
+      aportes="0.00"
       dinheiroTotal="150.50"
       momento="atual"
+      hoje="2026-11-09"
+      periodo={{ ano: 2026, mes: 11 }}
       aoRegistrarGanho={aoRegistrarGanho}
       {...extras}
     />,
@@ -34,7 +37,19 @@ describe("ResumoDoMes", () => {
   it("o dinheiro total aparece ao lado", () => {
     desenhar();
 
-    expect(screen.getByRole("group", { name: `Dinheiro total: R$${NBSP}150,50` })).not.toBeNull();
+    const dinheiro = screen.getByRole("group", { name: "Dinheiro nas contas correntes" });
+    expect(dinheiro.textContent).toContain(`R$${NBSP}150,50`);
+  });
+
+  it("tem um só herói (Pode gastar) e o dinheiro nas contas correntes em tamanho médio", () => {
+    const { container } = render(
+      <ResumoDoMes renda="100.00" gasto="10.00" dinheiroTotal="5.00" momento="atual" hoje="2026-11-09" periodo={{ ano: 2026, mes: 11 }} aoRegistrarGanho={() => {}} />,
+    );
+
+    expect(container.querySelectorAll('[data-tamanho="heroi"]')).toHaveLength(1);
+    expect(screen.getByRole("group", { name: /^Pode gastar este mês/ }).getAttribute("data-tamanho")).toBe("heroi");
+    expect(screen.getByRole("group", { name: "Dinheiro nas contas correntes" })).toBeTruthy();
+    expect(screen.queryByText("Dinheiro total")).toBeNull();
   });
 
   it("gastos acima da renda têm tom negativo, sinal de menos e a palavra Negativo", () => {
@@ -58,7 +73,9 @@ describe("ResumoDoMes", () => {
 
     expect(screen.getByRole("group", { name: `Gasto no mês: R$${NBSP}25,90` })).not.toBeNull();
     expect(screen.queryByText("Pode gastar este mês")).toBeNull();
-    fireEvent.click(screen.getByRole("button", { name: "Registrar um ganho" }));
+    const botao = screen.getByRole("button", { name: "Registrar um ganho" });
+    expect(botao.getAttribute("data-papel")).toBe("secundaria");
+    fireEvent.click(botao);
     expect(aoRegistrarGanho).toHaveBeenCalledTimes(1);
   });
 
@@ -66,13 +83,22 @@ describe("ResumoDoMes", () => {
     desenhar({ renda: "0.00", gasto: "0.00", momento: "futuro" });
 
     expect(screen.getByRole("group", { name: `Gasto no mês: R$${NBSP}0,00` })).not.toBeNull();
-    expect(screen.getByRole("group", { name: /^Dinheiro total/ })).not.toBeNull();
+    expect(screen.getByRole("group", { name: "Dinheiro nas contas correntes" })).not.toBeNull();
   });
 
   it("enquanto os dados não chegam, mostra um traço", () => {
     desenhar({ renda: undefined, gasto: undefined, dinheiroTotal: undefined });
 
     expect(screen.getByRole("group", { name: "Pode gastar este mês: —" })).not.toBeNull();
-    expect(screen.getByRole("group", { name: "Dinheiro total: —" })).not.toBeNull();
+    expect(screen.getByRole("group", { name: "Dinheiro nas contas correntes" })).not.toBeNull();
   });
+});
+
+it("desconta só aportes com dinheiro novo e abre a conta", () => {
+  render(<ResumoDoMes renda="5387.04" gasto="284.87" aportes="2811.88" dinheiroTotal="0.00" momento="atual" hoje="2026-11-09" periodo={{ ano: 2026, mes: 11 }} aoRegistrarGanho={() => {}} />);
+  expect(screen.getByText(/2.290,29/)).toBeTruthy();
+  expect(screen.getByText("Aportes com dinheiro do mês")).toBeTruthy();
+  const nota = screen.getByText("Aportes que só reaplicam resgates não entram na conta.");
+  expect(nota.closest('[role="group"]')?.getAttribute("aria-label")).toBe("Aportes com dinheiro do mês");
+  expect(screen.getByRole("group", { name: "Dinheiro nas contas correntes" }).querySelector('[data-parte="nota"]')?.getAttribute("data-vazia")).toBe("true");
 });

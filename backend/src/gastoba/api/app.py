@@ -11,17 +11,35 @@ from fastapi.middleware.trustedhost import TrustedHostMiddleware
 
 from gastoba.api.dependencias import CABECALHO_ANTI_CSRF, criar_sincronizador
 from gastoba.api.erros import registrar_tratadores_de_erro
+from gastoba.api.rotas.aparencia import roteador as roteador_de_aparencia
+from gastoba.api.rotas.aportes_sem_investimento import (
+    roteador as roteador_de_aportes_sem_investimento,
+)
 from gastoba.api.rotas.autenticacao import roteador as roteador_de_autenticacao
+from gastoba.api.rotas.casamentos import roteador as roteador_de_casamentos
 from gastoba.api.rotas.categorias import roteador as roteador_de_categorias
 from gastoba.api.rotas.chaves_de_api import roteador as roteador_de_chaves_de_api
 from gastoba.api.rotas.contas import roteador as roteador_de_contas
+from gastoba.api.rotas.destinacoes_cadastradas import (
+    roteador as roteador_de_destinacoes_cadastradas,
+)
+from gastoba.api.rotas.documentacao import roteador as roteador_de_documentacao
+from gastoba.api.rotas.faturas import roteador as roteador_de_faturas
 from gastoba.api.rotas.ganhos import roteador as roteador_de_ganhos
 from gastoba.api.rotas.gastos import roteador as roteador_de_gastos
+from gastoba.api.rotas.guardado_nas_metas import roteador as roteador_de_guardado_nas_metas
 from gastoba.api.rotas.importacao import TRAVA_DA_SINCRONIZACAO
 from gastoba.api.rotas.importacao import roteador as roteador_de_importacao
+from gastoba.api.rotas.investimentos import roteador as roteador_de_investimentos
 from gastoba.api.rotas.metas import roteador as roteador_de_metas
+from gastoba.api.rotas.operacoes import roteador as roteador_de_operacoes
+from gastoba.api.rotas.reaplicacoes import roteador as roteador_de_reaplicacoes
 from gastoba.api.rotas.recorrencias import roteador as roteador_de_recorrencias
+from gastoba.api.rotas.renda_base import roteador as roteador_de_renda_base
 from gastoba.api.rotas.resumos import roteador as roteador_de_resumos
+from gastoba.api.rotas.revisao import roteador as roteador_de_revisao
+from gastoba.api.rotas.revisao_contabil import roteador as roteador_de_revisao_contabil
+from gastoba.api.rotas.revisao_da_bolsa import roteador as roteador_da_revisao_da_bolsa
 from gastoba.api.rotas.saude import roteador as roteador_de_saude
 from gastoba.api.rotas.tags import roteador as roteador_de_tags
 from gastoba.application.processar_recorrencias import ProcessarRecorrencias
@@ -113,7 +131,16 @@ def criar_app(configuracoes: Configuracoes | None = None) -> FastAPI:
                     await em_andamento
         engine.dispose()
 
-    app = FastAPI(title="Gastoba", version="0.1.0", lifespan=lifespan)
+    # As rotas automáticas de documentação ficam desligadas: o roteador de documentação as serve
+    # atrás da autenticação (spec 075).
+    app = FastAPI(
+        title="Gastoba",
+        version="0.1.0",
+        lifespan=lifespan,
+        docs_url=None,
+        redoc_url=None,
+        openapi_url=None,
+    )
     app.state.engine = engine
     app.state.fabrica_de_sessoes = criar_fabrica_de_sessoes(engine)
     app.state.configuracoes = configuracoes
@@ -155,15 +182,29 @@ def criar_app(configuracoes: Configuracoes | None = None) -> FastAPI:
     )
 
     app.include_router(roteador_de_saude)
+    app.include_router(roteador_de_documentacao)
     app.include_router(roteador_de_autenticacao)
     app.include_router(roteador_de_chaves_de_api)
     app.include_router(roteador_de_contas)
     app.include_router(roteador_de_gastos)
     app.include_router(roteador_de_ganhos)
     app.include_router(roteador_de_importacao)
+    app.include_router(roteador_de_faturas)
+    app.include_router(roteador_de_investimentos)
+    app.include_router(roteador_de_reaplicacoes)
+    app.include_router(roteador_de_casamentos)
+    app.include_router(roteador_da_revisao_da_bolsa)
+    app.include_router(roteador_de_aportes_sem_investimento)
+    app.include_router(roteador_de_operacoes)
     app.include_router(roteador_de_recorrencias)
     app.include_router(roteador_de_metas)
+    app.include_router(roteador_de_revisao)
+    app.include_router(roteador_de_revisao_contabil)
+    app.include_router(roteador_de_renda_base)
+    app.include_router(roteador_de_aparencia)
+    app.include_router(roteador_de_guardado_nas_metas)
     app.include_router(roteador_de_resumos)
     app.include_router(roteador_de_tags)
     app.include_router(roteador_de_categorias)
+    app.include_router(roteador_de_destinacoes_cadastradas)
     return app

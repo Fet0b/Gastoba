@@ -381,7 +381,6 @@ def _modelo_de_gasto(conta_id, **campos):
         "descricao": "Compra",
         "valor_centavos": 1000,
         "data": date(2026, 10, 5),
-        "tags": [],
         "origem": "manual",
         "categoria": "conforto",
     }
@@ -428,3 +427,47 @@ def test_gasto_com_conta_inexistente_viola_a_chave_estrangeira(fabrica_de_sessoe
         sessao.add(_modelo_de_gasto(uuid4()))
         with pytest.raises(IntegrityError):
             sessao.flush()
+
+
+@pytest.mark.parametrize("tipo", ["gasto", "ganho", "movimento"])
+def test_persiste_vinculo_da_transacao_sem_unicidade_e_isola_por_pessoa(uow, usuario, tipo):
+    from gastoba.domain.ganho import Ganho
+    from gastoba.domain.movimento_de_investimento import MovimentoDeInvestimento, TipoDeMovimento
+    from gastoba.domain.transacao_importada import SentidoDaTransacao, TransacaoImportada
+
+    conta = criar_conta(uow, usuario.id)
+    dia = date(2026, 10, 5)
+    transacao = TransacaoImportada(
+        conta.id, "origem-exemplo", dia, "Exemplo", Dinheiro(200), SentidoDaTransacao.SAIDA
+    )
+    with uow:
+        uow.transacoes_importadas.adicionar_se_nova(transacao)
+        uow.commit()
+    criados = []
+    for _ in range(2):
+        dados = dict(
+            conta_id=conta.id,
+            valor=Dinheiro(100),
+            descricao="Exemplo",
+            data=dia,
+            transacao_importada_id=transacao.id,
+        )
+        if tipo == "gasto":
+            criado = Gasto(**dados, categoria=CategoriaDoGasto.LAZER)
+            repositorio = "gastos"
+        elif tipo == "ganho":
+            criado = Ganho(**dados)
+            repositorio = "ganhos"
+        else:
+            criado = MovimentoDeInvestimento(**dados, tipo=TipoDeMovimento.APORTE)
+            repositorio = "movimentos_de_investimento"
+        with uow:
+            getattr(uow, repositorio).adicionar(criado)
+            uow.commit()
+        criados.append(criado)
+    with uow:
+        repo = getattr(uow, repositorio)
+        lidos = repo.listar(usuario.id, dia, dia)
+        assert {lido.id for lido in lidos} == {c.id for c in criados}
+        assert {lido.transacao_importada_id for lido in lidos} == {transacao.id}
+        assert repo.listar(uuid4(), dia, dia) == []

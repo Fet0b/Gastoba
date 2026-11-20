@@ -1,9 +1,13 @@
-import { type FormEvent, useEffect, useId, useRef, useState } from "react";
+import { type FormEvent, useEffect, useRef, useState } from "react";
 
 import { ErroDaApiCliente } from "../../api/cliente";
 import { useCriarConta } from "../../api/consultas";
 import type { Conta } from "../../api/tipos";
 import { deMascara, interpretarDigitacao } from "../../dinheiro/dinheiro";
+import { Botao } from "../Botao/Botao";
+import { Caixa } from "../Campo/Caixa";
+import { CampoDeTexto } from "../Campo/CampoDeTexto";
+import { CampoDeValor } from "../Campo/CampoDeValor";
 import estilos from "./Contas.module.css";
 
 type Propriedades = {
@@ -49,7 +53,6 @@ export function FormularioDeConta({ aoCriar, aoCancelar, aoFalhar }: Propriedade
   const [saldo, definirSaldo] = useState(() => interpretarDigitacao(""));
   const [devedor, definirDevedor] = useState(false);
   const criar = useCriarConta();
-  const id = useId();
   const campoNome = useRef<HTMLInputElement>(null);
   const campoSaldo = useRef<HTMLInputElement>(null);
 
@@ -77,73 +80,33 @@ export function FormularioDeConta({ aoCriar, aoCancelar, aoFalhar }: Propriedade
     if (conta) aoCriar(conta);
   }
 
-  const idNome = `${id}-nome`;
-  const idSaldo = `${id}-saldo`;
-  const idDevedor = `${id}-devedor`;
-  const idErroNome = `${id}-erro-nome`;
-  const idErroSaldo = `${id}-erro-saldo`;
-  const idDicaDevedor = `${id}-dica-devedor`;
 
   return (
     <form className={estilos.formulario} onSubmit={enviar} aria-label="Nova conta" noValidate>
-      <div className={estilos.campo}>
-        <label htmlFor={idNome}>Nome</label>
-        <input
-          ref={campoNome}
-          id={idNome}
-          className={estilos.entrada}
-          value={nome}
-          onChange={(evento) => definirNome(evento.target.value)}
-          autoComplete="off"
-          autoFocus
-          aria-invalid={erros.nome ? true : undefined}
-          aria-describedby={erros.nome ? idErroNome : undefined}
-        />
-        {erros.nome && (
-          <p id={idErroNome} className={estilos.erroDoCampo}>
-            {erros.nome}
-          </p>
-        )}
-      </div>
+      <CampoDeTexto
+        ref={campoNome}
+        rotulo="Nome"
+        valor={nome}
+        aoMudar={definirNome}
+        autoComplete="off"
+        autoFocus
+        erro={erros.nome}
+      />
 
-      <div className={estilos.campo}>
-        <label htmlFor={idSaldo}>Saldo inicial</label>
-        <div className={estilos.entradaDeValor}>
-          <span className={estilos.moeda} aria-hidden="true">
-            {devedor ? "−R$" : "R$"}
-          </span>
-          <input
-            ref={campoSaldo}
-            id={idSaldo}
-            className={`${estilos.entrada} valor`}
-            value={saldo}
-            onChange={(evento) => definirSaldo(interpretarDigitacao(evento.target.value))}
-            inputMode="numeric"
-            autoComplete="off"
-            aria-invalid={erros.saldo ? true : undefined}
-            aria-describedby={erros.saldo ? idErroSaldo : undefined}
-          />
-        </div>
-        {erros.saldo && (
-          <p id={idErroSaldo} className={estilos.erroDoCampo}>
-            {erros.saldo}
-          </p>
-        )}
-      </div>
+      <CampoDeValor
+        ref={campoSaldo}
+        rotulo="Saldo inicial"
+        valor={deMascara(saldo)}
+        aoMudar={(valor) => definirSaldo(interpretarDigitacao(valor))}
+        erro={erros.saldo}
+      />
 
-      <div className={estilos.opcao}>
-        <input
-          id={idDevedor}
-          type="checkbox"
-          checked={devedor}
-          onChange={(evento) => definirDevedor(evento.target.checked)}
-          aria-describedby={idDicaDevedor}
-        />
-        <label htmlFor={idDevedor}>Saldo devedor</label>
-        <p id={idDicaDevedor} className={estilos.dica}>
-          A conta começa devendo esse valor, como um cartão de crédito.
-        </p>
-      </div>
+      <Caixa
+        rotulo="Saldo devedor"
+        ajuda="A conta começa devendo esse valor, como um cartão de crédito."
+        marcada={devedor}
+        aoMudar={definirDevedor}
+      />
 
       {/* Sem campo ao qual ligar a mensagem nem foco para levá-la: o alerta a anuncia. */}
       {erros.geral && (
@@ -153,12 +116,12 @@ export function FormularioDeConta({ aoCriar, aoCancelar, aoFalhar }: Propriedade
       )}
 
       <div className={estilos.acoes}>
-        <button type="submit" className={estilos.primario} disabled={criar.pendente}>
+        <Botao type="submit" variante="primario" disabled={criar.pendente}>
           Criar conta
-        </button>
-        <button type="button" className={estilos.secundario} onClick={aoCancelar}>
+        </Botao>
+        <Botao variante="secundario" onClick={aoCancelar}>
           Cancelar
-        </button>
+        </Botao>
       </div>
     </form>
   );

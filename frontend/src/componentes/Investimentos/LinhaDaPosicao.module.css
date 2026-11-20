@@ -1,0 +1,35 @@
+.linha { display: grid; grid-template-columns: minmax(0, 1fr) 7rem 7rem 7rem 2.75rem; align-items: center; gap: var(--espaco-3); padding: var(--espaco-4); border-top: var(--borda-de-camada); }
+.identificacao { display: grid; gap: var(--espaco-2); min-width: 0; }
+.nome { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.apoio, .rotulo { color: var(--cor-bruma); font-size: var(--texto-rotulo); }
+.aplicado, .saldo, .rendimento { display: flex; flex-direction: column; align-items: flex-end; font-family: var(--fonte-titulo); font-size: var(--numero-pequeno); font-variant-numeric: tabular-nums; }
+.rotulo { display: none; font-family: var(--fonte-corpo); }
+.percentual { font-size: var(--texto-rotulo); }
+.rendimento[data-tom="positivo"] { color: var(--cor-positivo); }
+.rendimento[data-tom="negativo"] { color: var(--cor-negativo); }
+.destinacao { display: inline-flex; gap: var(--espaco-1); align-items: center; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ponto { width: var(--espaco-2); height: var(--espaco-2); border-radius: 50%; flex-shrink: 0; }
+.menu { justify-self: end; }
+/* Estreito: em cima o nome (que tem prioridade, até duas linhas) com o menu na mesma linha e os metadados
+   embaixo; depois Aplicado, Saldo e Rendimento, cada um numa linha com o rótulo à esquerda e o valor à
+   direita, onde "R$ 12.500,00" sempre cabe. */
+@container (max-width: 37.5rem) {
+ .linha { grid-template-columns: minmax(0, 1fr); gap: var(--espaco-2); padding-inline: var(--espaco-2); }
+ .identificacao { grid-column: 1; grid-row: 1; padding-inline-end: var(--alvo-de-toque); }
+ .menu { grid-column: 1; grid-row: 1; align-self: start; }
+ .nome { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; white-space: normal; overflow-wrap: anywhere; }
+ .aplicado, .saldo, .rendimento { display: grid; grid-template-columns: minmax(0, 1fr) auto; column-gap: var(--espaco-3); align-items: baseline; }
+ .rotulo { display: block; grid-column: 1; }
+ .aplicado > :not(.rotulo), .saldo > :not(.rotulo), .rendimento > :not(:first-child) { grid-column: 2; justify-self: end; text-align: end; white-space: nowrap; }
+ /* Colunas vazias da conta investimentos só servem ao alinhamento largo: sem elas, sem o vão. */
+ .aplicado[data-vazio], .rendimento[data-vazio] { display: none; }
+}
+
+/* Aviso de histórico incompleto: ocupa a linha inteira da grade e some quando vazio. */
+.pendencia {
+  grid-column: 1 / -1;
+}
+
+.pendencia:empty {
+  display: none;
+}

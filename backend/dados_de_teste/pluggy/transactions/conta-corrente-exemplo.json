@@ -1,0 +1,1124 @@
+{
+  "results": [
+    {
+      "_datas": {
+        "date": 2
+      },
+      "accountId": "conta-corrente-exemplo",
+      "amount": 6500.0,
+      "currencyCode": "BRL",
+      "description": "SALARIO EMPRESA EXEMPLO LTDA",
+      "id": "cc-001",
+      "operationType": "TED",
+      "status": "POSTED",
+      "type": "CREDIT"
+    },
+    {
+      "_datas": {
+        "date": 3
+      },
+      "accountId": "conta-corrente-exemplo",
+      "amount": -312.47,
+      "currencyCode": "BRL",
+      "description": "PIX ENVIADO MERCADO BOM PRECO",
+      "id": "cc-002",
+      "operationType": "PIX",
+      "status": "POSTED",
+      "type": "DEBIT"
+    },
+    {
+      "_datas": {
+        "date": 4
+      },
+      "accountId": "conta-corrente-exemplo",
+      "amount": -1800.0,
+      "currencyCode": "BRL",
+      "description": "BOLETO ALUGUEL IMOBILIARIA EXEMPLO",
+      "id": "cc-003",
+      "operationType": "BOLETO",
+      "status": "POSTED",
+      "type": "DEBIT"
+    },
+    {
+      "_datas": {
+        "date": 6
+      },
+      "accountId": "conta-corrente-exemplo",
+      "amount": -86.5,
+      "currencyCode": "BRL",
+      "description": "PIX ENVIADO RESTAURANTE SABOR CASEIRO",
+      "id": "cc-004",
+      "operationType": "PIX",
+      "status": "POSTED",
+      "type": "DEBIT"
+    },
+    {
+      "_datas": {
+        "date": 7
+      },
+      "accountId": "conta-corrente-exemplo",
+      "amount": -54.2,
+      "currencyCode": "BRL",
+      "description": "COMPRA DEBITO FARMACIA SAUDE",
+      "id": "cc-005",
+      "operationType": "CARTAO",
+      "status": "POSTED",
+      "type": "DEBIT"
+    },
+    {
+      "_datas": {
+        "date": 9
+      },
+      "accountId": "conta-corrente-exemplo",
+      "amount": -187.33,
+      "currencyCode": "BRL",
+      "description": "BOLETO CONTA DE LUZ ENERGIA EXEMPLO",
+      "id": "cc-006",
+      "operationType": "BOLETO",
+      "status": "POSTED",
+      "type": "DEBIT"
+    },
+    {
+      "_datas": {
+        "date": 10
+      },
+      "accountId": "conta-corrente-exemplo",
+      "amount": -119.9,
+      "currencyCode": "BRL",
+      "description": "DEBITO AUTOMATICO INTERNET FIBRA EXEMPLO",
+      "id": "cc-007",
+      "operationType": "DEBITO_AUTOMATICO",
+      "status": "POSTED",
+      "type": "DEBIT"
+    },
+    {
+      "_datas": {
+        "date": 12
+      },
+      "accountId": "conta-corrente-exemplo",
+      "amount": -1100.0,
+      "currencyCode": "BRL",
+      "description": "PAGAMENTO FATURA CARTAO BLACK",
+      "id": "cc-008",
+      "operationType": "PAGAMENTO_FATURA",
+      "status": "POSTED",
+      "type": "DEBIT"
+    },
+    {
+      "_datas": {
+        "date": 14
+      },
+      "accountId": "conta-corrente-exemplo",
+      "amount": -64.0,
+      "currencyCode": "BRL",
+      "description": "COMPRA DEBITO CINE EXEMPLO",
+      "id": "cc-009",
+      "operationType": "CARTAO",
+      "status": "POSTED",
+      "type": "DEBIT"
+    },
+    {
+      "_datas": {
+        "date": 16
+      },
+      "accountId": "conta-corrente-exemplo",
+      "amount": -129.9,
+      "currencyCode": "BRL",
+      "description": "PIX ENVIADO LIVRARIA PAGINA UM",
+      "id": "cc-010",
+      "operationType": "PIX",
+      "status": "POSTED",
+      "type": "DEBIT"
+    },
+    {
+      "_datas": {
+        "date": 18
+      },
+      "accountId": "conta-corrente-exemplo",
+      "amount": -299.0,
+      "currencyCode": "BRL",
+      "description": "PIX ENVIADO CURSO ONLINE EXEMPLO",
+      "id": "cc-011",
+      "operationType": "PIX",
+      "status": "POSTED",
+      "type": "DEBIT"
+    },
+    {
+      "_datas": {
+        "date": 20
+      },
+      "accountId": "conta-corrente-exemplo",
+      "amount": -45.9,
+      "currencyCode": "BRL",
+      "description": "PIX ENVIADO PADARIA PAO QUENTE",
+      "id": "cc-012",
+      "operationType": "PIX",
+      "status": "POSTED",
+      "type": "DEBIT"
+    },
+    {
+      "_datas": {
+        "date": 22
+      },
+      "accountId": "conta-corrente-exemplo",
+      "amount": -210.0,
+      "currencyCode": "BRL",
+      "description": "COMPRA DEBITO POSTO COMBUSTIVEL EXEMPLO",
+      "id": "cc-013",
+      "operationType": "CARTAO",
+      "status": "POSTED",
+      "type": "DEBIT"
+    },
+    {
+      "_datas": {
+        "date": 24
+      },
+      "accountId": "conta-corrente-exemplo",
+      "amount": -500.0,
+      "currencyCode": "BRL",
+      "description": "TRANSFERENCIA PARA CONTA PROPRIA",
+      "id": "cc-014",
+      "operationType": "TRANSFERENCIA_MESMA_INSTITUICAO",
+      "status": "POSTED",
+      "type": "DEBIT"
+    },
+    {
+      "_datas": {
+        "date": 26
+      },
+      "accountId": "conta-corrente-exemplo",
+      "amount": -35.0,
+      "currencyCode": "BRL",
+      "description": "PIX ENVIADO LANCHONETE ESQUINA",
+      "id": "cc-015",
+      "operationType": "PIX",
+      "status": "POSTED",
+      "type": "DEBIT"
+    },
+    {
+      "_datas": {
+        "date": 32
+      },
+      "accountId": "conta-corrente-exemplo",
+      "amount": 6500.0,
+      "currencyCode": "BRL",
+      "description": "SALARIO EMPRESA EXEMPLO LTDA",
+      "id": "cc-016",
+      "operationType": "TED",
+      "status": "POSTED",
+      "type": "CREDIT"
+    },
+    {
+      "_datas": {
+        "date": 33
+      },
+      "accountId": "conta-corrente-exemplo",
+      "amount": -312.47,
+      "currencyCode": "BRL",
+      "description": "PIX ENVIADO MERCADO BOM PRECO",
+      "id": "cc-017",
+      "operationType": "PIX",
+      "status": "POSTED",
+      "type": "DEBIT"
+    },
+    {
+      "_datas": {
+        "date": 34
+      },
+      "accountId": "conta-corrente-exemplo",
+      "amount": -1800.0,
+      "currencyCode": "BRL",
+      "description": "BOLETO ALUGUEL IMOBILIARIA EXEMPLO",
+      "id": "cc-018",
+      "operationType": "BOLETO",
+      "status": "POSTED",
+      "type": "DEBIT"
+    },
+    {
+      "_datas": {
+        "date": 36
+      },
+      "accountId": "conta-corrente-exemplo",
+      "amount": -86.5,
+      "currencyCode": "BRL",
+      "description": "PIX ENVIADO RESTAURANTE SABOR CASEIRO",
+      "id": "cc-019",
+      "operationType": "PIX",
+      "status": "POSTED",
+      "type": "DEBIT"
+    },
+    {
+      "_datas": {
+        "date": 37
+      },
+      "accountId": "conta-corrente-exemplo",
+      "amount": -54.2,
+      "currencyCode": "BRL",
+      "description": "COMPRA DEBITO FARMACIA SAUDE",
+      "id": "cc-020",
+      "operationType": "CARTAO",
+      "status": "POSTED",
+      "type": "DEBIT"
+    },
+    {
+      "_datas": {
+        "date": 39
+      },
+      "accountId": "conta-corrente-exemplo",
+      "amount": -187.33,
+      "currencyCode": "BRL",
+      "description": "BOLETO CONTA DE LUZ ENERGIA EXEMPLO",
+      "id": "cc-021",
+      "operationType": "BOLETO",
+      "status": "POSTED",
+      "type": "DEBIT"
+    },
+    {
+      "_datas": {
+        "date": 40
+      },
+      "accountId": "conta-corrente-exemplo",
+      "amount": -119.9,
+      "currencyCode": "BRL",
+      "description": "DEBITO AUTOMATICO INTERNET FIBRA EXEMPLO",
+      "id": "cc-022",
+      "operationType": "DEBITO_AUTOMATICO",
+      "status": "POSTED",
+      "type": "DEBIT"
+    },
+    {
+      "_datas": {
+        "date": 42
+      },
+      "accountId": "conta-corrente-exemplo",
+      "amount": -1100.0,
+      "currencyCode": "BRL",
+      "description": "PAGAMENTO FATURA CARTAO BLACK",
+      "id": "cc-023",
+      "operationType": "PAGAMENTO_FATURA",
+      "status": "POSTED",
+      "type": "DEBIT"
+    },
+    {
+      "_datas": {
+        "date": 44
+      },
+      "accountId": "conta-corrente-exemplo",
+      "amount": -64.0,
+      "currencyCode": "BRL",
+      "description": "COMPRA DEBITO CINE EXEMPLO",
+      "id": "cc-024",
+      "operationType": "CARTAO",
+      "status": "POSTED",
+      "type": "DEBIT"
+    },
+    {
+      "_datas": {
+        "date": 46
+      },
+      "accountId": "conta-corrente-exemplo",
+      "amount": -129.9,
+      "currencyCode": "BRL",
+      "description": "PIX ENVIADO LIVRARIA PAGINA UM",
+      "id": "cc-025",
+      "operationType": "PIX",
+      "status": "POSTED",
+      "type": "DEBIT"
+    },
+    {
+      "_datas": {
+        "date": 48
+      },
+      "accountId": "conta-corrente-exemplo",
+      "amount": -299.0,
+      "currencyCode": "BRL",
+      "description": "PIX ENVIADO CURSO ONLINE EXEMPLO",
+      "id": "cc-026",
+      "operationType": "PIX",
+      "status": "POSTED",
+      "type": "DEBIT"
+    },
+    {
+      "_datas": {
+        "date": 50
+      },
+      "accountId": "conta-corrente-exemplo",
+      "amount": -45.9,
+      "currencyCode": "BRL",
+      "description": "PIX ENVIADO PADARIA PAO QUENTE",
+      "id": "cc-027",
+      "operationType": "PIX",
+      "status": "POSTED",
+      "type": "DEBIT"
+    },
+    {
+      "_datas": {
+        "date": 52
+      },
+      "accountId": "conta-corrente-exemplo",
+      "amount": -210.0,
+      "currencyCode": "BRL",
+      "description": "COMPRA DEBITO POSTO COMBUSTIVEL EXEMPLO",
+      "id": "cc-028",
+      "operationType": "CARTAO",
+      "status": "POSTED",
+      "type": "DEBIT"
+    },
+    {
+      "_datas": {
+        "date": 54
+      },
+      "accountId": "conta-corrente-exemplo",
+      "amount": -500.0,
+      "currencyCode": "BRL",
+      "description": "TRANSFERENCIA PARA CONTA PROPRIA",
+      "id": "cc-029",
+      "operationType": "TRANSFERENCIA_MESMA_INSTITUICAO",
+      "status": "POSTED",
+      "type": "DEBIT"
+    },
+    {
+      "_datas": {
+        "date": 56
+      },
+      "accountId": "conta-corrente-exemplo",
+      "amount": -35.0,
+      "currencyCode": "BRL",
+      "description": "PIX ENVIADO LANCHONETE ESQUINA",
+      "id": "cc-030",
+      "operationType": "PIX",
+      "status": "POSTED",
+      "type": "DEBIT"
+    },
+    {
+      "_datas": {
+        "date": 62
+      },
+      "accountId": "conta-corrente-exemplo",
+      "amount": 6500.0,
+      "currencyCode": "BRL",
+      "description": "SALARIO EMPRESA EXEMPLO LTDA",
+      "id": "cc-031",
+      "operationType": "TED",
+      "status": "POSTED",
+      "type": "CREDIT"
+    },
+    {
+      "_datas": {
+        "date": 63
+      },
+      "accountId": "conta-corrente-exemplo",
+      "amount": -312.47,
+      "currencyCode": "BRL",
+      "description": "PIX ENVIADO MERCADO BOM PRECO",
+      "id": "cc-032",
+      "operationType": "PIX",
+      "status": "POSTED",
+      "type": "DEBIT"
+    },
+    {
+      "_datas": {
+        "date": 64
+      },
+      "accountId": "conta-corrente-exemplo",
+      "amount": -1800.0,
+      "currencyCode": "BRL",
+      "description": "BOLETO ALUGUEL IMOBILIARIA EXEMPLO",
+      "id": "cc-033",
+      "operationType": "BOLETO",
+      "status": "POSTED",
+      "type": "DEBIT"
+    },
+    {
+      "_datas": {
+        "date": 66
+      },
+      "accountId": "conta-corrente-exemplo",
+      "amount": -86.5,
+      "currencyCode": "BRL",
+      "description": "PIX ENVIADO RESTAURANTE SABOR CASEIRO",
+      "id": "cc-034",
+      "operationType": "PIX",
+      "status": "POSTED",
+      "type": "DEBIT"
+    },
+    {
+      "_datas": {
+        "date": 67
+      },
+      "accountId": "conta-corrente-exemplo",
+      "amount": -54.2,
+      "currencyCode": "BRL",
+      "description": "COMPRA DEBITO FARMACIA SAUDE",
+      "id": "cc-035",
+      "operationType": "CARTAO",
+      "status": "POSTED",
+      "type": "DEBIT"
+    },
+    {
+      "_datas": {
+        "date": 69
+      },
+      "accountId": "conta-corrente-exemplo",
+      "amount": -187.33,
+      "currencyCode": "BRL",
+      "description": "BOLETO CONTA DE LUZ ENERGIA EXEMPLO",
+      "id": "cc-036",
+      "operationType": "BOLETO",
+      "status": "POSTED",
+      "type": "DEBIT"
+    },
+    {
+      "_datas": {
+        "date": 70
+      },
+      "accountId": "conta-corrente-exemplo",
+      "amount": -119.9,
+      "currencyCode": "BRL",
+      "description": "DEBITO AUTOMATICO INTERNET FIBRA EXEMPLO",
+      "id": "cc-037",
+      "operationType": "DEBITO_AUTOMATICO",
+      "status": "POSTED",
+      "type": "DEBIT"
+    },
+    {
+      "_datas": {
+        "date": 72
+      },
+      "accountId": "conta-corrente-exemplo",
+      "amount": -1100.0,
+      "currencyCode": "BRL",
+      "description": "PAGAMENTO FATURA CARTAO BLACK",
+      "id": "cc-038",
+      "operationType": "PAGAMENTO_FATURA",
+      "status": "POSTED",
+      "type": "DEBIT"
+    },
+    {
+      "_datas": {
+        "date": 74
+      },
+      "accountId": "conta-corrente-exemplo",
+      "amount": -64.0,
+      "currencyCode": "BRL",
+      "description": "COMPRA DEBITO CINE EXEMPLO",
+      "id": "cc-039",
+      "operationType": "CARTAO",
+      "status": "POSTED",
+      "type": "DEBIT"
+    },
+    {
+      "_datas": {
+        "date": 76
+      },
+      "accountId": "conta-corrente-exemplo",
+      "amount": -129.9,
+      "currencyCode": "BRL",
+      "description": "PIX ENVIADO LIVRARIA PAGINA UM",
+      "id": "cc-040",
+      "operationType": "PIX",
+      "status": "POSTED",
+      "type": "DEBIT"
+    },
+    {
+      "_datas": {
+        "date": 78
+      },
+      "accountId": "conta-corrente-exemplo",
+      "amount": -299.0,
+      "currencyCode": "BRL",
+      "description": "PIX ENVIADO CURSO ONLINE EXEMPLO",
+      "id": "cc-041",
+      "operationType": "PIX",
+      "status": "POSTED",
+      "type": "DEBIT"
+    },
+    {
+      "_datas": {
+        "date": 80
+      },
+      "accountId": "conta-corrente-exemplo",
+      "amount": -45.9,
+      "currencyCode": "BRL",
+      "description": "PIX ENVIADO PADARIA PAO QUENTE",
+      "id": "cc-042",
+      "operationType": "PIX",
+      "status": "POSTED",
+      "type": "DEBIT"
+    },
+    {
+      "_datas": {
+        "date": 82
+      },
+      "accountId": "conta-corrente-exemplo",
+      "amount": -210.0,
+      "currencyCode": "BRL",
+      "description": "COMPRA DEBITO POSTO COMBUSTIVEL EXEMPLO",
+      "id": "cc-043",
+      "operationType": "CARTAO",
+      "status": "POSTED",
+      "type": "DEBIT"
+    },
+    {
+      "_datas": {
+        "date": 84
+      },
+      "accountId": "conta-corrente-exemplo",
+      "amount": -500.0,
+      "currencyCode": "BRL",
+      "description": "TRANSFERENCIA PARA CONTA PROPRIA",
+      "id": "cc-044",
+      "operationType": "TRANSFERENCIA_MESMA_INSTITUICAO",
+      "status": "POSTED",
+      "type": "DEBIT"
+    },
+    {
+      "_datas": {
+        "date": 86
+      },
+      "accountId": "conta-corrente-exemplo",
+      "amount": -35.0,
+      "currencyCode": "BRL",
+      "description": "PIX ENVIADO LANCHONETE ESQUINA",
+      "id": "cc-045",
+      "operationType": "PIX",
+      "status": "POSTED",
+      "type": "DEBIT"
+    },
+    {
+      "_datas": {
+        "date": 92
+      },
+      "accountId": "conta-corrente-exemplo",
+      "amount": 6500.0,
+      "currencyCode": "BRL",
+      "description": "SALARIO EMPRESA EXEMPLO LTDA",
+      "id": "cc-046",
+      "operationType": "TED",
+      "status": "POSTED",
+      "type": "CREDIT"
+    },
+    {
+      "_datas": {
+        "date": 93
+      },
+      "accountId": "conta-corrente-exemplo",
+      "amount": -312.47,
+      "currencyCode": "BRL",
+      "description": "PIX ENVIADO MERCADO BOM PRECO",
+      "id": "cc-047",
+      "operationType": "PIX",
+      "status": "POSTED",
+      "type": "DEBIT"
+    },
+    {
+      "_datas": {
+        "date": 94
+      },
+      "accountId": "conta-corrente-exemplo",
+      "amount": -1800.0,
+      "currencyCode": "BRL",
+      "description": "BOLETO ALUGUEL IMOBILIARIA EXEMPLO",
+      "id": "cc-048",
+      "operationType": "BOLETO",
+      "status": "POSTED",
+      "type": "DEBIT"
+    },
+    {
+      "_datas": {
+        "date": 96
+      },
+      "accountId": "conta-corrente-exemplo",
+      "amount": -86.5,
+      "currencyCode": "BRL",
+      "description": "PIX ENVIADO RESTAURANTE SABOR CASEIRO",
+      "id": "cc-049",
+      "operationType": "PIX",
+      "status": "POSTED",
+      "type": "DEBIT"
+    },
+    {
+      "_datas": {
+        "date": 97
+      },
+      "accountId": "conta-corrente-exemplo",
+      "amount": -54.2,
+      "currencyCode": "BRL",
+      "description": "COMPRA DEBITO FARMACIA SAUDE",
+      "id": "cc-050",
+      "operationType": "CARTAO",
+      "status": "POSTED",
+      "type": "DEBIT"
+    },
+    {
+      "_datas": {
+        "date": 99
+      },
+      "accountId": "conta-corrente-exemplo",
+      "amount": -187.33,
+      "currencyCode": "BRL",
+      "description": "BOLETO CONTA DE LUZ ENERGIA EXEMPLO",
+      "id": "cc-051",
+      "operationType": "BOLETO",
+      "status": "POSTED",
+      "type": "DEBIT"
+    },
+    {
+      "_datas": {
+        "date": 100
+      },
+      "accountId": "conta-corrente-exemplo",
+      "amount": -119.9,
+      "currencyCode": "BRL",
+      "description": "DEBITO AUTOMATICO INTERNET FIBRA EXEMPLO",
+      "id": "cc-052",
+      "operationType": "DEBITO_AUTOMATICO",
+      "status": "POSTED",
+      "type": "DEBIT"
+    },
+    {
+      "_datas": {
+        "date": 102
+      },
+      "accountId": "conta-corrente-exemplo",
+      "amount": -1100.0,
+      "currencyCode": "BRL",
+      "description": "PAGAMENTO FATURA CARTAO BLACK",
+      "id": "cc-053",
+      "operationType": "PAGAMENTO_FATURA",
+      "status": "POSTED",
+      "type": "DEBIT"
+    },
+    {
+      "_datas": {
+        "date": 104
+      },
+      "accountId": "conta-corrente-exemplo",
+      "amount": -64.0,
+      "currencyCode": "BRL",
+      "description": "COMPRA DEBITO CINE EXEMPLO",
+      "id": "cc-054",
+      "operationType": "CARTAO",
+      "status": "POSTED",
+      "type": "DEBIT"
+    },
+    {
+      "_datas": {
+        "date": 106
+      },
+      "accountId": "conta-corrente-exemplo",
+      "amount": -129.9,
+      "currencyCode": "BRL",
+      "description": "PIX ENVIADO LIVRARIA PAGINA UM",
+      "id": "cc-055",
+      "operationType": "PIX",
+      "status": "POSTED",
+      "type": "DEBIT"
+    },
+    {
+      "_datas": {
+        "date": 108
+      },
+      "accountId": "conta-corrente-exemplo",
+      "amount": -299.0,
+      "currencyCode": "BRL",
+      "description": "PIX ENVIADO CURSO ONLINE EXEMPLO",
+      "id": "cc-056",
+      "operationType": "PIX",
+      "status": "POSTED",
+      "type": "DEBIT"
+    },
+    {
+      "_datas": {
+        "date": 110
+      },
+      "accountId": "conta-corrente-exemplo",
+      "amount": -45.9,
+      "currencyCode": "BRL",
+      "description": "PIX ENVIADO PADARIA PAO QUENTE",
+      "id": "cc-057",
+      "operationType": "PIX",
+      "status": "POSTED",
+      "type": "DEBIT"
+    },
+    {
+      "_datas": {
+        "date": 112
+      },
+      "accountId": "conta-corrente-exemplo",
+      "amount": -210.0,
+      "currencyCode": "BRL",
+      "description": "COMPRA DEBITO POSTO COMBUSTIVEL EXEMPLO",
+      "id": "cc-058",
+      "operationType": "CARTAO",
+      "status": "POSTED",
+      "type": "DEBIT"
+    },
+    {
+      "_datas": {
+        "date": 114
+      },
+      "accountId": "conta-corrente-exemplo",
+      "amount": -500.0,
+      "currencyCode": "BRL",
+      "description": "TRANSFERENCIA PARA CONTA PROPRIA",
+      "id": "cc-059",
+      "operationType": "TRANSFERENCIA_MESMA_INSTITUICAO",
+      "status": "POSTED",
+      "type": "DEBIT"
+    },
+    {
+      "_datas": {
+        "date": 116
+      },
+      "accountId": "conta-corrente-exemplo",
+      "amount": -35.0,
+      "currencyCode": "BRL",
+      "description": "PIX ENVIADO LANCHONETE ESQUINA",
+      "id": "cc-060",
+      "operationType": "PIX",
+      "status": "POSTED",
+      "type": "DEBIT"
+    },
+    {
+      "_datas": {
+        "date": 0
+      },
+      "accountId": "conta-corrente-exemplo",
+      "amount": -72.4,
+      "currencyCode": "BRL",
+      "description": "PIX ENVIADO RESTAURANTE SABOR CASEIRO HOJE",
+      "id": "cc-061",
+      "operationType": "PIX",
+      "status": "POSTED",
+      "type": "DEBIT"
+    },
+    {
+      "_datas": {
+        "date": 0
+      },
+      "accountId": "conta-corrente-exemplo",
+      "amount": -28.9,
+      "currencyCode": "BRL",
+      "description": "COMPRA DEBITO PADARIA PAO QUENTE HOJE",
+      "id": "cc-062",
+      "operationType": "CARTAO",
+      "status": "POSTED",
+      "type": "DEBIT"
+    },
+    {
+      "_datas": {
+        "date": 1
+      },
+      "accountId": "conta-corrente-exemplo",
+      "amount": -95.0,
+      "currencyCode": "BRL",
+      "description": "PIX ENVIADO MERCADO BOM PRECO HOJE",
+      "id": "cc-063",
+      "operationType": "PIX",
+      "status": "POSTED",
+      "type": "DEBIT"
+    },
+    {
+      "_datas": {
+        "date": 5
+      },
+      "accountId": "conta-corrente-exemplo",
+      "amount": 54.2,
+      "currencyCode": "BRL",
+      "description": "ESTORNO COMPRA FARMACIA SAUDE",
+      "id": "cc-064",
+      "operationType": "ESTORNO",
+      "status": "POSTED",
+      "type": "CREDIT"
+    },
+    {
+      "_datas": {
+        "date": 5
+      },
+      "accountId": "conta-corrente-exemplo",
+      "amount": -45.0,
+      "currencyCode": "BRL",
+      "description": "COMPRA DEBITO AGUARDANDO CONFIRMACAO",
+      "id": "cc-065",
+      "operationType": "CARTAO",
+      "status": "PENDING",
+      "type": "DEBIT"
+    },
+    {
+      "_datas": {
+        "date": 8
+      },
+      "accountId": "conta-corrente-exemplo",
+      "amount": -20.0,
+      "currencyCode": "USD",
+      "description": "COMPRA INTERNACIONAL USD EXEMPLO",
+      "id": "cc-066",
+      "operationType": "CARTAO",
+      "status": "POSTED",
+      "type": "DEBIT"
+    },
+    {
+      "_datas": {
+        "date": 11
+      },
+      "accountId": "conta-corrente-exemplo",
+      "amount": -400.0,
+      "currencyCode": "BRL",
+      "description": "COMPRA ATACADO EXEMPLO DIVIDIR",
+      "id": "cc-067",
+      "operationType": "CARTAO",
+      "status": "POSTED",
+      "type": "DEBIT"
+    },
+    {
+      "_datas": {
+        "date": 13
+      },
+      "accountId": "conta-corrente-exemplo",
+      "amount": -30.0,
+      "currencyCode": "BRL",
+      "description": "PIX LANCHONETE LOTE A",
+      "id": "cc-068",
+      "operationType": "PIX",
+      "status": "POSTED",
+      "type": "DEBIT"
+    },
+    {
+      "_datas": {
+        "date": 14
+      },
+      "accountId": "conta-corrente-exemplo",
+      "amount": -32.0,
+      "currencyCode": "BRL",
+      "description": "PIX LANCHONETE LOTE B",
+      "id": "cc-069",
+      "operationType": "PIX",
+      "status": "POSTED",
+      "type": "DEBIT"
+    },
+    {
+      "_datas": {
+        "date": 15
+      },
+      "accountId": "conta-corrente-exemplo",
+      "amount": -28.0,
+      "currencyCode": "BRL",
+      "description": "PIX LANCHONETE LOTE C",
+      "id": "cc-070",
+      "operationType": "PIX",
+      "status": "POSTED",
+      "type": "DEBIT"
+    },
+    {
+      "_datas": {
+        "date": 17
+      },
+      "accountId": "conta-corrente-exemplo",
+      "amount": -250.0,
+      "currencyCode": "BRL",
+      "description": "PIX ENVIADO CARTEIRA MANUAL PROPRIA",
+      "id": "cc-071",
+      "operationType": "PIX",
+      "status": "POSTED",
+      "type": "DEBIT"
+    },
+    {
+      "_datas": {
+        "date": 10
+      },
+      "accountId": "conta-corrente-exemplo",
+      "amount": -1000.0,
+      "currencyCode": "BRL",
+      "description": "PIX ENVIADO CORRETORA PROPRIA",
+      "id": "cc-072",
+      "operationType": "PIX",
+      "status": "POSTED",
+      "type": "DEBIT"
+    },
+    {
+      "_datas": {
+        "date": 3
+      },
+      "accountId": "conta-corrente-exemplo",
+      "amount": -1000.0,
+      "currencyCode": "BRL",
+      "description": "TED APLICACAO LCI BANCO EXEMPLO",
+      "id": "cc-073",
+      "operationType": "TED",
+      "status": "POSTED",
+      "type": "DEBIT"
+    },
+    {
+      "_datas": {
+        "date": 9
+      },
+      "accountId": "conta-corrente-exemplo",
+      "amount": 1500.0,
+      "currencyCode": "BRL",
+      "description": "RESGATE FUNDO MULTIMERCADO EXEMPLO",
+      "id": "cc-074",
+      "operationType": "TED",
+      "status": "POSTED",
+      "type": "CREDIT"
+    },
+    {
+      "_datas": {
+        "date": 25
+      },
+      "accountId": "conta-corrente-exemplo",
+      "amount": -800.0,
+      "currencyCode": "BRL",
+      "description": "TED APLICACAO TESOURO IPCA LONGO",
+      "id": "cc-075",
+      "operationType": "TED",
+      "status": "POSTED",
+      "type": "DEBIT"
+    },
+    {
+      "_datas": {
+        "date": 18
+      },
+      "accountId": "conta-corrente-exemplo",
+      "amount": -3150.0,
+      "currencyCode": "BRL",
+      "description": "LIQ BOLSA - VISTA BRUTO PREGAO: {hoje-20}",
+      "id": "cc-076",
+      "status": "POSTED",
+      "type": "DEBIT"
+    },
+    {
+      "_datas": {
+        "date": 18
+      },
+      "accountId": "conta-corrente-exemplo",
+      "amount": -0.56,
+      "currencyCode": "BRL",
+      "description": "LIQ BOLSA - VISTA TX EMOL",
+      "id": "cc-077",
+      "status": "POSTED",
+      "type": "DEBIT"
+    },
+    {
+      "_datas": {
+        "date": 18
+      },
+      "accountId": "conta-corrente-exemplo",
+      "amount": -0.84,
+      "currencyCode": "BRL",
+      "description": "LIQ BOLSA - VISTA TX CCP",
+      "id": "cc-078",
+      "status": "POSTED",
+      "type": "DEBIT"
+    },
+    {
+      "_datas": {
+        "date": 10
+      },
+      "accountId": "conta-corrente-exemplo",
+      "amount": -1000.0,
+      "currencyCode": "BRL",
+      "description": "LIQ BOLSA - VISTA BRUTO PREGAO: {hoje-12}",
+      "id": "cc-079",
+      "status": "POSTED",
+      "type": "DEBIT"
+    },
+    {
+      "_datas": {
+        "date": 4
+      },
+      "accountId": "conta-corrente-exemplo",
+      "amount": 440.0,
+      "currencyCode": "BRL",
+      "description": "LIQ BOLSA - VISTA BRUTO PREGAO: {hoje-6}",
+      "id": "cc-080",
+      "status": "POSTED",
+      "type": "CREDIT"
+    },
+    {
+      "_datas": {
+        "date": 4
+      },
+      "accountId": "conta-corrente-exemplo",
+      "amount": 4700.0,
+      "currencyCode": "BRL",
+      "description": "RESGATE CDB BANCO EXEMPLO VENCIMENTO",
+      "id": "cc-081",
+      "status": "POSTED",
+      "type": "CREDIT"
+    },
+    {
+      "_datas": {
+        "date": 4
+      },
+      "accountId": "conta-corrente-exemplo",
+      "amount": 300.0,
+      "currencyCode": "BRL",
+      "description": "CREDITO CDB BANCO EXEMPLO JUROS",
+      "id": "cc-082",
+      "status": "POSTED",
+      "type": "CREDIT"
+    },
+    {
+      "_datas": {
+        "date": 4
+      },
+      "accountId": "conta-corrente-exemplo",
+      "amount": -38.12,
+      "currencyCode": "BRL",
+      "description": "IRRF RESGATE CDB BANCO EXEMPLO",
+      "id": "cc-083",
+      "status": "POSTED",
+      "type": "DEBIT"
+    },
+    {
+      "_datas": {
+        "date": 6
+      },
+      "accountId": "conta-corrente-exemplo",
+      "amount": -3000.0,
+      "currencyCode": "BRL",
+      "description": "TED APLICACAO FUNDO A DEFINIR",
+      "id": "cc-900",
+      "operationType": "TED",
+      "status": "POSTED",
+      "type": "DEBIT"
+    },
+    {
+      "_datas": {
+        "date": 3
+      },
+      "accountId": "conta-corrente-exemplo",
+      "amount": 1900.0,
+      "currencyCode": "BRL",
+      "description": "RESGATE TESOURO PREFIXADO VENCIMENTO",
+      "id": "cc-910",
+      "status": "POSTED",
+      "type": "CREDIT"
+    },
+    {
+      "_datas": {
+        "date": 3
+      },
+      "accountId": "conta-corrente-exemplo",
+      "amount": 190.0,
+      "currencyCode": "BRL",
+      "description": "CREDITO TESOURO PREFIXADO JUROS",
+      "id": "cc-911",
+      "status": "POSTED",
+      "type": "CREDIT"
+    },
+    {
+      "_datas": {
+        "date": 3
+      },
+      "accountId": "conta-corrente-exemplo",
+      "amount": -28.5,
+      "currencyCode": "BRL",
+      "description": "IRRF RESGATE TESOURO PREFIXADO",
+      "id": "cc-912",
+      "status": "POSTED",
+      "type": "DEBIT"
+    }
+  ]
+}

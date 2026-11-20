@@ -9,15 +9,16 @@ function criar(tela: Tela = "inicio"): Navegacao {
 }
 
 describe("BarraDeAbas", () => {
-  it("mostra as quatro principais e o botão Mais", () => {
+  it("mostra as quatro principais como links e o botão Mais", () => {
     render(<BarraDeAbas navegacao={criar("contas")} />);
     const nav = screen.getByRole("navigation", { name: "Telas" });
     expect(
       within(nav)
-        .getAllByRole("button")
+        .getAllByRole("link")
         .map((b) => b.textContent),
-    ).toEqual(["Início", "Transações", "Orçamento", "Contas", "Mais"]);
-    expect(screen.getByRole("button", { name: "Contas" }).getAttribute("aria-current")).toBe(
+    ).toEqual(["Início", "Transações", "Orçamento", "Contas"]);
+    expect(within(nav).getByRole("button", { name: "Mais" })).toBeTruthy();
+    expect(screen.getByRole("link", { name: "Contas" }).getAttribute("aria-current")).toBe(
       "page",
     );
     expect(screen.getByRole("button", { name: "Mais" }).getAttribute("aria-current")).toBeNull();
@@ -26,7 +27,7 @@ describe("BarraDeAbas", () => {
   it("chama aoIrPara ao tocar numa aba", () => {
     const navegacao = criar();
     render(<BarraDeAbas navegacao={navegacao} />);
-    fireEvent.click(screen.getByRole("button", { name: "Transações" }));
+    fireEvent.click(screen.getByRole("link", { name: "Transações" }));
     expect(navegacao.aoIrPara).toHaveBeenCalledWith("transacoes");
   });
 
@@ -35,7 +36,7 @@ describe("BarraDeAbas", () => {
     expect(screen.queryByRole("dialog")).toBeNull();
   });
 
-  it("abre a folha com as outras quatro; escolher uma navega e fecha", () => {
+  it("abre a folha com as outras seis; escolher uma navega e fecha", () => {
     const navegacao = criar();
     render(<BarraDeAbas navegacao={navegacao} />);
     fireEvent.click(screen.getByRole("button", { name: "Mais" }));
@@ -43,11 +44,20 @@ describe("BarraDeAbas", () => {
     expect(
       within(folha)
         .getAllByRole("listitem")
-        .map((item) => item.textContent),
-    ).toEqual(["Faturas", "Tags", "Outros", "Perfil"]);
-    fireEvent.click(within(folha).getByRole("button", { name: "Tags" }));
+        .map((item) => item.querySelector("a")?.getAttribute("aria-label") ?? item.textContent),
+    ).toEqual(["Investimentos", "Caixinhas", "Faturas", "Tags", "Recorrências", "Perfil"]);
+    fireEvent.click(within(folha).getByRole("link", { name: "Tags" }));
     expect(navegacao.aoIrPara).toHaveBeenCalledWith("tags");
     expect(screen.queryByRole("dialog")).toBeNull();
+  });
+
+  it("Faturas não leva mais o selo 'em breve'", () => {
+    render(<BarraDeAbas navegacao={criar()} />);
+    fireEvent.click(screen.getByRole("button", { name: "Mais" }));
+    const faturas = within(screen.getByRole("dialog")).getByRole("link", { name: "Faturas" });
+
+    expect(faturas.textContent).not.toContain("em breve");
+    expect(faturas.getAttribute("aria-describedby")).toBeNull();
   });
 
   it("marca Mais e a entrada da folha quando a tela atual está em Mais", () => {
@@ -56,10 +66,10 @@ describe("BarraDeAbas", () => {
     expect(mais.getAttribute("aria-current")).toBe("page");
     fireEvent.click(mais);
     const folha = screen.getByRole("dialog");
-    expect(within(folha).getByRole("button", { name: "Perfil" }).getAttribute("aria-current")).toBe(
+    expect(within(folha).getByRole("link", { name: "Perfil" }).getAttribute("aria-current")).toBe(
       "page",
     );
-    expect(within(folha).getByRole("button", { name: "Tags" }).getAttribute("aria-current")).toBeNull();
+    expect(within(folha).getByRole("link", { name: "Tags" }).getAttribute("aria-current")).toBeNull();
   });
 
   it("fecha com Esc e devolve o foco ao botão Mais", () => {

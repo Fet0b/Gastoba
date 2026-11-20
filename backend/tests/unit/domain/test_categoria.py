@@ -25,7 +25,7 @@ def test_valor_desconhecido_levanta_value_error():
 @pytest.mark.parametrize(
     ("categoria", "nome"),
     [
-        (CategoriaDoGasto.INVESTIMENTOS, "Investimentos"),
+        (CategoriaDoGasto.INVESTIMENTOS, "Investimentos (antiga)"),
         (CategoriaDoGasto.LAZER, "Lazer"),
         (CategoriaDoGasto.CONHECIMENTO, "Conhecimento"),
         (CategoriaDoGasto.CONFORTO, "Conforto"),
@@ -34,3 +34,17 @@ def test_valor_desconhecido_levanta_value_error():
 )
 def test_nome_para_exibicao(categoria, nome):
     assert categoria.nome == nome
+
+
+def test_categorias_ativas_e_legada():
+    from gastoba.domain.categoria import exigir_categoria_ativa
+    from gastoba.domain.excecoes import CategoriaInvalida
+
+    assert CategoriaDoGasto.ativas() == tuple(list(CategoriaDoGasto)[1:])
+    for categoria in CategoriaDoGasto:
+        assert categoria.legada == (categoria is CategoriaDoGasto.INVESTIMENTOS)
+        if categoria.legada:
+            with pytest.raises(CategoriaInvalida, match="Liberdade financeira"):
+                exigir_categoria_ativa(categoria)
+        else:
+            exigir_categoria_ativa(categoria)

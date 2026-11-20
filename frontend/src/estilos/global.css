@@ -16,7 +16,9 @@ h4,
 p,
 ul,
 ol,
-figure {
+figure,
+dl,
+dd {
   margin: 0;
 }
 
@@ -55,7 +57,7 @@ button {
 
 body {
   min-height: 100vh;
-  background: var(--cor-noite);
+  background: var(--textura-da-pagina), var(--cor-noite);
   color: var(--cor-nevoa);
   font-family: var(--fonte-corpo);
   font-size: 1rem;

@@ -6,7 +6,13 @@ import { type Barra, type Membro, prepararBarras } from "../../graficos/barras";
 import { fracaoDe, rotuloDoPercentual } from "../../graficos/fatias";
 import { EstadoVazio } from "../EstadoVazio/EstadoVazio";
 import { prefereMenosMovimento } from "../movimento";
+import { Titulo } from "../Titulo/Titulo";
+import { Recolhivel } from "../Recolhivel/Recolhivel";
+import { Tabela } from "../Tabela/Tabela";
+import { Esqueleto } from "../Esqueleto/Esqueleto";
+import { EstadoDeErro } from "../EstadoDeErro/EstadoDeErro";
 import estilos from "./GraficoDeBarras.module.css";
+import { rotuloDeExibicao } from "../../texto/rotulo";
 
 type Propriedades = {
   /** O resumo do período; `undefined` enquanto a primeira resposta não chega. */
@@ -17,6 +23,8 @@ type Propriedades = {
   /** A chave da barra fixada (a tag, ou a marca de "Sem tag"), ou `null`. */
   selecionada: string | null;
   aoSelecionar: (chave: string | null) => void;
+  /** Ação do estado vazio: levar a quem possa dar tag a um gasto. */
+  aoAdicionarTag?: () => void;
 };
 
 function textoDaQuantidade(quantidade: number | undefined): string {
@@ -68,8 +76,13 @@ function Preenchimento({ fracao, tipo }: { fracao: number; tipo: Barra["tipo"] }
 function Dica({ valor, percentual, quantidade }: Pick<Barra, "valor" | "percentual" | "quantidade">) {
   return (
     <span className={estilos.dica} data-dica aria-hidden="true">
-      <strong className="valor">{formatar(valor)}</strong> · {percentual} do total
-      {textoDaQuantidade(quantidade)}
+      <strong className="valor">{formatar(valor)}</strong>
+      <span>{percentual} do total</span>
+      {quantidade !== undefined && (
+        <span>
+          {quantidade} {quantidade === 1 ? "gasto" : "gastos"}
+        </span>
+      )}
     </span>
   );
 }
@@ -120,7 +133,7 @@ function LinhaDaBarra({
         onBlur={aoEsconder}
       >
         <span className={estilos.rotulo}>
-          {barra.tipo === "sem_tag" ? <em>(sem tag)</em> : barra.rotulo}
+          {barra.tipo === "sem_tag" ? <em>(sem tag)</em> : rotuloDeExibicao(barra.rotulo)}
         </span>
         <span className={estilos.trilha} aria-hidden="true">
           <Preenchimento fracao={barra.fracaoDaMaior} tipo={barra.tipo} />
@@ -156,7 +169,7 @@ function LinhaDeMembro({
         aria-label={nomeDaBarra(membro.tag, membro.valor, membro.percentual, membro.quantidade)}
         onClick={aoClicar}
       >
-        <span className={estilos.rotulo}>{membro.tag}</span>
+        <span className={estilos.rotulo}>{rotuloDeExibicao(membro.tag)}</span>
         <span className={estilos.numeros} aria-hidden="true">
           <span className="valor">{formatar(membro.valor)}</span>
           <span className={estilos.percentual}>{membro.percentual}</span>
@@ -171,10 +184,17 @@ function LinhaDeMembro({
  * e "Sem tag"). Cada barra é um botão: passar o cursor ou focar mostra uma dica, e clicar fixa
  * a tag (quem usa o gráfico mostra o detalhe). As barras crescem ao aparecer e se movem ao
  * trocar de mês. O valor de um gasto com várias tags se divide em partes iguais entre elas.
- * Nome do botão, legenda de valores e a tabela equivalente (em `<details>`) trazem os mesmos
+ * Nome do botão, legenda de valores e a tabela equivalente (em `Recolhivel`) trazem os mesmos
  * números, então a dica nunca é o único caminho.
  */
-export function GraficoDeBarras({ resumo, carregando, gastos, selecionada, aoSelecionar }: Propriedades) {
+export function GraficoDeBarras({
+  resumo,
+  carregando,
+  gastos,
+  selecionada,
+  aoSelecionar,
+  aoAdicionarTag,
+}: Propriedades) {
   const idTitulo = useId();
   const idDosMembros = useId();
   const [dicaDe, definirDicaDe] = useState<string | null>(null);
@@ -205,18 +225,23 @@ export function GraficoDeBarras({ resumo, carregando, gastos, selecionada, aoSel
       data-atualizando={atualizando}
       onKeyDown={aoTeclar}
     >
-      <h3 id={idTitulo} className={estilos.titulo}>
+      <Titulo nivel="cartao" como="h3" id={idTitulo} className={estilos.titulo}>
         Distribuição por tags
-      </h3>
-      <p className={estilos.apoio}>
-        O valor de um gasto com várias tags se divide em partes iguais entre elas. Toque numa tag
-        para ver os gastos dela.
-      </p>
+      </Titulo>
 
       {exibido === undefined ? (
-        <p className={estilos.estado}>{carregando ? "Carregando…" : "Sem dados para mostrar."}</p>
+        carregando ? <Esqueleto rotulo="Carregando…" /> : <EstadoDeErro titulo="Sem dados" mensagem="Sem dados para mostrar." />
       ) : barras.length === 0 ? (
-        <EstadoVazio icone="tags" titulo="Sem gastos neste período" />
+        <EstadoVazio
+          icone="tags"
+          titulo="Nenhum gasto com tag neste período"
+        descricao="Adicione tags aos gastos para entender como e onde o dinheiro foi usado."
+          acao={
+            aoAdicionarTag
+              ? { rotulo: "Adicionar tag a um gasto", aoClicar: aoAdicionarTag }
+              : undefined
+          }
+        />
       ) : (
         <>
           <ul className={estilos.lista} aria-label="Gastos por tag">
@@ -262,34 +287,33 @@ export function GraficoDeBarras({ resumo, carregando, gastos, selecionada, aoSel
             })}
           </ul>
 
-          <details className={estilos.tabela}>
-            <summary>Ver como tabela</summary>
-            <table>
+          <Recolhivel resumo="Ver como tabela">
+            <Tabela legenda="Distribuição dos gastos por tag">
               <thead>
                 <tr>
                   <th scope="col">Tag</th>
-                  <th scope="col">Valor</th>
-                  <th scope="col">Percentual</th>
+                  <th scope="col" data-numerica>Valor</th>
+                  <th scope="col" data-numerica>Percentual</th>
                 </tr>
               </thead>
               <tbody>
                 {exibido.fatias.map((fatia) => (
                   <tr key={fatia.tag ?? "\u{0}sem_tag"}>
-                    <th scope="row">{fatia.tag ?? <em>(sem tag)</em>}</th>
-                    <td className="valor">{formatar(fatia.valor)}</td>
-                    <td>{rotuloDoPercentual(fracaoDe(fatia.valor, exibido.total))}</td>
+                    <th scope="row">{fatia.tag === null ? <em>(sem tag)</em> : rotuloDeExibicao(fatia.tag)}</th>
+                    <td className="valor" data-numerica>{formatar(fatia.valor)}</td>
+                    <td data-numerica>{rotuloDoPercentual(fracaoDe(fatia.valor, exibido.total))}</td>
                   </tr>
                 ))}
               </tbody>
               <tfoot>
                 <tr>
                   <th scope="row">Total</th>
-                  <td className="valor">{formatar(exibido.total)}</td>
-                  <td>100%</td>
+                  <td className="valor" data-numerica>{formatar(exibido.total)}</td>
+                  <td data-numerica>100%</td>
                 </tr>
               </tfoot>
-            </table>
-          </details>
+            </Tabela>
+          </Recolhivel>
         </>
       )}
     </section>

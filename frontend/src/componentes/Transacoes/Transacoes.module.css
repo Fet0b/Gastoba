@@ -3,20 +3,25 @@
 
 .linha {
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-columns: 2.5rem minmax(0, 1fr) auto 2.75rem;
   align-items: center;
   gap: var(--espaco-3);
   padding: var(--espaco-3) 0;
+  border-block-end: 1px solid var(--cor-veludo);
   list-style: none;
+}
+
+.linha:last-child {
+  border-block-end: 0;
 }
 
 .icone {
   display: grid;
   place-items: center;
-  width: 2.25rem;
-  height: 2.25rem;
+  width: 2.5rem;
+  height: 2.5rem;
   border-radius: var(--raio-chip);
-  background: color-mix(in srgb, var(--cor-da-categoria, var(--cor-lavanda)) 18%, transparent);
+  background: var(--superficie-tonal);
   color: var(--cor-da-categoria, var(--cor-lavanda));
 }
 
@@ -27,24 +32,28 @@
   min-width: 0;
 }
 
+/* O nome não quebra linha dentro da grade: uma linha com reticências (o texto inteiro vai no title). */
 .descricao {
-  overflow-wrap: anywhere;
-  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: var(--peso-secao);
 }
 
-.detalhe {
-  color: var(--cor-bruma);
-  font-size: var(--texto-pequeno);
-  line-height: var(--texto-pequeno-linha);
+/* Nível 2: conta, categoria, tags, marcas e coberturas, em selos que quebram de linha. */
+.nivel2 {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--espaco-1) var(--espaco-2);
+  min-width: 0;
 }
 
-.recorrente {
-  margin-left: var(--espaco-2);
-  padding: 0 var(--espaco-2);
-  border-radius: var(--raio-chip);
-  background: var(--cor-veludo);
-  color: var(--cor-nevoa);
-  font-size: var(--texto-minimo);
+.pontoDaCategoria {
+  width: 0.5rem;
+  height: 0.5rem;
+  flex: none;
+  border-radius: 50%;
 }
 
 .tags {
@@ -56,17 +65,28 @@
   list-style: none;
 }
 
-.tag {
-  color: var(--cor-bruma);
-  font-size: var(--texto-minimo);
-  line-height: var(--texto-minimo-linha);
-}
-
 .valor {
   font-family: var(--fonte-titulo);
-  font-weight: 650;
+  font-weight: var(--peso-secao);
   font-variant-numeric: tabular-nums;
+  text-align: right;
   white-space: nowrap;
+}
+
+/* 320 px: o valor desce para a segunda linha, ainda à direita, em vez de espremer o texto. */
+@media (max-width: 30rem) {
+  .linha {
+    grid-template-columns: 2.5rem minmax(0, 1fr) 2.75rem;
+  }
+
+  .icone {
+    grid-row: 1 / span 2;
+  }
+
+  .valor {
+    grid-column: 2 / -1;
+    grid-row: 2;
+  }
 }
 
 .linha[data-sentido="saida"] .valor {
@@ -74,34 +94,21 @@
 }
 
 .linha[data-sentido="entrada"] .valor {
-  color: var(--cor-lavanda);
+  color: var(--cor-positivo);
 }
 
-/* Categoria e tag da linha como filtro (só nas Transações): parecem texto, com sublinhado, e a
-   ativa fica em Lavanda. */
-.filtro {
-  min-height: 2rem;
-  padding: 0 var(--espaco-1);
-  border: 0;
-  border-radius: var(--raio-campo);
-  background: none;
-  color: inherit;
-  font: inherit;
-  text-decoration: underline dotted;
-  text-underline-offset: 3px;
-  cursor: pointer;
+/* Menu "Mais ações" no fim da linha: sempre visível, com opacidade reduzida em repouso, para não
+   deslocar os valores; ganha força no ponteiro, no foco e com o menu aberto (Art. XI.5.2). */
+.acoes {
+  justify-self: end;
 }
 
-.filtro:hover {
-  color: var(--cor-nevoa);
+.acoes [data-menu-de-acoes] {
+  opacity: 0.6;
 }
 
-.filtro[aria-pressed="true"] {
-  color: var(--cor-lavanda);
-  text-decoration-style: solid;
-}
-
-.filtro:focus-visible {
-  outline: var(--anel-de-foco);
-  outline-offset: var(--afastamento-do-foco);
+.linha:hover .acoes [data-menu-de-acoes],
+.linha:focus-within .acoes [data-menu-de-acoes],
+.acoes [data-menu-de-acoes][aria-expanded="true"] {
+  opacity: 1;
 }

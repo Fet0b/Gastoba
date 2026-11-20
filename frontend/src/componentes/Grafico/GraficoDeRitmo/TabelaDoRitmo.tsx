@@ -1,5 +1,5 @@
 import { deCentavos, formatar, paraCentavos } from "../../../dinheiro/dinheiro";
-import estilos from "./GraficoDeRitmo.module.css";
+import { Tabela } from "../../Tabela/Tabela";
 
 type Propriedades = {
   /** O gasto acumulado de cada dia, do dia 1 até o último dia desenhado. */
@@ -11,14 +11,13 @@ type Propriedades = {
 /** A mesma informação do gráfico em texto: um dia por linha. */
 export function TabelaDoRitmo({ acumulado, ideal }: Propriedades) {
   return (
-    <table className={estilos.tabela}>
-      <caption className={estilos.legendaDaTabela}>Gasto acumulado por dia</caption>
+    <Tabela legenda="Gasto acumulado por dia">
       <thead>
         <tr>
           <th scope="col">Dia</th>
-          <th scope="col">Gasto do dia</th>
-          <th scope="col">Acumulado</th>
-          {ideal && <th scope="col">Ritmo ideal</th>}
+          <th scope="col" data-numerica>Gasto do dia</th>
+          <th scope="col" data-numerica>Acumulado</th>
+          {ideal && <th scope="col" data-numerica>Ritmo ideal</th>}
         </tr>
       </thead>
       <tbody>
@@ -27,13 +26,13 @@ export function TabelaDoRitmo({ acumulado, ideal }: Propriedades) {
           return (
             <tr key={indice}>
               <th scope="row">{indice + 1}</th>
-              <td>{formatar(deCentavos(paraCentavos(total) - anterior))}</td>
-              <td>{formatar(total)}</td>
-              {ideal && <td>{formatar(ideal[indice])}</td>}
+              <td data-numerica>{formatar(deCentavos(paraCentavos(total) - anterior))}</td>
+              <td data-numerica>{formatar(total)}</td>
+              {ideal && <td data-numerica>{formatar(ideal[indice])}</td>}
             </tr>
           );
         })}
       </tbody>
-    </table>
+    </Tabela>
   );
 }

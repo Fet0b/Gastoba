@@ -1,0 +1,25 @@
+.introducao { margin: 0; color: var(--cor-bruma); font-size: var(--texto-pequeno); }
+.lista { display: grid; gap: var(--espaco-3); margin: 0; padding: 0; list-style: none; min-width: 0; }
+.grupo { display: grid; gap: var(--espaco-3); min-width: 0; }
+.linha { display: grid; gap: var(--espaco-3); padding: var(--espaco-4); background: var(--cor-veludo); border: var(--borda-de-camada); border-radius: var(--raio-cartao); min-width: 0; }
+.topo { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; align-items: center; gap: var(--espaco-3); min-width: 0; }
+.nome { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* O texto da Caixa fica num span filho: é ele que precisa encolher e cortar com reticências. */
+.nome > span:last-child { display: block; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.valor { font-family: var(--fonte-titulo); font-variant-numeric: tabular-nums; text-align: end; white-space: nowrap; }
+.valor[data-sentido="saida"] { color: var(--cor-negativo); }
+.valor[data-sentido="entrada"] { color: var(--cor-positivo); }
+.efeitos { margin: 0; padding-inline-start: var(--espaco-5); display: grid; gap: var(--espaco-1); color: var(--cor-nevoa); }
+.apoio { margin: 0; color: var(--cor-bruma); font-size: var(--texto-pequeno); }
+.alerta { margin: 0; color: var(--cor-atencao); font-size: var(--texto-pequeno); }
+.rodape { display: flex; align-items: center; justify-content: flex-end; flex-wrap: wrap; gap: var(--espaco-3); }
+.faltando { margin: 0; margin-inline-end: auto; color: var(--cor-bruma); font-size: var(--texto-pequeno); }
+.escolha { display: grid; gap: var(--espaco-2); min-width: 0; }
+.acoes { display: flex; justify-content: flex-end; }
+
+.linha > * { min-width: 0; }
+@media (max-width: 30rem) {
+  .topo { grid-template-columns: minmax(0, 1fr) auto; }
+  .valor { grid-column: 1; grid-row: 2; text-align: start; }
+}
+.selo { display: inline-flex; flex-wrap: wrap; align-items: center; gap: var(--espaco-1); max-width: 100%; min-width: 0; }

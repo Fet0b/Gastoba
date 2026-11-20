@@ -10,8 +10,9 @@
 .cartao {
   display: flex;
   flex-direction: column;
-  gap: var(--espaco-2);
-  padding: var(--espaco-3) var(--espaco-4);
+  gap: var(--espaco-3);
+  min-width: 0;
+  padding: var(--espaco-4);
   border-radius: var(--raio-cartao);
   background: var(--cor-veludo);
 }
@@ -22,7 +23,8 @@
 
 .topo {
   display: flex;
-  align-items: center;
+  flex-wrap: wrap;
+  align-items: flex-start;
   gap: var(--espaco-3);
 }
 
@@ -38,32 +40,53 @@
 }
 
 .cartao[data-sentido="entrada"] .sentido {
-  color: var(--cor-lavanda);
+  color: var(--cor-positivo);
 }
 
 .identificacao {
-  flex: 1;
+  flex: 1 1 10rem;
   min-width: 0;
 }
 
 .nome {
-  font-weight: 650;
+  font-weight: var(--peso-secao);
   overflow-wrap: anywhere;
 }
 
+/* No cartão da fila o título cabe numa linha, com reticências; o texto inteiro fica no title. */
+.identificacao .nome {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* O valor com o sinal é o destaque do cartão: grande, tabular, à direita. */
 .valor {
   flex: none;
-  font-weight: 600;
+  max-width: 50%;
+  font-family: var(--fonte-titulo);
+  font-size: var(--texto-grande);
+  line-height: var(--texto-grande-linha);
+  font-weight: var(--peso-titulo);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  overflow-wrap: anywhere;
   color: var(--cor-brasa);
 }
 
 .cartao[data-sentido="entrada"] .valor {
-  color: var(--cor-lavanda);
+  color: var(--cor-positivo);
 }
 
 .detalhe {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--espaco-1) var(--espaco-3);
   color: var(--cor-bruma);
-  font-size: 0.9375rem;
+  font-size: var(--texto-pequeno);
+  line-height: var(--texto-pequeno-linha);
+  overflow-wrap: anywhere;
 }
 
 .etiquetas {
@@ -73,22 +96,6 @@
 }
 
 /* O alerta nunca é só cor: ícone e texto. */
-.etiqueta {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--espaco-1);
-  padding: var(--espaco-1) var(--espaco-3);
-  border: 1px solid var(--cor-alerta);
-  border-radius: var(--raio-chip);
-  color: var(--cor-nevoa);
-  font-size: var(--texto-pequeno);
-  line-height: var(--texto-pequeno-linha);
-}
-
-.etiqueta svg {
-  color: var(--cor-alerta);
-}
-
 .adicionarTags {
   align-self: flex-start;
   min-height: 2rem;
@@ -121,6 +128,12 @@
   align-items: center;
   justify-content: space-between;
   gap: var(--espaco-2) var(--espaco-4);
+}
+
+.acoesDoCabecalho {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--espaco-2);
 }
 
 .titulo {
@@ -173,21 +186,63 @@
 
 .erro {
   color: var(--cor-brasa);
-  font-size: 0.9375rem;
+  font-size: var(--texto-corpo);
+}
+
+/* "Parece o aporte de «…»": a sugestão em texto, nunca só pela cor. */
+.sugestao {
+  color: var(--cor-nevoa);
+  font-size: var(--texto-corpo);
 }
 
 .motivos {
   padding-left: var(--espaco-4);
   color: var(--cor-bruma);
-  font-size: 0.9375rem;
+  font-size: var(--texto-corpo);
   list-style: disc;
 }
 
 .acoes {
   display: flex;
+  gap: var(--espaco-2);
+}
+
+/* O botão principal ocupa o que sobra; o secundário (Ignorar) fica do tamanho do texto. */
+.acoes > .principal {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.acoes > :not(.principal) {
+  flex: 0 0 auto;
+}
+
+/* Ações secundárias do modo gasto: botões pequenos, um pouco mais claros que o cartão. */
+.secundarias {
+  display: flex;
   flex-wrap: wrap;
   gap: var(--espaco-2);
 }
+
+.secundarias .secundaria[data-variante] {
+  min-height: 2rem;
+  padding: var(--espaco-1) var(--espaco-3);
+  background: var(--superficie-badge);
+  border-radius: var(--raio-campo);
+}
+
+.secundarias .secundaria[data-variante]:hover:not(:disabled) {
+  background: var(--superficie-tonal);
+  text-decoration: none;
+}
+
+.transferencia {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espaco-3);
+  min-width: 0;
+}
+
 
 .primario,
 .secundario {
@@ -205,7 +260,7 @@
   border-color: transparent;
   background: var(--cor-ametista);
   color: var(--cor-noite);
-  font-weight: 650;
+  font-weight: var(--peso-secao);
 }
 
 .primario:disabled,
@@ -235,7 +290,9 @@
   display: flex;
   flex-direction: column;
   gap: var(--espaco-4);
+  min-width: 0;
   padding: var(--espaco-5);
+  border: var(--borda-de-camada);
   border-radius: var(--raio-painel);
   background: var(--cor-ameixa);
 }
@@ -260,4 +317,78 @@
   overflow: hidden;
   clip-path: inset(50%);
   white-space: nowrap;
+}
+
+/* Aceitar em lote: a caixa de seleção de cada saída e o painel de baixo. */
+.selecao {
+  flex: none;
+  width: 1.25rem;
+  height: 1.25rem;
+  accent-color: var(--cor-ametista);
+  cursor: pointer;
+}
+
+.selecao:focus-visible {
+  outline: var(--anel-de-foco);
+  outline-offset: var(--afastamento-do-foco);
+}
+
+.cartao[data-selecionada="true"] {
+  box-shadow: inset 0 0 0 2px var(--cor-ametista);
+}
+
+.barraDoLote {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--espaco-2) var(--espaco-4);
+  color: var(--cor-bruma);
+  font-size: var(--texto-pequeno);
+}
+
+.todas {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--espaco-2);
+  cursor: pointer;
+}
+
+.painelDoLote {
+  position: sticky;
+  bottom: var(--espaco-3);
+  z-index: 1;
+  max-height: 70dvh;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--espaco-2);
+  padding: var(--espaco-3) var(--espaco-4);
+  border: 1px solid var(--cor-ametista);
+  border-radius: var(--raio-cartao);
+  background: var(--cor-ameixa);
+  box-shadow: var(--sombra-alta);
+}
+
+.tituloDoLote {
+  font-weight: var(--peso-secao);
+}
+
+/* Celular: o painel do lote cola acima da barra de abas, sem ficar escondido sob ela. */
+@media (max-width: 48rem) {
+  .painelDoLote {
+    bottom: calc(var(--altura-da-barra-de-abas) + var(--espaco-3));
+    max-height: calc(100dvh - var(--altura-da-barra-de-abas) - var(--espaco-6) * 2);
+  }
+}
+
+/* Movimento interno da conta: a descrição do banco é apoio e a frase ocupa a largura do cartão. */
+.descricaoDoBanco {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.explicacaoInterna {
+  margin-block-start: var(--espaco-2);
 }

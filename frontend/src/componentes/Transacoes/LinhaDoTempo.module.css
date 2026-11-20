@@ -24,14 +24,67 @@
   animation: entrada var(--duracao-media) var(--curva-saida) var(--atraso) both;
 }
 
-.rotuloDoDia {
+/* O cabeçalho do dia usa as mesmas colunas da linha de transação (ícone, texto, valor, menu): o
+   nome do dia ocupa as duas primeiras, o total fica na coluna dos valores e a do menu é reservada,
+   para o total não parecer um lançamento torto. */
+.cabecalhoDoDia {
+  display: grid;
+  grid-template-columns: 2.5rem minmax(0, 1fr) auto 2.75rem;
+  align-items: baseline;
+  column-gap: var(--espaco-3);
   padding-block-end: var(--espaco-2);
   border-block-end: 1px solid var(--cor-veludo);
+}
+
+.cabecalhoDoDia > h3 {
+  grid-column: 1 / 3;
+}
+
+/* O total do dia é um agregado de leitura, não uma entrada nem uma saída: neutro, em peso normal
+   e no tamanho de metadado, com o sinal no valor e o rótulo visível. */
+.subtotal {
+  grid-column: 3;
+  display: flex;
+  gap: var(--espaco-2);
+  justify-content: flex-end;
+  font-family: var(--fonte-corpo);
+  font-size: var(--texto-rotulo);
+  line-height: var(--texto-rotulo-linha);
+  font-weight: 400;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  color: var(--cor-bruma);
+}
+
+.acoesReservada {
+  grid-column: 4;
+}
+
+/* Mesma regra da linha em 320 px: o valor passa a ocupar o fim da linha. */
+@media (max-width: 30rem) {
+  .cabecalhoDoDia {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .cabecalhoDoDia > h3 {
+    grid-column: 1;
+  }
+
+  .subtotal {
+    grid-column: 2;
+  }
+
+  .acoesReservada {
+    display: none;
+  }
+}
+
+.rotuloDoDia {
   color: var(--cor-bruma);
   font-family: var(--fonte-corpo);
   font-size: var(--texto-pequeno);
   line-height: var(--texto-pequeno-linha);
-  font-weight: 600;
+  font-weight: var(--peso-secao);
 }
 
 .linhas {
@@ -44,30 +97,12 @@
 
 .maisLinhas {
   align-self: center;
-  min-height: var(--alvo-de-toque);
-  padding: 0 var(--espaco-5);
-  border: 1px solid var(--cor-veludo);
-  border-radius: var(--raio-campo);
-  background: transparent;
-  color: var(--cor-lavanda);
-  font: inherit;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.maisLinhas:hover {
-  background: var(--cor-veludo);
-}
-
-.maisLinhas:focus-visible {
-  outline: var(--anel-de-foco);
-  outline-offset: var(--afastamento-do-foco);
 }
 
 @keyframes entrada {
   from {
     opacity: 0;
-    transform: translateY(8px);
+    transform: translateY(var(--espaco-2));
   }
 
   to {

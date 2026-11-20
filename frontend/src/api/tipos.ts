@@ -2,16 +2,28 @@
 // Dinheiro trafega sempre como string decimal ("25.90"), nunca como número (Art. III.3).
 
 export type Conta = {
+  papel?: "corrente" | "investimento" | null;
   id: string;
   nome: string;
   saldo: string;
   origem: "manual" | "open_finance";
-  tipo: "corrente" | "cartao";
+  /** `remunerada`: aplica e resgata sozinha; o saldo é a caixinha, não entra no total das contas. */
+  tipo: "corrente" | "cartao" | "remunerada";
+  /** Como a conta aparece em toda tela: o apelido, senão o nome no banco, senão o nome. */
+  rotulo: string;
+  apelido: string | null;
+  nome_no_banco: string | null;
+  /** Só os quatro últimos dígitos do número da conta, se o banco os informa. */
+  final_do_numero: string | null;
 };
 
-export type Categoria = { codigo: string; nome: string };
+export type AlvoDaMeta = { codigo: string; nome: string };
+export type Categoria = AlvoDaMeta & { legada: boolean };
 
 export type Gasto = {
+  transacao_importada_id?: string | null;
+  valor_coberto: string;
+  coberturas: Cobertura[];
   id: string;
   conta_id: string;
   valor: string;
@@ -28,6 +40,7 @@ export type Gasto = {
 
 /** Ganho: dinheiro que entra numa conta (salário, reembolso). Não tem categoria. */
 export type Ganho = {
+  transacao_importada_id?: string | null;
   id: string;
   conta_id: string;
   valor: string;
@@ -84,12 +97,13 @@ export type AlteracaoDeRecorrencia = {
 };
 
 /** Porcentagem (1 a 100) da renda do mês destinada a uma categoria. */
-export type Meta = { categoria: string; percentual: number };
+export type Meta = { categoria: string; nome: string; percentual: number };
 
 export type SituacaoDaMeta = "dentro" | "alerta" | "estourou" | "sem_renda";
 
 /** Uma meta no mês: o limite é o percentual da renda; `restante` fica negativo ao estourar. */
 export type ProgressoDaMeta = {
+  nome: string;
   categoria: string;
   percentual: number;
   limite: string;
@@ -98,10 +112,43 @@ export type ProgressoDaMeta = {
   /** `gasto * 100 / limite`, para baixo; nulo se há gasto e o limite é zero. */
   percentual_usado: number | null;
   situacao: SituacaoDaMeta;
+  /** `gasto` mais o que as caixinhas pagaram: o card mostra "bruto de limite + adicional". */
+  gasto_bruto: string;
+  /** O que as caixinhas pagaram de compras da categoria no mês; aumenta o limite. */
+  limite_adicional: string;
+  caixinhas: CaixinhaDaMeta[];
+  /** Rentabilidade (%, duas casas) das caixinhas da meta; nula sem dado. */
+  rentabilidade: string | null;
+  /** Só exibição (066): aportes menos resgates do mês nas caixinhas marcadas; "0.00" se desligado. */
+  guardado?: string;
+  /** `guardado * 100 / limite` (mínimo 1 com guardado positivo); zero sem limite. Pode passar de 100. */
+  percentual_guardado?: number;
+  /** As caixinhas marcadas que contribuíram, em ordem alfabética. */
+  caixinhas_guardadas?: string[];
 };
 
-/** `GET /metas/progresso`: a renda do mês (soma dos ganhos) e as metas com o progresso. */
-export type ResumoDasMetas = { mes: string; renda: string; metas: ProgressoDaMeta[] };
+/** Uma caixinha (destinação) marcada para comprar numa categoria de gasto. */
+export type CaixinhaMarcada = { categoria: string; tag: string };
+
+/** A configuração do guardado nas metas: o interruptor e as marcações (preservadas ao desligar). */
+export type GuardadoNasMetas = { ativo: boolean; marcacoes: CaixinhaMarcada[] };
+
+/** Uma caixinha ligada à meta: o que pagou no mês (pode ser zero) e a rentabilidade. */
+export type CaixinhaDaMeta = { tag: string; valor: string; rentabilidade: string | null };
+
+/** Previsão mensal usada somente como referência das metas. */
+export type RendaBase = { valor: string | null };
+
+/** Renda registrada, base opcional e referência usada no progresso das metas. */
+export type ResumoDasMetas = {
+  aportes_do_mes?: string;
+  classificacoes_para_revisar?: number;
+  mes: string;
+  renda: string;
+  renda_base: string | null;
+  renda_de_referencia: string;
+  metas: ProgressoDaMeta[];
+};
 
 export type NovaConta = { nome: string; saldo_inicial?: string };
 
@@ -145,12 +192,43 @@ export type Usuario = {
   nome: string;
   /** Só em `GET /auth/eu`: a pessoa é a dona da importação bancária e vê a aba Importadas. */
   importacao_bancaria?: boolean;
+  gestao_de_investimentos?: boolean;
+  /** Só em `GET /auth/eu`: cor, textura, nome e logo escolhidos pela pessoa. */
+  aparencia?: Aparencia;
+};
+
+export type IntensidadeDaCor = "suave" | "media" | "viva";
+export type TexturaDoFundo = "nenhuma" | "pontos" | "linhas" | "grade" | "grao";
+export type MarcaDoApp = "olho" | "inicial" | "moeda" | "cofre" | "folha" | "grafico";
+
+/** `GET /auth/eu` (campo `aparencia`) e `PUT /aparencia`. */
+export type Aparencia = {
+  matiz: number;
+  intensidade: IntensidadeDaCor;
+  textura: TexturaDoFundo;
+  nome: string;
+  marca: MarcaDoApp;
+  /** Falso na aparência padrão: nada é trocado. */
+  personalizada: boolean;
+};
+
+export type EscolhaDeAparencia = Omit<Aparencia, "personalizada">;
+
+export type OpcaoDeAparencia<C extends string = string> = { codigo: C; nome: string };
+
+/** `GET /aparencia/opcoes`. */
+export type OpcoesDeAparencia = {
+  intensidades: OpcaoDeAparencia<IntensidadeDaCor>[];
+  texturas: OpcaoDeAparencia<TexturaDoFundo>[];
+  marcas: OpcaoDeAparencia<MarcaDoApp>[];
 };
 
 export type SentidoDaTransacao = "entrada" | "saida";
 
 /** Transação vinda do banco, esperando a decisão da pessoa (a caixa de entrada). */
 export type TransacaoImportada = {
+  motivo_ignorada?: "transferencia_entre_contas" | "movimento_interno_da_conta" | null;
+  tipo_de_movimento_sugerido?: TipoDeMovimento | null;
   id: string;
   conta_id: string;
   /** "AAAA-MM-DD". */
@@ -164,12 +242,191 @@ export type TransacaoImportada = {
   sugerir_descarte: boolean;
   /** Já há um lançamento manual da mesma conta, no mesmo dia e com o mesmo valor. */
   possivel_duplicado: boolean;
+  /** A posição de que a saída parece ser o aporte (a emissão do título); nulo sem sugestão. */
+  investimento_sugerido_id: string | null;
+  /** A outra ponta provável de uma transferência entre contas próprias, se for inequívoca. */
+  par_sugerido_id?: string | null;
+  /** A transferência com uma só ponta que esta transação completaria (069); nulo sem sugestão. */
+  transferencia_sugerida_id?: string | null;
+  /** Liquidação da bolsa: não é gasto nem ganho; liga-se na Revisão da bolsa (069). */
+  liquidacao_de_bolsa?: boolean;
 };
 
 /** O que `POST /transacoes-importadas/{id}/aceitar` criou. */
-export type Aceite = { tipo: "gasto" | "ganho"; id: string };
+export type Aceite = { tipo: "gasto" | "ganho" | TipoDeMovimento; id: string };
 
-export type AceiteDaTransacao = { categoria?: string; tags: string[] };
+export type AceiteDaTransacao = {
+  tipo_de_movimento?: TipoDeMovimento;
+  movimento_relacionado_id?: string;
+  /** Categoria ativa obrigatória apenas no gasto; proibida em operação de investimento. */
+  categoria?: string;
+  tags: string[];
+  /** Classifica uma operação de investimento, sem categoria de despesa nem tags comuns. */
+  como_investimento?: boolean;
+  /** Só com `como_investimento`: o investimento e a divisão do valor (soma 100%). */
+  investimento_id?: string;
+  destinacoes?: DestinacaoDeEnvio[];
+};
+
+/** Aceita de uma vez várias saídas pendentes, com a mesma categoria e as mesmas tags. */
+export type AceiteEmLote = AceiteDaTransacao & { transacao_ids: string[] };
+export type AceiteEmLoteResposta = { aceitas: Aceite[] };
+
+/** Uma parte do aporte: a tag e o percentual inteiro (1 a 100). */
+export type DestinacaoDeEnvio = { tag: string; percentual: number };
+
+/** Finalidade vazia do catálogo da pessoa; não representa posição, saldo ou ativo. */
+export type DestinacaoCadastrada = {
+  id: string;
+  nome: string;
+  /** Nulo = ícone padrão (o cofre). */
+  icone: IconeDaCaixinha | null;
+  /** Nula = cor automática. */
+  cor: CorDaDestinacao | null;
+};
+
+export type IconeDaCaixinha = "aviao" | "casa" | "carro" | "computador" | "cofre" | "exclamacao";
+
+export type DestinacaoDoInvestimento = {
+  cor: CorDaDestinacao | null;
+  /** Nula na parte do saldo que ainda não tem destinação. */
+  tag: string | null;
+  principal: string;
+  valor_atual: string;
+  /** `valor_atual - principal`; o ganho sobre o principal em % ("4.32"), nulo sem principal. */
+  rendimento: string;
+  rentabilidade: string | null;
+};
+
+/** A remuneração contratada como a instituição informa; o que é zero vem nulo. */
+export type TaxaDoInvestimento = {
+  /** % do indexador (ou a taxa, sem indexador), em texto: "101.2". */
+  percentual: string | null;
+  /** "CDI", "IPCA"…, como a instituição escreve. */
+  indexador: string | null;
+  /** A parte fixa ao ano somada ao percentual. */
+  adicional_anual: string | null;
+};
+
+/** O que falta para fechar o histórico de uma posição: ``faltam_cotas`` ou ``sobram_cotas``. */
+export type PendenciaDeInvestimento = { tipo: "faltam_cotas" | "sobram_cotas"; quantidade_estimada: string };
+
+export type AcaoDoHistorico = "confirmar_quantidade" | "completar" | "conferir_operacoes";
+
+export type NaturezaDoMovimento = "liquidacao_de_bolsa" | "imposto_ou_taxa" | "conta_remunerada" | "vencimento" | "rendimento" | "outra";
+
+export type Investimento = {
+  alocacao_por_fracao?: boolean;
+  pendencias_de_operacoes?: PendenciaDeOperacao[];
+  /** Nome normalizado com vencimento e taxa (e o final do id, só se ainda repetir): único. */
+  rotulo?: string | null;
+  /**
+   * Posição pelas operações (060). Sem histórico completo a rentabilidade vem nula, com o
+   * motivo `historico_incompleto`; o anualizado só existe com mais de 12 meses. Opcionais para
+   * aceitar respostas anteriores a esses campos.
+   */
+  quantidade?: string | null;
+  custo_medio?: string | null;
+  historico_completo?: boolean;
+  rentabilidade_do_periodo?: string | null;
+  rentabilidade_anualizada?: string | null;
+  motivo_sem_rentabilidade?: string | null;
+  pendencias?: PendenciaDeInvestimento[];
+  /** Qual botão acompanha o aviso do histórico; nulo quando não há o que fazer. */
+  acao_do_historico?: AcaoDoHistorico | null;
+  data_de_aplicacao?: string | null;
+  conta_id?: string | null;
+  custos_registrados?: string;
+  resultado_realizado?: string | null;
+  id: string;
+  nome: string;
+  tipo: string;
+  subtipo: string | null;
+  saldo: string;
+  /**
+   * Valor aplicado, lucro e rentabilidade em % (lucro / aplicado): da instituição (`origem_da_rentabilidade`);
+   * nulos quando ela não informa, exceto na conta remunerada, estimada pelo principal (`"aportes"`).
+   */
+  valor_aplicado: string | null;
+  rendimento: string | null;
+  rentabilidade: string | null;
+  origem_da_rentabilidade: "instituicao" | "aportes" | null;
+  /** Com o histórico das operações fechado: o aplicado (custo médio) e o lucro sobre ele. */
+  valor_aplicado_das_operacoes?: string | null;
+  rendimento_das_operacoes?: string | null;
+  taxa: TaxaDoInvestimento | null;
+  /** "AAAA-MM-DD" do vencimento do título, se a instituição informa. */
+  vencimento?: string | null;
+  /** "AAAA-MM-DD" do último saldo guardado, ou nulo. */
+  atualizado_em: string | null;
+  destinacoes: DestinacaoDoInvestimento[];
+};
+
+export type VisaoDosInvestimentos = "destinacao" | "tipo";
+
+export type FatiaDeInvestimento = { cor: CorDaDestinacao | null; rotulo: string | null; valor: string };
+export type HistoricoDeMeta = { categoria: string; nome: string; acao: "criada" | "alterada" | "removida"; percentual_anterior: number | null; percentual_novo: number | null; instante: string };
+
+export type ResumoDeInvestimentos = {
+  aportes_sem_destino?: { total: string; quantidade: number };
+  visao: VisaoDosInvestimentos;
+  total: string;
+  fatias: FatiaDeInvestimento[];
+};
+
+export type PontoDoHistorico = { investimento_id: string; data: string; saldo: string };
+
+export type Realocacao = {
+  id: string;
+  investimento_id: string;
+  origem: string;
+  destino: string;
+  valor: string;
+  data: string;
+};
+
+/** `POST /investimentos/{id}/destinacoes`: reparte a parte da posição ainda sem principal. */
+export type DestinacoesIniciais = { destinacoes: DestinacaoDeEnvio[] };
+
+/** Informe o `valor` ou o `percentual` (do principal da origem), só um dos dois. */
+export type NovaRealocacao = {
+  origem: string;
+  destino: string;
+  data: string;
+  valor?: string;
+  percentual?: number;
+};
+
+/** `POST /movimentos-de-investimento/{id}/destinacoes`: também define as caixinhas de um resgate já ligado à posição e sem partes (069, D4). `DELETE .../caixinhas` não tem corpo (204). */
+export type CaixinhasDoResgate = { investimento_id: string; destinacoes: DestinacaoDeEnvio[] };
+
+export type ClassificacaoDesfeita = { transacao_id: string; estado: "pendente"; lancamentos_removidos: number };
+
+export type MovimentoDeInvestimento = {
+  natureza?: NaturezaDoMovimento;
+  /** Casamento que originou o movimento (nulo até a Revisão da bolsa). */
+  casamento_id?: string | null;
+  vencimento_confirmado?: boolean;
+  revisao_contabil_pendente?: boolean;
+  movimento_relacionado_id?: string | null;
+  categoria: string | null;
+  revisao_pendente: boolean;
+  transacao_importada_id: string | null;
+  id: string;
+  /** Nula só no saldo inicial, que não sai de conta. */
+  conta_id: string | null;
+  investimento_id: string | null;
+  tipo: TipoDeMovimento;
+  /** `open_finance`, `manual` (gasto antigo convertido) ou `saldo_inicial`. */
+  origem: string;
+  descricao: string;
+  valor: string;
+  data: string;
+  destinacoes: ParteDoMovimento[];
+};
+
+/** `categoria` é a foto do vínculo da caixinha na hora do aporte; `coberto` é o quanto compras já usaram do resgate. */
+export type ParteDoMovimento = { tag: string; valor: string; categoria: string | null; coberto: string | null };
 
 export type Sincronizacao = { contas: number; transacoes_novas: number; falhas: number };
 
@@ -220,3 +477,147 @@ export type FiltrosDeGastos = {
   tag?: string;
   categoria?: string;
 };
+
+/**
+ * Uma parte de uma transação dividida: categoria (só na saída), tags e o percentual inteiro. A
+ * parte de saída com `como_investimento` é um aporte: sem tags, com o investimento e as
+ * destinações opcionais.
+ */
+export type ParteDaDivisao = {
+  como_investimento?: boolean;
+  categoria?: string;
+  tags: string[];
+  percentual: number;
+  investimento_id?: string;
+  destinacoes?: DestinacaoDeEnvio[];
+};
+/** De 2 a 10 partes, de 1 a 100% cada, somando 100%. */
+export type DivisaoDaTransacao = { partes: ParteDaDivisao[] };
+export type DivisaoResposta = { criados: Aceite[] };
+
+export type Cobertura = {id: string; tag: string; valor: string; movimento_id?: string | null};
+export type CorDaDestinacao = "ametista" | "menta" | "orquidea" | "ceu" | "ambar" | "coral" | "glicinia" | "esmeralda";
+export type ReservaDaDestinacao = {tag: string; reservado: string; coberto: string; disponivel: string; cor: CorDaDestinacao | null};
+export type PendenciasDeRevisao = {aportes: MovimentoDeInvestimento[]; gastos: Gasto[]; recorrencias: Recorrencia[]};
+export type RevisaoDoAporte = {categoria: string | null; investimento_id?: string; destinacoes?: DestinacaoDeEnvio[]};
+
+export type SituacaoDaFatura = "aberta" | "fechada" | "paga" | "vencida";
+
+/** `GET /faturas`: uma fatura do cartão. Dinheiro como texto; datas "AAAA-MM-DD". */
+export type Fatura = {
+  id: string;
+  inicio: string | null;
+  fechamento: string;
+  vencimento: string | null;
+  total: string;
+  pago: string;
+  restante: string;
+  a_favor: string;
+  minimo: string | null;
+  situacao: SituacaoDaFatura;
+  /** "estimada": calculada pelas compras, não veio do banco. */
+  fonte: "banco" | "estimada";
+  quantidade_de_compras: number;
+};
+
+export type CartaoComFaturas = {
+  conta_id: string;
+  conta_nome: string;
+  valor_devido: string;
+  /** Da mais recente para a mais antiga. */
+  faturas: Fatura[];
+};
+
+export type ListaDeFaturas = { cartoes: CartaoComFaturas[] };
+
+export type CompraDaFatura = {
+  id: string;
+  data: string;
+  descricao: string;
+  valor: string;
+  /** "entrada" é estorno e abate o total. */
+  sentido: SentidoDaTransacao;
+  parcela_numero: number | null;
+  parcela_total: number | null;
+  estado: "pendente" | "aceita" | "ignorada";
+};
+
+export type PagamentoDaFatura = { data: string; valor: string; forma: string | null };
+
+export type FaturaDetalhada = Fatura & {
+  compras: CompraDaFatura[];
+  pagamentos: PagamentoDaFatura[];
+};
+
+export type ImpactoDaReversao = { transacoes_reabertas: number; coberturas_removidas: number; transacao_id: string; versao: string; lancamentos_removidos: number; divisao_inteira: boolean };
+
+export type TransferenciaEntreContas = {
+ id: string; conta_origem_id: string; conta_destino_id: string; valor: string; data: string;
+ aporte_liquido: string; papel_origem: "corrente" | "investimento"; papel_destino: "corrente" | "investimento";
+ transacao_origem_id: string | null; transacao_destino_id: string | null; competencia_provisoria: boolean;
+};
+
+export type TipoDeMovimento = "aporte" | "resgate" | "rendimento" | "custo" | "imposto";
+
+
+export type ReaplicacaoDeResgate = { id: string; aporte_id: string; resgate_id: string; valor: string };
+export type ConfirmarReaplicacao = { aporte_id: string; resgate_id: string; valor: string };
+export type ResgateParaReaplicar = { id: string; data: string; descricao: string; investimento_nome: string; valor: string; disponivel: string };
+
+export type AvisoDeResgate = Omit<MovimentoDeInvestimento, "tipo"> & { tipo: "resgate" | "vencimento"; investimento_nome?: string | null };
+
+
+/** Uma das transações do casamento: o débito (ou crédito) bruto, a taxa ou o imposto. */
+export type VinculoDeCasamento = { transacao_id: string; papel: "bruto" | "taxa" | "imposto" };
+export type Casamento = { id: string; operacao_ids: string[]; vinculos: VinculoDeCasamento[] };
+
+/** Revisão da bolsa (061): propostas de ligar lançamentos da conta às operações da corretora. */
+export type SituacaoNaRevisao = "pendente" | "aporte_sem_investimento" | "resgate_sem_investimento" | "ganho" | "aporte_de_outra_posicao";
+export type OperacaoNaProposta = { id: string; posicao_id: string; rotulo: string; tipo: string; data: string; quantidade: string; valor_bruto: string; custos: string };
+export type TransacaoNaProposta = { id: string; data: string; descricao: string; valor: string; situacao: SituacaoNaRevisao };
+export type CodigoDeEfeito = "aporte_passa_a_ser_da_posicao" | "taxa_deixa_de_ser_aporte" | "ganho_deixa_de_ser_renda" | "aceita_a_pendente";
+export type PropostaDeCasamento = {
+  chave: string;
+  versao: string;
+  tipo: "compra_na_bolsa" | "venda_na_bolsa" | "resgate_de_renda_fixa";
+  data_do_pregao: string;
+  operacoes: OperacaoNaProposta[];
+  bruto: TransacaoNaProposta[];
+  taxas: TransacaoNaProposta[];
+  /** Dinheiro com sinal: bruto da conta menos o das operações. */
+  diferenca: string;
+  diferenca_de_custo: string;
+  confianca: "exata" | "precisa_escolher";
+  motivo: string | null;
+  efeitos: { transacao_id: string; codigo: CodigoDeEfeito }[];
+};
+/** `descricao` diz o que é ("Compra de AUVP11 (3)" ou o texto do banco); `data` e `valor` ajudam a achar. */
+export type ItemSemPar = { motivo: string; operacao_id: string | null; transacao_id: string | null; descricao: string; data: string | null; valor: string | null; sentido: "entrada" | "saida" | null; pode_trocar_pela_ligacao?: boolean };
+/** Operação da corretora que a pessoa já tratou na caixa, na mesma posição (só leitura). */
+export type ItemConciliado = { operacao_id: string; transacao_id: string; descricao: string; data: string; valor: string; sentido: "entrada" | "saida" };
+export type CasamentoConfirmado = Casamento & { sem_aporte: boolean };
+export type RevisaoDaBolsa = { propostas: PropostaDeCasamento[]; sem_par: ItemSemPar[]; confirmados: CasamentoConfirmado[]; conciliadas: ItemConciliado[] };
+/** `POST /revisao-da-bolsa/trocar-gasto/{transacao_id}` devolve o mesmo formato (069, T022). */
+export type LigacaoConfirmada = { casamento_id: string; chave: string };
+export type ItemDeConfirmacao = { chave: string; versao: string; operacao_ids?: string[] };
+/** O que `POST /transacoes-importadas/{id}/reclassificar` aceita como rótulo. */
+export type RotuloDeReclassificacao = "transferencia_para_investimento" | "rendimento_da_posicao" | "imposto" | "custo";
+
+/** Operações da posição (060): quantidades e dinheiro viajam como texto. */
+export type TipoDeOperacao = "COMPRA" | "VENDA" | "PROVENTO" | "TAXA" | "IMPOSTO" | "VENCIMENTO" | "ABERTURA";
+export type Operacao = {
+  id: string; investimento_id: string; tipo: TipoDeOperacao; data: string;
+  quantidade: string; valor: string; custos: string;
+  origem: "pluggy" | "manual" | "abertura"; editavel: boolean;
+  quantidade_estimada: boolean; operacao_relacionada_id: string | null;
+  /** A da corretora que veio sem quantidade: só a quantidade pode ser confirmada. */
+  quantidade_confirmavel?: boolean;
+};
+export type NovaOperacao = Pick<Operacao, "tipo" | "data" | "quantidade" | "valor" | "custos"> & {
+  operacao_relacionada_id?: string;
+  confirmar_duplicidade?: boolean;
+};
+
+export type PendenciaDeOperacao = { tipo: string; data: string; motivo: string };
+export type AporteSemInvestimento = { id: string; conta_id: string | null; data: string; valor: string; /** O texto do banco e a natureza dele; só `outra` pode ser mesclada ou excluída. */ descricao: string; natureza: NaturezaDoMovimento; duplicado_sugerido_id: string | null; tratamento_pendente_de_aprovacao: boolean };
+export type TratamentoDeAporte = { id: string; movimento_id: string; acao: "excluido" | "mesclado"; aprovado: boolean };

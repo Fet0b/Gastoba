@@ -1,0 +1,19 @@
+.painel { min-width: 0; }
+.conteudo { display: grid; gap: var(--espaco-3); min-width: 0; scroll-margin-block: var(--espaco-4) calc(var(--altura-da-barra-de-abas) + var(--espaco-7)); }
+.conteudo h2:focus-visible, .conteudo h2:focus { outline: var(--anel-de-foco); outline-offset: var(--afastamento-do-foco); }
+.vazio { color: var(--cor-bruma); }
+.nome { display: block; max-width: 24rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rendimento[data-tom="positivo"] { color: var(--cor-positivo); }
+.rendimento[data-tom="negativo"] { color: var(--cor-negativo); }
+.rendimento[data-tom="neutro"] { color: var(--cor-bruma); }
+
+/* Em tela estreita (abaixo de 37.5rem): um bloco por investimento, sem rolagem de lado. */
+.blocos { display: flex; flex-direction: column; margin: 0; padding: 0; list-style: none; }
+.bloco { display: flex; flex-direction: column; gap: var(--espaco-2); min-width: 0; padding: var(--espaco-3) 0; border-top: var(--borda-de-camada); }
+.bloco:first-child { border-top: 0; }
+.nomeDoBloco { min-width: 0; overflow: hidden; font-weight: var(--peso-secao); text-overflow: ellipsis; white-space: nowrap; }
+.nomeDoBloco .nome { max-width: 100%; }
+.pares { display: flex; flex-direction: column; gap: var(--espaco-1); margin: 0; font-size: var(--texto-pequeno); font-variant-numeric: tabular-nums; }
+.pares > div { display: flex; justify-content: space-between; gap: var(--espaco-3); }
+.pares dt { color: var(--cor-bruma); }
+.pares dd { margin: 0; text-align: end; white-space: nowrap; }

@@ -1,0 +1,32 @@
+/* A amostra da cor da destinação ao lado do nome; a cor vem do mapa central. */
+.amostra {
+  display: inline-block;
+  width: var(--espaco-3);
+  height: var(--espaco-3);
+  flex-shrink: 0;
+  margin-top: var(--espaco-1);
+  border-radius: 50%;
+}
+
+/* As coberturas já feitas nesta compra: texto à esquerda e a ação à direita. */
+.coberturas {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espaco-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.coberturas li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--espaco-2);
+  overflow-wrap: anywhere;
+}
+
+.erro {
+  color: var(--cor-negativo);
+}

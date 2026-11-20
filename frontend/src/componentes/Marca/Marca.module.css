@@ -1,0 +1,22 @@
+.marca {
+  display: inline-grid;
+  place-items: center;
+  width: var(--tamanho-do-olho, 2.75rem);
+  height: var(--tamanho-do-olho, 2.75rem);
+  border: var(--borda-de-camada);
+  border-radius: 50%;
+  background: var(--cor-ameixa);
+  color: var(--cor-lavanda);
+}
+
+.marca svg {
+  width: 60%;
+  height: 60%;
+}
+
+.inicial {
+  font-family: var(--fonte-titulo);
+  font-size: var(--texto-grande);
+  line-height: 1;
+  font-weight: var(--peso-titulo);
+}

@@ -1,7 +1,7 @@
 // Módulo puro: estimativa linear do gasto do mês. "Hoje" e o mês chegam como
 // argumento (o relógio nunca é lido aqui) e a conta é toda em BigInt.
 
-import type { Gasto } from "../api/tipos";
+import type { Despesa } from "../transacoes/despesas";
 import { deCentavos, paraCentavos } from "../dinheiro/dinheiro";
 import { limites, type Periodo } from "../periodo/periodo";
 
@@ -16,7 +16,7 @@ export type Projecao =
 
 export type EntradaDaProjecao = {
   /** Os gastos conhecidos do mês; o que tem data depois de hoje fica fora da conta. */
-  gastos: readonly Pick<Gasto, "valor" | "data">[];
+  gastos: readonly Pick<Despesa, "valor" | "data">[];
   periodo: Periodo;
   /** "AAAA-MM-DD". */
   hoje: string;

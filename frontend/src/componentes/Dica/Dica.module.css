@@ -1,0 +1,50 @@
+.dica {
+  position: relative;
+  display: inline-flex;
+  vertical-align: middle;
+}
+
+/* Área clicável do tamanho do alvo de toque, maior que o ícone de 16 px */
+.botao {
+  display: inline-grid;
+  place-items: center;
+  width: var(--alvo-de-toque);
+  height: var(--alvo-de-toque);
+  padding: 0;
+  border: 0;
+  border-radius: var(--raio-chip);
+  background: transparent;
+  color: var(--cor-bruma);
+  cursor: pointer;
+}
+
+.botao:hover,
+.botao[aria-expanded="true"] {
+  color: var(--cor-lavanda);
+}
+
+.botao:focus-visible {
+  outline: var(--anel-de-foco);
+  outline-offset: var(--afastamento-do-foco);
+}
+
+.balao {
+  position: absolute;
+  inset-block-start: 100%;
+  inset-inline-start: 0;
+  z-index: 20;
+  width: min(20rem, calc(100vw - var(--espaco-6)));
+  padding: var(--espaco-3);
+  border: var(--borda-de-camada);
+  border-radius: var(--raio-campo);
+  background: var(--cor-veludo);
+  box-shadow: var(--sombra-media);
+  color: var(--cor-nevoa);
+  font-size: var(--texto-pequeno);
+  line-height: var(--texto-pequeno-linha);
+  font-weight: 400;
+}
+
+.balao[hidden] {
+  display: none;
+}

@@ -1,0 +1,27 @@
+{
+  "results": [
+    {
+      "_datas": {
+        "date": 400
+      },
+      "amount": 4500.0,
+      "id": "op-cdbv-1",
+      "movementType": "CREDIT",
+      "quantity": 1.0,
+      "type": "TRANSFER"
+    },
+    {
+      "_datas": {
+        "date": 5
+      },
+      "amount": 5000.0,
+      "expenses": {
+        "incomeTax": 38.12
+      },
+      "id": "op-cdbv-2",
+      "movementType": "CREDIT",
+      "quantity": 1.0,
+      "type": "SELL"
+    }
+  ]
+}

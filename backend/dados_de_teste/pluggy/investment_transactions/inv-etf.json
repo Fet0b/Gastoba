@@ -1,0 +1,26 @@
+{
+  "results": [
+    {
+      "_datas": {
+        "date": 12,
+        "tradeDate": 12
+      },
+      "amount": 1000.0,
+      "id": "op-etf-1",
+      "movementType": "DEBIT",
+      "quantity": 8.0,
+      "type": "BUY"
+    },
+    {
+      "_datas": {
+        "date": 75,
+        "tradeDate": 75
+      },
+      "amount": 500.0,
+      "id": "op-etf-0",
+      "movementType": "DEBIT",
+      "quantity": 4.0,
+      "type": "BUY"
+    }
+  ]
+}

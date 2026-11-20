@@ -5,8 +5,8 @@ import type { Conta } from "../../api/tipos";
 import { FiltroDeContas } from "./FiltroDeContas";
 
 const CONTAS: Conta[] = [
-  { id: "c1", nome: "Carteira", saldo: "10.00", origem: "manual", tipo: "corrente" },
-  { id: "c2", nome: "Nubank", saldo: "20.00", origem: "manual", tipo: "corrente" },
+  { id: "c1", nome: "Carteira", saldo: "10.00", origem: "manual", tipo: "corrente", rotulo: "Carteira", apelido: null, nome_no_banco: null, final_do_numero: null },
+  { id: "c2", nome: "Nubank", saldo: "20.00", origem: "manual", tipo: "corrente", rotulo: "Nubank", apelido: null, nome_no_banco: null, final_do_numero: null },
 ];
 
 describe("FiltroDeContas", () => {
@@ -16,8 +16,8 @@ describe("FiltroDeContas", () => {
     const seletor = screen.getByLabelText("Conta") as HTMLSelectElement;
     expect([...seletor.options].map((o) => o.textContent)).toEqual([
       "Todas as contas",
-      "Carteira",
-      "Nubank",
+      "Carteira, Conta corrente",
+      "Nubank, Conta corrente",
     ]);
     expect(seletor.value).toBe("");
   });

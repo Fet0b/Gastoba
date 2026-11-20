@@ -3,7 +3,7 @@ name = "gastoba"
 version = "0.1.0"
 description = "Plataforma web de controle de gastos pessoais"
 authors = [
-    { name = "Fet0b" }
+    { name = "Fet0b", email = "fetobalopez@gmail.com" }
 ]
 requires-python = ">=3.14"
 dependencies = [
@@ -23,11 +23,13 @@ build-backend = "uv_build"
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-ra"
+# O pacote de teste (``dados_de_teste``) fica ao lado de ``src/``, fora da imagem de produção.
+pythonpath = ["."]
 
 [tool.ruff]
 line-length = 100
 target-version = "py314"
-src = ["src", "tests"]
+src = ["src", "tests", "."]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B", "SIM"]

@@ -13,51 +13,32 @@
   pointer-events: none;
 }
 
+/* O campo-base cuida de borda, fundo e foco; aqui só o espaço da lupa e do "Limpar", e o rótulo fica
+   só para leitores de tela. */
 .campo {
-  width: 100%;
-  min-height: var(--alvo-de-toque);
-  padding-inline: calc(var(--espaco-3) + 20px + var(--espaco-2)) 5rem;
-  border: 1px solid var(--cor-veludo);
-  border-radius: var(--raio-campo);
-  background: var(--cor-ameixa);
-  color: inherit;
-  font: inherit;
-  transition: border-color var(--duracao-curta) var(--curva-saida);
+  flex: 1;
 }
 
-.campo:hover {
-  border-color: var(--cor-bruma);
+.campo label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
 }
 
-.campo:focus-visible {
-  outline: var(--anel-de-foco);
-  outline-offset: var(--afastamento-do-foco);
+.campo input {
+  padding-inline: calc(var(--espaco-3) + 1.25rem + var(--espaco-2)) 5rem;
 }
 
 /* O "x" nativo do campo de busca duplicaria o botão. */
-.campo::-webkit-search-cancel-button {
+.campo input::-webkit-search-cancel-button {
   appearance: none;
 }
 
 .limpar {
   position: absolute;
-  inset-inline-end: var(--espaco-2);
-  min-height: 2rem;
-  padding: 0 var(--espaco-3);
-  border: 0;
-  border-radius: var(--raio-campo);
-  background: transparent;
-  color: var(--cor-lavanda);
-  font: inherit;
-  font-size: var(--texto-pequeno);
-  cursor: pointer;
-}
-
-.limpar:hover {
-  background: var(--cor-veludo);
-}
-
-.limpar:focus-visible {
-  outline: var(--anel-de-foco);
-  outline-offset: var(--afastamento-do-foco);
+  inset-inline-end: var(--espaco-1);
 }

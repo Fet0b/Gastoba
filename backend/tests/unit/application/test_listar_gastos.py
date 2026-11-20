@@ -35,7 +35,7 @@ def registrar(
 
 
 def descricoes(gastos):
-    return [g.descricao for g in gastos]
+    return [g.gasto.descricao for g in gastos]
 
 
 def test_filtra_por_periodo_inclusivo_em_ordem_de_data_decrescente(
@@ -86,7 +86,7 @@ def test_filtra_por_categoria(unidade_de_trabalho, semear_conta):
     )
 
     assert descricoes(gastos) == ["cinema"]
-    assert all(g.categoria == CategoriaDoGasto.LAZER for g in gastos)
+    assert all(g.gasto.categoria == CategoriaDoGasto.LAZER for g in gastos)
 
 
 def test_categoria_combina_com_tag_e_conta(unidade_de_trabalho, semear_conta):

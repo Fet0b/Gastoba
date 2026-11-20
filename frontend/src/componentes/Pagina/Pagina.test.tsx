@@ -55,10 +55,39 @@ describe("Pagina", () => {
     expect(texto.closest("[aria-live]")?.getAttribute("aria-live")).toBe("polite");
   });
 
-  it("sem controles não há seletor de mês nem Novo gasto", () => {
+  it("sem controles não há seletor de mês, mas há sempre um só Novo gasto", () => {
     montar();
     expect(screen.queryByRole("group", { name: "Período" })).toBeNull();
-    expect(screen.queryByRole("button", { name: /Novo gasto/ })).toBeNull();
+    expect(screen.getAllByRole("button", { name: /Novo gasto/ })).toHaveLength(1);
+  });
+
+  it("sem aoNovoGasto próprio, Novo gasto e a tecla N levam a Transações com o compositor", () => {
+    const navegacao = criar();
+    montar({ navegacao });
+
+    fireEvent.click(screen.getByRole("button", { name: /Novo gasto/ }));
+    expect(navegacao.aoIrPara).toHaveBeenLastCalledWith("transacoes", { abrirCompositor: true });
+
+    fireEvent.keyDown(window, { key: "n" });
+    expect(navegacao.aoIrPara).toHaveBeenCalledTimes(2);
+  });
+
+  it("a tecla N é ignorada num campo de texto e com um diálogo aberto", () => {
+    const navegacao = criar();
+    montar({ navegacao });
+    const campo = document.createElement("input");
+    document.body.appendChild(campo);
+
+    fireEvent.keyDown(campo, { key: "n" });
+    campo.remove();
+    expect(navegacao.aoIrPara).not.toHaveBeenCalled();
+
+    const dialogo = document.createElement("dialog");
+    dialogo.setAttribute("open", "");
+    document.body.appendChild(dialogo);
+    fireEvent.keyDown(window, { key: "n" });
+    expect(navegacao.aoIrPara).not.toHaveBeenCalled();
+    dialogo.remove();
   });
 
   it("os controles trazem o mês e trocar de mês chama aoMudarPeriodo", () => {
@@ -71,7 +100,27 @@ describe("Pagina", () => {
     expect(aoMudarPeriodo).toHaveBeenCalledWith(proximo(periodo));
     fireEvent.click(screen.getByRole("button", { name: "Mês anterior" }));
     expect(aoMudarPeriodo).toHaveBeenCalledTimes(2);
-    expect(screen.queryByRole("button", { name: /Novo gasto/ })).toBeNull();
+  });
+
+  it("com cabeçalho, o título vem antes do seletor, que mantém rótulo, setas e aria-live", () => {
+    montar({
+      controles: { periodo: periodoAtual(), aoMudarPeriodo: vi.fn() },
+      cabecalho: { titulo: "Seu mês", subtitulo: "Resumo" },
+    });
+
+    const titulo = screen.getByRole("heading", { level: 2, name: "Seu mês" });
+    const seletor = screen.getByRole("group", { name: "Período" });
+    expect(titulo.compareDocumentPosition(seletor) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(within(seletor).getByRole("button", { name: "Mês anterior" })).toBeTruthy();
+    expect(within(seletor).getByRole("button", { name: "Próximo mês" })).toBeTruthy();
+    expect(within(seletor).getByText(rotulo(periodoAtual())).getAttribute("aria-live")).toBe("polite");
+  });
+
+  it("sem controles o cabeçalho continua aparecendo", () => {
+    montar({ cabecalho: { titulo: "Só título", subtitulo: "Resumo" } });
+
+    expect(screen.getByRole("heading", { name: "Só título" })).toBeTruthy();
+    expect(screen.queryByRole("group", { name: "Período" })).toBeNull();
   });
 
   it("a virada de ano funciona nos dois sentidos", () => {
@@ -110,9 +159,9 @@ describe("Pagina", () => {
     expect(container.querySelector("svg[data-estado]")?.getAttribute("data-estado")).toBe("erro");
   });
 
-  it("Novo gasto só existe com aoNovoGasto, e há um só", () => {
+  it("com aoNovoGasto próprio, ele substitui o padrão, e há um só botão", () => {
     const aoNovoGasto = vi.fn();
-    montar({ controles: { periodo: periodoAtual(), aoMudarPeriodo: vi.fn(), aoNovoGasto } });
+    montar({ aoNovoGasto, controles: { periodo: periodoAtual(), aoMudarPeriodo: vi.fn() } });
     const botoes = screen.getAllByRole("button", { name: /Novo gasto/ });
     expect(botoes).toHaveLength(1);
     expect(botoes[0].getAttribute("aria-keyshortcuts")).toBe("N");
@@ -176,15 +225,45 @@ describe("Pagina", () => {
       expect(titulos.map((t) => t.textContent)).toEqual(["Gastoba"]);
     });
 
+    it("o h1 só para leitor de tela usa o nome do app escolhido", () => {
+      definirLayoutEstreito(true);
+      montar({ navegacao: { ...criar(), nomeDoApp: "Meu cofre" } });
+      const titulos = screen.getAllByRole("heading", { level: 1 });
+      expect(titulos.map((t) => t.textContent)).toEqual(["Meu cofre"]);
+    });
+
     it("Novo gasto continua um botão com o mesmo nome, só um", () => {
       definirLayoutEstreito(true);
       const aoNovoGasto = vi.fn();
-      montar({ controles: { periodo: periodoAtual(), aoMudarPeriodo: vi.fn(), aoNovoGasto } });
+      montar({ aoNovoGasto, controles: { periodo: periodoAtual(), aoMudarPeriodo: vi.fn() } });
       const botoes = screen.getAllByRole("button", { name: /Novo gasto/ });
       expect(botoes).toHaveLength(1);
       fireEvent.click(botoes[0]);
       expect(aoNovoGasto).toHaveBeenCalledTimes(1);
       expect(screen.getByRole("group", { name: "Período" })).not.toBeNull();
     });
+  });
+});
+
+describe("Pagina e o sininho", () => {
+  it("o sininho aparece só para quem tem gestão de investimentos", async () => {
+    const { unmount } = montar();
+    expect(screen.queryByRole("button", { name: /^Avisos:/ })).toBeNull();
+    unmount();
+
+    montar({ navegacao: { ...criar(), gestaoDeInvestimentos: true } });
+    expect(await screen.findByRole("button", { name: /^Avisos:/ })).not.toBeNull();
+  });
+
+  it("marca o sino como controle único do cabeçalho apenas sem seletor de mês", () => {
+    const { unmount } = montar({ navegacao: { ...criar(), gestaoDeInvestimentos: true } });
+    expect(document.querySelector("[data-cabecalho-da-tela]")?.hasAttribute("data-sininho-unico")).toBe(true);
+    unmount();
+
+    montar({
+      navegacao: { ...criar(), gestaoDeInvestimentos: true },
+      controles: { periodo: periodoAtual(), aoMudarPeriodo: vi.fn() },
+    });
+    expect(document.querySelector("[data-cabecalho-da-tela]")?.hasAttribute("data-sininho-unico")).toBe(false);
   });
 });

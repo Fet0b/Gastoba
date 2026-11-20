@@ -9,17 +9,18 @@ import { LinhaDoTempo } from "./LinhaDoTempo";
 
 const NBSP = "\u{a0}";
 const CONTAS: Conta[] = [
-  { id: "c1", nome: "Nubank", saldo: "0.00", origem: "manual", tipo: "corrente" },
+  { id: "c1", nome: "Nubank", saldo: "0.00", origem: "manual", tipo: "corrente", rotulo: "Nubank", apelido: null, nome_no_banco: null, final_do_numero: null },
 ];
 const CATEGORIAS: Categoria[] = [
-  { codigo: "conforto", nome: "Conforto" },
-  { codigo: "lazer", nome: "Lazer" },
+  { codigo: "conforto", nome: "Conforto", legada: false },
+  { codigo: "lazer", nome: "Lazer", legada: false },
 ];
 
 function gasto(descricao: string, data: string, extra: Partial<Gasto> = {}): Gasto {
   return {
     id: `g-${descricao}`, conta_id: "c1", valor: "10.00", descricao, data, categoria: "conforto",
     tags: [], origem: "manual", recorrencia_id: null, ...extra,
+    valor_coberto: "0.00", coberturas: [],
   };
 }
 
@@ -62,7 +63,7 @@ describe("LinhaDoTempo", () => {
     expect(screen.getAllByRole("heading", { level: 3 }).map((h) => h.textContent)).toEqual([
       "Hoje",
       "Ontem",
-      "sexta, 2 de outubro",
+      "Sexta, 2 de outubro",
     ]);
     const hoje = screen.getByRole("heading", { name: "Hoje" }).closest("li");
     const textos = [...(hoje?.querySelectorAll(":scope > ul > li") ?? [])].map((li) => li.textContent);
@@ -72,6 +73,42 @@ describe("LinhaDoTempo", () => {
     expect(textos[0]).toContain(`\u{2212}R$${NBSP}10,00`);
     expect(textos[1]).toContain("Salário");
     expect(textos[1]).toContain(`+R$${NBSP}5.000,00`);
+  });
+
+  it("cada dia mostra o subtotal à direita, com sinal e tom: entradas menos saídas", () => {
+    const { container } = montar(
+      [gasto("Padaria", "2026-10-10", { valor: "30.00" }), gasto("Uber", "2026-10-09", { valor: "12.50" })],
+      [ganho("Salário", "2026-10-10", { valor: "100.00" }), ganho("Bolsa", "2026-10-08", { valor: "0.10" })],
+    );
+
+    const subtotais = [...container.querySelectorAll("[data-subtotal]")];
+    expect(subtotais.map((e) => e.querySelector("[data-subtotal-valor]")?.textContent)).toEqual([
+      `+R$${NBSP}70,00`,
+      `\u{2212}R$${NBSP}12,50`,
+      `+R$${NBSP}0,10`,
+    ]);
+    expect(subtotais.map((e) => e.getAttribute("data-tom"))).toEqual(["positivo", "negativo", "positivo"]);
+  });
+
+  it("dia que fecha em zero não leva sinal nem cor de entrada ou saída", () => {
+    const { container } = montar(
+      [gasto("Padaria", "2026-10-10", { valor: "50.00" })],
+      [ganho("Reembolso", "2026-10-10", { valor: "50.00" })],
+    );
+
+    const subtotal = container.querySelector("[data-subtotal]");
+    expect(subtotal?.getAttribute("data-tom")).toBe("neutro");
+    expect(subtotal?.textContent).toContain(`R$${NBSP}0,00`);
+    expect(subtotal?.textContent).not.toContain("+");
+  });
+
+  it("o subtotal é um agregado com rótulo visível e fica na coluna dos valores, com a coluna do menu reservada", () => {
+    const { container } = montar([gasto("Padaria", "2026-10-10")], []);
+
+    const cabecalho = container.querySelector("[data-cabecalho-do-dia]");
+    expect(cabecalho?.querySelector("[data-subtotal]")?.textContent).toContain("Total do dia");
+    // O espaço do menu "..." da linha também existe no cabeçalho, para a coluna dos valores coincidir.
+    expect(cabecalho?.querySelector("[data-acoes-reservada]")).toBeTruthy();
   });
 
   it("mostra conta e categoria do gasto; categoria desconhecida mostra o código", () => {
@@ -100,25 +137,44 @@ describe("LinhaDoTempo", () => {
     expect(screen.getByText("Avulso").closest("li")?.textContent).not.toContain("Recorrente");
   });
 
-  it("só o ganho avulso tem o botão Excluir; o de recorrência e o gasto não", () => {
+  it("só o ganho avulso tem o item Excluir no menu da linha; o de recorrência e o gasto não", () => {
     montar(
       [gasto("Aluguel", "2026-10-05")],
       [ganho("Bolsa", "2026-10-05", { recorrencia_id: "r1" }), ganho("Avulso", "2026-10-06")],
     );
 
-    expect(screen.getAllByRole("button", { name: /Excluir/ })).toHaveLength(1);
-    expect(screen.getByRole("button", { name: "Excluir o ganho Avulso" })).toBeTruthy();
+    expect(screen.queryByRole("button", { name: /^Excluir/ })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Mais ações de Bolsa" })).toBeNull();
+    // O gasto tem o menu (reserva), mas sem Excluir.
+    fireEvent.click(screen.getByRole("button", { name: "Mais ações de Aluguel" }));
+    expect(screen.queryByRole("menuitem", { name: /Excluir/ })).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Mais ações de Aluguel" }));
+    fireEvent.click(screen.getByRole("button", { name: "Mais ações de Avulso" }));
+    expect(screen.getAllByRole("menuitem", { name: /Excluir/ })).toHaveLength(1);
+    expect(screen.getByRole("menuitem", { name: "Excluir o ganho Avulso" })).toBeTruthy();
   });
 
-  it("excluir passa o ganho a aoExcluirGanho depois da confirmação", async () => {
+  it("excluir passa o ganho a aoExcluirGanho depois da confirmação no diálogo", async () => {
     const aoExcluirGanho = vi.fn().mockResolvedValue(true);
     const avulso = ganho("Avulso", "2026-10-06");
     montar([], [avulso], { aoExcluirGanho });
 
-    fireEvent.click(screen.getByRole("button", { name: "Excluir o ganho Avulso" }));
+    fireEvent.click(screen.getByRole("button", { name: "Mais ações de Avulso" }));
+    fireEvent.click(screen.getByRole("menuitem", { name: "Excluir o ganho Avulso" }));
+    expect(screen.getByRole("dialog", { name: "Excluir Avulso?" })).toBeTruthy();
+    expect(aoExcluirGanho).not.toHaveBeenCalled();
     fireEvent.click(screen.getByRole("button", { name: "Confirmar exclusão" }));
 
     await vi.waitFor(() => expect(aoExcluirGanho).toHaveBeenCalledWith(expect.objectContaining({ id: avulso.id })));
+  });
+
+  it("Mostrar mais é um botão secundário", () => {
+    const muitos = Array.from({ length: TAMANHO_DA_PAGINA + 1 }, (_, i) =>
+      gasto(`Item ${String(i).padStart(3, "0")}`, "2026-10-10"),
+    );
+    montar(muitos, []);
+
+    expect(screen.getByRole("button", { name: /Mostrar mais/ }).getAttribute("data-papel")).toBe("secundaria");
   });
 
   it("pagina de 100 em 100: Mostrar mais revela o restante", () => {
@@ -197,7 +253,7 @@ describe("LinhaDoTempo", () => {
         gasto("Passagem", "2026-10-10", { categoria: "viagem" }),
       ],
       [],
-      { aoAlternarCategoria, aoAlternarTag, categoriaAtiva: "conforto", tagAtiva: "pix" },
+      { aoAlternarCategoria, aoAlternarTag, categoriasAtivas: ["conforto"], tagsAtivas: ["pix"] },
     );
 
     const categoria = screen.getByRole("button", { name: "Filtrar por Conforto" });

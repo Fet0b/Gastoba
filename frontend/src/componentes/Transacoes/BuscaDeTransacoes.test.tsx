@@ -1,4 +1,5 @@
 import { fireEvent, render, screen } from "@testing-library/react";
+import { createRef } from "react";
 import { describe, expect, it, vi } from "vitest";
 
 import { BuscaDeTransacoes } from "./BuscaDeTransacoes";
@@ -26,9 +27,27 @@ describe("BuscaDeTransacoes", () => {
     expect(document.activeElement).toBe(screen.getByLabelText("Buscar transações"));
   });
 
+  it("Limpar é um botão terciário", () => {
+    render(<BuscaDeTransacoes valor="pix" aoMudar={vi.fn()} />);
+
+    expect(screen.getByRole("button", { name: "Limpar busca" }).getAttribute("data-papel")).toBe("terciaria");
+  });
+
   it("o ícone da lupa é decorativo", () => {
     const { container } = render(<BuscaDeTransacoes valor="" aoMudar={vi.fn()} />);
 
     expect(container.querySelector("svg")?.getAttribute("aria-hidden")).toBe("true");
+  });
+});
+
+describe("BuscaDeTransacoes: atalho", () => {
+  it("anuncia a tecla / e entrega o campo à página pela referência", () => {
+    const ref = createRef<HTMLInputElement>();
+    render(<BuscaDeTransacoes valor="" aoMudar={vi.fn()} campoRef={ref} />);
+
+    const campo = screen.getByLabelText("Buscar transações");
+    expect(ref.current).toBe(campo);
+    expect(campo.getAttribute("aria-keyshortcuts")).toBe("/");
+    expect(campo.getAttribute("placeholder")).toContain("/");
   });
 });

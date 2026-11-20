@@ -7,56 +7,56 @@
   gap: var(--espaco-4);
 }
 
-.titulo {
-  font-size: 1.125rem;
-  font-weight: 650;
+.cabecalhoDaSecao {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--espaco-3);
 }
 
-.estado {
-  color: var(--cor-bruma);
+.item {
+  position: relative;
+}
+
+/* O menu é irmão do cartão (que pode ser um botão de filtro), no canto do item. */
+.menuDaConta {
+  position: absolute;
+  inset-block-start: var(--espaco-2);
+  inset-inline-end: var(--espaco-2);
 }
 
 .lista {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(min(100%, 16rem), 1fr));
+  grid-auto-rows: 1fr;
   gap: var(--espaco-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
 }
 
 /* Cartão de conta, estilo carteira: nome, saldo grande, selos e tom do saldo. */
 
 .cartao {
-  --faixa-da-carteira: var(--cor-ametista);
   position: relative;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
   gap: var(--espaco-2);
   width: 100%;
-  padding: var(--espaco-4) var(--espaco-4) var(--espaco-4) var(--espaco-5);
+  height: 100%;
+  min-height: 11rem;
+  padding: var(--espaco-4) var(--espaco-5);
   overflow: hidden;
   border: var(--borda-de-camada);
   border-radius: var(--raio-painel);
-  background: linear-gradient(160deg, var(--cor-veludo), var(--cor-ameixa));
-  box-shadow: var(--sombra-media);
+  background: var(--cor-veludo);
   text-align: start;
   transition:
     border-color var(--duracao-curta) var(--curva-saida),
     box-shadow var(--duracao-media) var(--curva-saida),
     transform var(--duracao-curta) var(--curva-saida);
-}
-
-/* Faixa de cor na borda do cartão, como a lombada de uma carteira. */
-.cartao::before {
-  content: "";
-  position: absolute;
-  inset-block: 0;
-  inset-inline-start: 0;
-  width: var(--espaco-2);
-  background: var(--faixa-da-carteira);
-}
-
-.cartao[data-tom="negativo"] {
-  --faixa-da-carteira: var(--cor-brasa);
 }
 
 button.cartao:hover {
@@ -77,15 +77,40 @@ button.cartao:active {
    marca data-animando quando anima, então nada acontece com menos movimento). */
 .cartao:has([data-animando]) {
   border-color: var(--cor-ametista);
-  box-shadow: 0 0 0 4px rgb(139 92 246 / 0.25);
+  box-shadow: var(--sombra-alta);
+}
+
+/* O nome fica em uma linha, com reticências (o texto inteiro vai no title). */
+.identificacao {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espaco-1);
+  align-self: stretch; /* a largura do cartão, não a do texto: sem isso o rótulo longo passa por baixo do menu */
+  min-width: 0;
+  max-width: 100%;
+}
+
+.reservaDoMenu {
+  padding-inline-end: 2.75rem; /* espaço do menu "⋯" no canto */
 }
 
 .nomeDaConta {
+  display: block;
+  min-width: 0;
   max-width: 100%;
-  color: var(--cor-bruma);
-  font-size: var(--texto-pequeno);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: var(--peso-secao);
   line-height: var(--texto-pequeno-linha);
-  overflow-wrap: anywhere;
+}
+
+/* O saldo na base do cartão: cartões irmãos ficam com o valor na mesma linha (Art. XI.4.4). */
+.baseDoCartao {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espaco-1);
+  margin-top: auto;
 }
 
 .cartao[aria-pressed="true"] .nomeDaConta {
@@ -94,43 +119,27 @@ button.cartao:active {
 
 .saldo {
   font-family: var(--fonte-titulo);
-  font-size: var(--texto-titulo);
+  font-size: var(--numero-grande);
   line-height: var(--texto-titulo-linha);
-  font-weight: 650;
+  font-weight: var(--peso-secao);
   letter-spacing: -0.01em;
-  font-variant-numeric: proportional-nums;
+  font-variant-numeric: tabular-nums;
 }
 
 .saldoNegativo {
   color: var(--cor-brasa);
 }
 
-.tomNegativo {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--espaco-1);
-  color: var(--cor-brasa);
+.rotuloDoSaldo {
+  color: var(--cor-bruma);
   font-size: var(--texto-minimo);
   line-height: var(--texto-minimo-linha);
-  font-weight: 600;
 }
 
 .selos {
   display: flex;
   flex-wrap: wrap;
   gap: var(--espaco-2);
-}
-
-.selo {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--espaco-1);
-  padding: 2px var(--espaco-2);
-  border: 1px solid var(--cor-bruma);
-  border-radius: var(--raio-chip);
-  color: var(--cor-nevoa);
-  font-size: var(--texto-minimo);
-  line-height: var(--texto-minimo-linha);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -142,100 +151,15 @@ button.cartao:active {
   }
 }
 
-/* Nova conta */
-
-.novaConta {
-  align-self: flex-start;
-  padding: var(--espaco-2) var(--espaco-3);
-  border: 1px dashed var(--cor-veludo);
-  border-radius: var(--raio-campo);
-  background: none;
-  color: var(--cor-lavanda);
-  transition: border-color var(--duracao-curta) var(--curva-saida);
-}
-
-.novaConta:hover {
-  border-color: var(--cor-lavanda);
-}
-
 .formulario {
   display: flex;
   flex-direction: column;
   gap: var(--espaco-4);
-  padding: var(--espaco-4);
-  border: 1px solid var(--cor-veludo);
-  border-radius: var(--raio-cartao);
-}
-
-.campo {
-  display: flex;
-  flex-direction: column;
-  gap: var(--espaco-1);
-}
-
-.campo > label {
-  color: var(--cor-bruma);
-  font-size: 0.9375rem;
-}
-
-.entrada {
-  width: 100%;
-  padding: var(--espaco-2) var(--espaco-3);
-  border: 1px solid var(--cor-veludo);
-  border-radius: var(--raio-campo);
-  background: var(--cor-veludo);
-}
-
-.entrada:hover {
-  border-color: var(--cor-bruma);
-}
-
-.entrada[aria-invalid="true"] {
-  border-color: var(--cor-brasa);
-}
-
-.entradaDeValor {
-  position: relative;
-}
-
-.entradaDeValor .entrada {
-  padding-inline-start: 3.25rem;
-  text-align: end;
-}
-
-.moeda {
-  position: absolute;
-  inset-block: 0;
-  inset-inline-start: var(--espaco-3);
-  display: flex;
-  align-items: center;
-  color: var(--cor-bruma);
-  pointer-events: none;
-}
-
-.opcao {
-  display: grid;
-  grid-template-columns: auto 1fr;
-  align-items: center;
-  column-gap: var(--espaco-2);
-}
-
-.opcao input {
-  width: 1.125rem;
-  height: 1.125rem;
-  margin: 0;
-  accent-color: var(--cor-ametista);
-}
-
-.dica {
-  grid-column: 2;
-  color: var(--cor-bruma);
-  font-size: 0.875rem;
 }
 
 .erroDoCampo {
   color: var(--cor-brasa);
-  font-size: 0.9375rem;
+  font-size: var(--texto-corpo);
 }
 
 .acoes {
@@ -244,33 +168,20 @@ button.cartao:active {
   gap: var(--espaco-2);
 }
 
-.primario {
-  padding: var(--espaco-2) var(--espaco-4);
-  border: 0;
-  border-radius: var(--raio-campo);
-  background: var(--cor-ametista);
-  color: var(--cor-noite);
-  font-weight: 650;
+/* Rodapé do diálogo de apelido: Cancelar e Salvar à direita; "Remover apelido" sozinho numa linha no celular. */
+.acoesDoApelido {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--espaco-2);
+  width: 100%;
 }
 
-.primario:hover {
-  filter: brightness(1.1);
-}
-
-.primario:disabled {
-  cursor: progress;
-  opacity: 0.6;
-}
-
-.secundario {
-  padding: var(--espaco-2) var(--espaco-4);
-  border: 1px solid var(--cor-veludo);
-  border-radius: var(--raio-campo);
-  background: none;
-}
-
-.secundario:hover {
-  border-color: var(--cor-bruma);
+@media (max-width: 45rem) {
+  .acoesDoApelido > :first-child:not(:nth-last-child(-n + 2)) {
+    flex: 0 0 100%;
+    justify-content: flex-start;
+  }
 }
 
 /* Seletor de conta (FiltroDeContas). */
@@ -280,16 +191,25 @@ button.cartao:active {
   gap: var(--espaco-2);
 }
 
-.rotuloDoFiltro {
+.apoio {
   color: var(--cor-bruma);
+  font-size: var(--texto-pequeno);
+  line-height: var(--texto-pequeno-linha);
 }
 
-.seletor {
-  min-height: 2.5rem;
-  padding: var(--espaco-1) var(--espaco-3);
-  border: 1px solid var(--cor-veludo);
-  border-radius: var(--raio-campo);
-  background: var(--cor-veludo);
-  color: inherit;
-  font: inherit;
+/* "Dê um apelido para diferenciar": texto de apoio dentro do cartão, sem cor de atenção. */
+.sugestao {
+  color: var(--cor-bruma);
+  font-size: var(--texto-minimo);
+  line-height: var(--texto-minimo-linha);
+}
+
+/* Texto de conta em uma linha, com reticências; o texto inteiro vai no title (Art. XI.6.5). */
+.textoDeConta {
+  display: block;
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }

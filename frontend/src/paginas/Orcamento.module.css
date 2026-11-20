@@ -1,6 +1,5 @@
-/* Aba Metas: introdução no topo e uma coluna com o mês, a renda e os cartões das
-   categorias. Mesma hierarquia das outras telas: página em Noite, coluna em
-   Ameixa, cartões em Veludo. */
+/* Orçamento: duas seções em cartões comuns (só borda): "Renda e projeção" e "Metas por categoria".
+   O editor das metas fica separado da projeção por título de seção. */
 
 .conteudo {
   display: flex;
@@ -8,15 +7,18 @@
   gap: var(--espaco-5);
 }
 
-.introducao {
+.secao {
   display: flex;
   flex-direction: column;
-  gap: var(--espaco-2);
+  gap: var(--espaco-4);
+  min-width: 0;
 }
 
-.titulo {
-  font-size: 1.5rem;
-  font-weight: 650;
+.tituloDaSecao {
+  font-family: var(--fonte-titulo);
+  font-size: var(--texto-grande);
+  line-height: var(--texto-grande-linha);
+  font-weight: var(--peso-secao);
 }
 
 .texto {
@@ -24,39 +26,95 @@
   color: var(--cor-bruma);
 }
 
-.coluna {
-  display: flex;
-  flex-direction: column;
-  gap: var(--espaco-4);
-  padding: var(--espaco-5);
-  border-radius: var(--raio-painel);
-  background: var(--cor-ameixa);
-}
-
 .faixa {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
-  align-items: start;
-  gap: var(--espaco-4) var(--espaco-5);
+  width: 100%;
+  min-width: 0;
 }
 
+/* A soma dos percentuais: número tabular, com a situação também em texto. */
 .soma {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--espaco-1) var(--espaco-3);
   color: var(--cor-bruma);
-  font-size: 0.9375rem;
+  font-size: var(--texto-corpo);
+  font-variant-numeric: tabular-nums;
+}
+
+.completo {
+  color: var(--cor-nevoa);
+  font-weight: var(--peso-secao);
+}
+
+.completo::before {
+  content: "\2713\00a0";
+  color: var(--cor-dentro);
 }
 
 .estado {
   color: var(--cor-bruma);
 }
 
-.cartoes {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(min(100%, 16rem), 1fr));
-  gap: var(--espaco-4);
+.metas {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espaco-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.cabecalhoDaSecao {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--espaco-2) var(--espaco-4);
+}
+
+/* Renda-base como dado rotulado: o rótulo pequeno em cima, o valor embaixo. */
+.dado {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espaco-1);
+  margin: 0;
+}
+
+.rotuloDoDado {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--espaco-1);
+  color: var(--cor-bruma);
+  font-size: var(--texto-pequeno);
+  line-height: var(--texto-pequeno-linha);
+}
+
+.valorDoDado {
+  margin: 0;
+  font-family: var(--fonte-titulo);
+  font-size: var(--numero-medio);
+  font-variant-numeric: tabular-nums;
 }
 
 @media (max-width: 48rem) {
-  .coluna {
+  .secao {
     padding: var(--espaco-4);
   }
+}
+
+.base {
+  display: contents;
+  min-width: 0;
+}
+
+.base form {
+  max-width: 26rem;
+}
+
+.acoes {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--espaco-3);
 }

@@ -1,0 +1,29 @@
+{
+  "results": [
+    {
+      "_datas": {
+        "date": 20,
+        "tradeDate": 20
+      },
+      "amount": 2000.0,
+      "expenses": {
+        "tradingFees": 0.56
+      },
+      "id": "op-acao-1",
+      "movementType": "DEBIT",
+      "quantity": 100.0,
+      "type": "BUY"
+    },
+    {
+      "_datas": {
+        "date": 6,
+        "tradeDate": 6
+      },
+      "amount": 440.0,
+      "id": "op-acao-2",
+      "movementType": "CREDIT",
+      "quantity": 20.0,
+      "type": "SELL"
+    }
+  ]
+}

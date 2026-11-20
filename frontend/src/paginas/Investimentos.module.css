@@ -1,0 +1,135 @@
+/* Tela de investimentos: total e pizza lado a lado no computador, tudo empilhado no celular. */
+
+.conteudo {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  align-items: start;
+  gap: var(--espaco-4);
+}
+
+.cheia {
+  grid-column: 1 / -1;
+}
+
+.subtitulo {
+  font-family: var(--fonte-titulo);
+  font-size: var(--texto-grande);
+  line-height: var(--texto-grande-linha);
+  font-weight: var(--peso-secao);
+}
+
+.texto {
+  max-width: 60ch;
+  color: var(--cor-bruma);
+}
+
+.total {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--espaco-1);
+}
+
+.rotuloDoTotal {
+  color: var(--cor-bruma);
+  font-size: var(--texto-pequeno);
+}
+
+/* P2: o total é o número principal da tela. */
+.valorDoTotal {
+  font-family: var(--fonte-titulo);
+  font-size: var(--numero-heroi);
+  line-height: var(--texto-destaque-linha);
+  font-weight: var(--peso-titulo);
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+
+.resumoDoTotal {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--espaco-2) var(--espaco-6, 2rem);
+  margin-top: var(--espaco-2);
+  font-size: var(--texto-pequeno);
+}
+
+.resumoDoTotal dt {
+  color: var(--cor-bruma);
+}
+
+.resumoDoTotal dd {
+  margin: 0;
+  font-weight: var(--peso-secao);
+}
+
+.rotuloDoSeletor {
+  color: var(--cor-bruma);
+  font-size: var(--texto-pequeno);
+}
+
+.secao {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--espaco-3);
+}
+
+.pizza,
+.evolucao {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espaco-3);
+  min-width: 0;
+}
+
+.cabecalho {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--espaco-2);
+}
+
+.alternadores {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--espaco-2);
+}
+
+.seletor:focus-visible {
+  outline: var(--anel-de-foco);
+  outline-offset: var(--afastamento-do-foco);
+}
+
+.escolha {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--espaco-2);
+}
+
+.seletor {
+  max-width: 100%;
+  min-width: 0;
+  min-height: var(--alvo-de-toque);
+  text-overflow: ellipsis;
+  padding: var(--espaco-1) var(--espaco-3);
+  border: 1px solid var(--cor-veludo);
+  border-radius: var(--raio-campo);
+  background: var(--cor-veludo);
+  color: var(--cor-nevoa);
+  font: inherit;
+}
+
+@media (max-width: 63.99rem) {
+  .conteudo {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.linhaDoTopo { grid-column: 1 / -1; display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: var(--espaco-4); align-items: start; }
+.linhaDoTopo .total { grid-column: auto; }
+.linhaDoTopo:has(> :only-child) { grid-template-columns: minmax(0, 1fr); }
+@media (max-width: 45rem) { .linhaDoTopo { grid-template-columns: minmax(0, 1fr); } }
+
+.linhaDoTopo:empty { display: none; }

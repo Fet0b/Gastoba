@@ -86,9 +86,9 @@ describe("rotuloDoDia", () => {
     fixarRelogio(NOITE_DE_10_DE_OUTUBRO);
     expect(rotuloDoDia("2026-10-10")).toBe("Hoje");
     expect(rotuloDoDia("2026-10-09")).toBe("Ontem");
-    expect(rotuloDoDia("2026-10-02")).toBe("sexta, 2 de outubro");
-    expect(rotuloDoDia("2026-10-03")).toBe("sábado, 3 de outubro");
-    expect(rotuloDoDia("2026-09-28")).toBe("segunda, 28 de setembro");
+    expect(rotuloDoDia("2026-10-02")).toBe("Sexta, 2 de outubro");
+    expect(rotuloDoDia("2026-10-03")).toBe("Sábado, 3 de outubro");
+    expect(rotuloDoDia("2026-09-28")).toBe("Segunda, 28 de setembro");
   });
 
   it("diz Ontem na virada do ano e não confunde o mesmo dia de outro ano", () => {
@@ -97,12 +97,12 @@ describe("rotuloDoDia", () => {
     fixarRelogio(Date.UTC(2027, 0, 1, 15, 0)); // 01/01/2027 12h em São Paulo
     expect(rotuloDoDia("2027-01-01")).toBe("Hoje");
     expect(rotuloDoDia("2026-12-31")).toBe("Ontem");
-    expect(rotuloDoDia("2026-01-01")).toBe("quinta, 1 de janeiro");
+    expect(rotuloDoDia("2026-01-01")).toBe("Quinta, 1 de janeiro");
   });
 
   it("escreve o 29 de fevereiro de ano bissexto", () => {
     fixarRelogio(NOITE_DE_10_DE_OUTUBRO);
-    expect(rotuloDoDia("2024-02-29")).toBe("quinta, 29 de fevereiro");
+    expect(rotuloDoDia("2024-02-29")).toBe("Quinta, 29 de fevereiro");
   });
 });
 

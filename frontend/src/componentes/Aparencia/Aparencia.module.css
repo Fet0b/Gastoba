@@ -1,0 +1,80 @@
+/* Aparência no Perfil: escolhas empilhadas, cada uma com o próprio grupo. */
+
+.formulario {
+  display: grid;
+  gap: var(--espaco-5);
+}
+
+.escolha {
+  display: grid;
+  gap: var(--espaco-3);
+}
+
+.legenda {
+  color: var(--cor-bruma);
+  font-size: var(--texto-rotulo);
+}
+
+.apoio {
+  color: var(--cor-bruma);
+  font-size: var(--texto-pequeno);
+}
+
+.textura {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.acoes {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--espaco-3);
+}
+
+.situacao {
+  color: var(--cor-bruma);
+  font-size: var(--texto-pequeno);
+}
+
+/* A barra do espectro: o único arco-íris do app (token --gradiente-do-espectro). */
+.espectro input[type="range"] {
+  appearance: none;
+  background: transparent;
+}
+
+.espectro input[type="range"]::-webkit-slider-runnable-track {
+  height: var(--espaco-3);
+  border-radius: var(--raio-chip);
+  background: var(--gradiente-do-espectro);
+}
+
+.espectro input[type="range"]::-moz-range-track {
+  height: var(--espaco-3);
+  border-radius: var(--raio-chip);
+  background: var(--gradiente-do-espectro);
+}
+
+.espectro input[type="range"]::-webkit-slider-thumb {
+  appearance: none;
+  width: var(--espaco-5);
+  height: var(--espaco-5);
+  margin-top: calc((var(--espaco-3) - var(--espaco-5)) / 2);
+  border: 2px solid var(--cor-noite);
+  border-radius: 50%;
+  background: var(--cor-nevoa);
+}
+
+.espectro input[type="range"]::-moz-range-thumb {
+  width: var(--espaco-5);
+  height: var(--espaco-5);
+  border: 2px solid var(--cor-noite);
+  border-radius: 50%;
+  background: var(--cor-nevoa);
+}
+
+.marcaDeAmostra {
+  --tamanho-do-olho: var(--espaco-6);
+  border: 0;
+}

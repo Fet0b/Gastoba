@@ -1,4 +1,4 @@
-/* Moldura de página: no celular uma coluna com folga para a barra de abas; a partir de 48rem,
+/* Moldura de página: no celular uma coluna com folga para a barra de abas; a partir de 45rem,
    barra lateral e conteúdo lado a lado. */
 
 .pagina {
@@ -29,7 +29,7 @@
   border-radius: var(--raio-campo);
   background: var(--cor-ametista);
   color: var(--cor-noite);
-  font-weight: 650;
+  font-weight: var(--peso-secao);
   transform: translateY(-300%);
 }
 
@@ -72,6 +72,21 @@
   background: var(--cor-noite);
 }
 
+/* Com cabeçalho (Início): o título e o seletor na mesma linha; no celular o seletor quebra para
+   baixo do título. A barra não fica presa ao topo, para o título não ocupar a tela rolando. */
+.controles[data-com-cabecalho] {
+  position: static;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  padding-top: 0;
+  background: none;
+}
+
+.cabecalho {
+  flex: 1 1 18rem;
+  min-width: 0;
+}
+
 .periodo {
   display: flex;
   align-items: center;
@@ -81,9 +96,10 @@
 .rotulo {
   min-width: 0;
   font-family: var(--fonte-titulo);
-  font-size: var(--texto-grande);
-  line-height: var(--texto-grande-linha);
-  font-weight: 600;
+  min-width: 8.5rem;
+  font-size: var(--texto-base);
+  line-height: var(--texto-base-linha);
+  font-weight: var(--peso-secao);
   text-align: center;
 }
 
@@ -96,7 +112,7 @@
   border: 1px solid var(--cor-veludo);
   border-radius: var(--raio-campo);
   background: var(--cor-ameixa);
-  font-size: 1.25rem;
+  font-size: var(--texto-grande);
   line-height: 1;
   transition:
     border-color var(--duracao-curta) var(--curva-saida),
@@ -119,7 +135,7 @@
   border-radius: var(--raio-campo);
   background: var(--cor-ametista);
   color: var(--cor-noite);
-  font-weight: 650;
+  font-weight: var(--peso-secao);
   transition:
     transform var(--duracao-curta) var(--curva-saida),
     filter var(--duracao-curta) var(--curva-saida);
@@ -154,14 +170,14 @@
 
 .tecla {
   padding: 0 var(--espaco-2);
-  border: 1px solid rgb(12 8 20 / 0.35);
-  border-radius: 6px;
+  border: 1px solid var(--cor-noite);
+  border-radius: var(--raio-campo);
   font-family: var(--fonte-corpo);
   font-size: var(--texto-pequeno);
   line-height: 1.5;
 }
 
-@media (min-width: 48rem) {
+@media (min-width: 45rem) {
   .pagina {
     --afastamento-do-aviso: var(--espaco-5);
     display: flex;
@@ -184,3 +200,8 @@
     transition: none;
   }
 }
+
+/* O cabeçalho completo e o conteúdo compartilham a mesma largura centralizada. */
+.controles { position: static; display: block; padding: 0; margin-bottom: var(--espaco-5); }
+.controles, .conteudo { width: 100%; max-width: var(--largura-do-conteudo); margin-inline: auto; }
+.principal { max-width: none; }

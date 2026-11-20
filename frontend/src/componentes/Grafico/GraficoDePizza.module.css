@@ -1,0 +1,241 @@
+/* Pizza (rosca) dos investimentos: o desenho ao lado da legenda; a legenda é de botões. Texto nas
+   cores de texto; a cor da fatia só acompanha o nome. */
+
+.pizza {
+  display: grid;
+  /* A legenda ao lado do desenho só se houver ao menos 17rem para ela; senão, embaixo. */
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 17rem), 1fr));
+  align-items: center;
+  gap: var(--espaco-4);
+}
+
+.desenho {
+  position: relative;
+  width: 100%;
+  max-width: 13rem;
+  justify-self: center;
+}
+
+.svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.fatia {
+  stroke: var(--cor-ameixa);
+  stroke-width: 1;
+  transform-origin: 50% 50%;
+  animation: surgir var(--duracao-media, 300ms) var(--curva-saida, ease-out) both;
+  transition:
+    opacity var(--duracao-curta, 150ms) var(--curva-saida, ease-out),
+    transform var(--duracao-curta, 150ms) var(--curva-saida, ease-out);
+}
+
+.fatia[data-destacada="true"] {
+  transform: scale(1.03);
+}
+
+.fatia[data-esmaecida="true"] {
+  opacity: 0.45;
+}
+
+@keyframes surgir {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fatia {
+    animation: none;
+    transition: none;
+  }
+}
+
+.centro {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 22%;
+  text-align: center;
+  pointer-events: none;
+}
+
+.centroRotulo {
+  max-width: 100%;
+  overflow: hidden;
+  color: var(--cor-bruma);
+  font-size: var(--texto-pequeno);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.centroValor {
+  font-size: var(--texto-corpo);
+  font-weight: var(--peso-secao);
+}
+
+.legenda {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espaco-1);
+  min-width: 0;
+}
+
+.coluna {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espaco-2);
+  min-width: 0;
+}
+
+.vazio {
+  margin: 0;
+}
+
+.linha {
+  display: flex;
+  align-items: center;
+  gap: var(--espaco-1);
+}
+
+/* Fora do gráfico: o texto vai a Bruma (contraste >= 4,5, sem opacidade); só o ponto esmaece. */
+.item[data-fora="true"],
+.item[data-fora="true"] .nome,
+.item[data-fora="true"] .valor,
+.item[data-fora="true"] .percentual {
+  color: var(--cor-bruma);
+}
+
+.item[data-fora="true"] .ponto {
+  opacity: 0.45;
+}
+
+.filtro {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--espaco-2);
+  color: var(--cor-bruma);
+  font-size: var(--texto-pequeno);
+}
+
+.item {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: var(--espaco-2);
+  flex: 1;
+  min-width: 0;
+  width: 100%;
+  min-height: var(--alvo-de-toque);
+  padding: var(--espaco-1) var(--espaco-3);
+  border: 1px solid transparent;
+  border-radius: var(--raio-campo);
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.item:hover,
+.item[data-destacada="true"] {
+  background: var(--cor-veludo);
+}
+
+.item:focus-visible {
+  outline: var(--anel-de-foco);
+  outline-offset: var(--afastamento-do-foco);
+}
+
+.ponto {
+  width: 0.75rem;
+  height: 0.75rem;
+  border-radius: 50%;
+}
+
+.nome {
+  overflow-wrap: anywhere;
+}
+
+.valor {
+  font-weight: var(--peso-secao);
+}
+
+.percentual {
+  min-width: 2.5rem;
+  color: var(--cor-bruma);
+  text-align: right;
+}
+
+.tabela {
+  grid-column: 1 / -1;
+  justify-self: stretch;
+  min-width: 0;
+  color: var(--cor-bruma);
+  font-size: var(--texto-pequeno);
+}
+
+.tabela summary {
+  cursor: pointer;
+}
+
+.tabela summary:focus-visible {
+  outline: var(--anel-de-foco);
+  outline-offset: var(--afastamento-do-foco);
+}
+
+/* O cabeçalho e os valores não quebram (nem no meio da palavra); só o nome da parte pode descer de linha. */
+.tabela th[scope="col"],
+.tabela td {
+  white-space: nowrap;
+}
+
+.tabela th[scope="row"] {
+  min-width: 0;
+  overflow-wrap: break-word;
+}
+
+@media (max-width: 36rem) {
+  .tabela {
+    min-width: 0;
+  }
+
+  .tabela th,
+  .tabela td {
+    padding-inline: var(--espaco-1);
+  }
+}
+
+/* Largura curta: o nome ocupa a linha toda e o valor e a porcentagem vão para baixo dele. */
+@media (max-width: 36rem) {
+  .item .nome {
+    grid-column: 2 / -1;
+  }
+
+  /* O valor fica na coluna larga, alinhado à direita: as bordas direitas dos valores coincidem. */
+  .item .valor {
+    grid-column: 2;
+    text-align: right;
+  }
+
+  .pizza {
+    grid-template-columns: minmax(0, 1fr);
+    justify-items: center;
+  }
+
+  .legenda {
+    width: 100%;
+  }
+}

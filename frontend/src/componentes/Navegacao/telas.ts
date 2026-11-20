@@ -1,3 +1,4 @@
+import type { Aparencia, MarcaDoApp } from "../../api/tipos";
 import type { NomeDoIcone } from "../Icone/Icone";
 
 /** As telas do app; a navegação é por estado, sem roteador. */
@@ -6,6 +7,8 @@ export type Tela =
   | "transacoes"
   | "orcamento"
   | "contas"
+  | "investimentos"
+  | "caixinhas"
   | "faturas"
   | "tags"
   | "outros"
@@ -13,15 +16,26 @@ export type Tela =
 
 /** Opções de uma ida a outra tela. */
 export type OpcoesDaIda = {
+  dataDoMovimento?: string;
   /** Contas abre já com o formulário de nova conta (vindo de Transações sem contas). */
   abrirFormulario?: boolean;
+  vistaDeTransacoes?: "aportes";
+  /** Transações abre já com o compositor de gasto (vindo de "Novo gasto" ou da tecla N em outra tela). */
+  abrirCompositor?: boolean;
 };
 
 /** O que o App entrega à navegação: quem está conectado e para onde ir. */
 export type Navegacao = {
   nomeDaPessoa: string;
+  /** O nome e a logo escolhidos pela pessoa (padrão: "Gastoba" e o olho). */
+  nomeDoApp?: string;
+  marca?: MarcaDoApp;
+  /** A aparência salva e como guardá-la depois de salvar ou restaurar (usadas pelo Perfil). */
+  aparencia?: Aparencia;
+  aoMudarAparencia?: (aparencia: Aparencia | undefined) => void;
   /** A pessoa é a dona da importação bancária: Transações ganha a caixa de entrada. */
   importacaoBancaria?: boolean;
+  gestaoDeInvestimentos?: boolean;
   tela: Tela;
   aoIrPara: (tela: Tela, opcoes?: OpcoesDaIda) => void;
   aoSair: () => void;
@@ -33,6 +47,8 @@ export type DadosDaTela = {
   icone: NomeDoIcone;
   /** As principais ficam na barra de abas do celular; as outras vão para "Mais". */
   principal: boolean;
+  /** A tela ainda não existe de verdade: a navegação mostra o selo "em breve". */
+  emBreve?: boolean;
 };
 
 /** A lista única das telas, na ordem em que a navegação as mostra. */
@@ -41,9 +57,11 @@ export const TELAS: readonly DadosDaTela[] = [
   { tela: "transacoes", nome: "Transações", icone: "transacoes", principal: true },
   { tela: "orcamento", nome: "Orçamento", icone: "orcamento", principal: true },
   { tela: "contas", nome: "Contas", icone: "contas", principal: true },
+  { tela: "investimentos", nome: "Investimentos", icone: "investimentos", principal: false },
+  { tela: "caixinhas", nome: "Caixinhas", icone: "cofre", principal: false },
   { tela: "faturas", nome: "Faturas", icone: "faturas", principal: false },
   { tela: "tags", nome: "Tags", icone: "tags", principal: false },
-  { tela: "outros", nome: "Outros", icone: "outros", principal: false },
+  { tela: "outros", nome: "Recorrências", icone: "repetir", principal: false },
   { tela: "perfil", nome: "Perfil", icone: "perfil", principal: false },
 ];
 

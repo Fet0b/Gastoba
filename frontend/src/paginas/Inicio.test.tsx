@@ -62,7 +62,7 @@ describe("Início", () => {
     expect(screen.getByRole("main")).not.toBeNull();
     expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);
     expect(screen.getByRole("group", { name: "Período" })).not.toBeNull();
-    expect(screen.queryByRole("button", { name: /Novo gasto/ })).toBeNull();
+    expect(screen.getAllByRole("button", { name: /Novo gasto/ })).toHaveLength(1);
   });
 
   it("o destaque principal é quanto ainda dá para gastar, em centavos exatos", async () => {
@@ -72,7 +72,6 @@ describe("Início", () => {
     await waitFor(() =>
       expect(destaque(container, /^Pode gastar este mês/).textContent).toContain(`R$${NBSP}974,15`),
     );
-    expect(container.textContent).not.toContain("Ganhos do mês");
     expect(container.textContent).not.toContain("Diferença");
   });
 
@@ -104,7 +103,7 @@ describe("Início", () => {
     await chamar<Conta>("/contas", { metodo: "POST", corpo: { nome: "Nubank", saldo_inicial: "50.50" } });
     const { container } = render(<Inicio navegacao={navegacao()} />);
 
-    await waitFor(() => expect(destaque(container, /^Dinheiro total/).textContent).toContain(`R$${NBSP}150,50`));
+    await waitFor(() => expect(destaque(container, /^Dinheiro nas contas correntes/).textContent).toContain(`R$${NBSP}150,50`));
   });
 
   it("o cartão de crédito importado não entra no dinheiro total", async () => {
@@ -114,7 +113,7 @@ describe("Início", () => {
     const esperado = formatar(somar(contas.filter((conta) => conta.tipo === "corrente").map((conta) => conta.saldo)));
     const { container } = render(<Inicio navegacao={navegacao()} />);
 
-    await waitFor(() => expect(destaque(container, /^Dinheiro total/).textContent).toContain(esperado));
+    await waitFor(() => expect(destaque(container, /^Dinheiro nas contas correntes/).textContent).toContain(esperado));
   });
 
   it("os últimos gastos são cinco linhas, e Ver todas leva às Transações", async () => {
@@ -136,20 +135,32 @@ describe("Início", () => {
     await within(bloco).findByText("Nenhum gasto neste mês");
   });
 
-  it("a ordem dos blocos: resumo, metas, ritmo, últimos gastos e aviso", async () => {
+  it("a ordem dos blocos: resumo, metas, ritmo e últimos gastos", async () => {
     await preparar();
     await chamar("/metas/lazer", { metodo: "PUT", corpo: { percentual: 3 } });
     const { container } = render(<Inicio navegacao={navegacao()} />);
-    await screen.findByRole("status");
-
     const nomes = ["Resumo do mês", "Metas do mês", "Ritmo do mês", "Últimos gastos"];
     const blocos = nomes.map((nome) => within(container).getByRole("region", { name: nome }));
-    const aviso = screen.getByRole("status");
-    const ordem = [...blocos, aviso];
-    for (let i = 0; i < ordem.length - 1; i += 1) {
-      expect(ordem[i].compareDocumentPosition(ordem[i + 1]) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    for (let i = 0; i < blocos.length - 1; i += 1) {
+      expect(blocos[i].compareDocumentPosition(blocos[i + 1]) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     }
     expect(within(blocos[1]).getByRole("heading", { name: "Metas do mês" })).not.toBeNull();
+  });
+
+  it("abre com o título da seção em h2, mantendo um único h1", async () => {
+    await preparar();
+    render(<Inicio navegacao={navegacao()} />);
+
+    expect(screen.getByRole("heading", { level: 2, name: "Seu mês, com clareza." })).not.toBeNull();
+    expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);
+  });
+
+  it("o resumo mostra os ganhos e os gastos do mês", async () => {
+    await preparar();
+    render(<Inicio navegacao={navegacao()} />);
+
+    expect(await screen.findByText("Ganhos do mês")).not.toBeNull();
+    expect(screen.getByText("Gastos do mês")).not.toBeNull();
   });
 
   it("mostra o gráfico de ritmo com o gasto acumulado do mês", async () => {
@@ -160,17 +171,30 @@ describe("Início", () => {
     expect(grafico.getAttribute("aria-label")).toContain(`R$${NBSP}25,95`);
   });
 
-  it("uma meta em alerta faz aparecer um único status com ícone", async () => {
+  it("uma meta em alerta mostra a situação na própria linha", async () => {
     await preparar();
     await chamar("/metas/lazer", { metodo: "PUT", corpo: { percentual: 3 } });
     const { container } = render(<Inicio navegacao={navegacao()} />);
 
     // Renda 1000,10; 3% = 30,00; gasto 25,95 = 86% do limite.
-    const status = await screen.findByRole("status");
-    expect(status.textContent).toContain("Lazer a 86% da meta");
-    expect(status.querySelector("svg")).not.toBeNull();
-    expect(within(container).getAllByRole("status")).toHaveLength(1);
+    const linha = await within(container).findByRole("img", { name: /^Lazer: / });
+    expect(linha.getAttribute("aria-label")).toContain("86% usado");
+    expect(linha.closest("[data-linha-da-meta]")?.getAttribute("data-situacao")).toBe("alerta");
+    expect(within(container).queryByRole("status")).toBeNull();
 
+  });
+
+  it("meta em alerta não cria aviso separado e mantém o acesso ao orçamento", async () => {
+    await preparar();
+    await chamar("/metas/lazer", { metodo: "PUT", corpo: { percentual: 3 } });
+    const nav = navegacao();
+    const { container } = render(<Inicio navegacao={nav} />);
+
+    const metas = within(container).getByRole("region", { name: "Metas do mês" });
+    await within(metas).findByRole("img", { name: /^Lazer: / });
+    expect(within(container).queryByRole("status")).toBeNull();
+    fireEvent.click(within(metas).getByRole("button", { name: "Ver orçamento" }));
+    expect(nav.aoIrPara).toHaveBeenCalledWith("orcamento");
   });
 
   it("meta dentro do limite não gera aviso", async () => {
@@ -178,7 +202,7 @@ describe("Início", () => {
     await chamar("/metas/lazer", { metodo: "PUT", corpo: { percentual: 10 } });
     const { container } = render(<Inicio navegacao={navegacao()} />);
 
-    await within(container).findByRole("progressbar", { name: "Meta de Lazer" });
+    await within(container).findByRole("img", { name: /^Lazer: / });
     expect(screen.queryByRole("status")).toBeNull();
   });
 
@@ -188,7 +212,7 @@ describe("Início", () => {
     const { container } = render(<Inicio navegacao={navegacao()} />);
 
     const bloco = within(container).getByRole("region", { name: "Metas do mês" });
-    await within(bloco).findByRole("progressbar", { name: "Meta de Lazer" });
+    await within(bloco).findByRole("img", { name: /^Lazer: / });
     expect(bloco.textContent).not.toContain("Ver gastos de");
   });
 
@@ -250,4 +274,44 @@ describe("Início", () => {
     const grafico = await screen.findByRole("img", { name: /^Gasto acumulado/ });
     expect(grafico.getAttribute("aria-label")).toContain(`R$${NBSP}40,00 até o dia 20`);
   });
+});
+
+describe("renda-base no Início", () => {
+  it("usa a base nos anéis e mantém Pode gastar e o ritmo sobre a renda registrada", async () => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date(2026, 9, 31, 12));
+    entrarNaSimulacao();
+    await preparar();
+    await chamar("/metas/lazer", { metodo: "PUT", corpo: { percentual: 10 } });
+    await chamar("/renda-base", { metodo: "PUT", corpo: { valor: "5000.00" } });
+    const { container } = render(<Inicio navegacao={navegacao()} />);
+    const medidor = await screen.findByRole("img", { name: /^Lazer: / });
+    expect(medidor.getAttribute("aria-label")).toContain("5% usado");
+    await waitFor(() => expect(destaque(container, /^Pode gastar este mês/).textContent).toContain(`R$${NBSP}974,15`));
+    const tabela = screen.getByRole("table", { name: "Gasto acumulado por dia" });
+    expect(tabela.textContent).not.toContain("5.000,00");
+    expect(tabela.textContent).toContain("1.000,10");
+  });
+});
+
+it("cobertura parcial desconta só a parte coberta nas despesas em todas as telas",async()=>{
+ const {default:App}=await import("../App");
+ const {prepararCenarioLiberdadeFinanceira}=await import("../simulacao/manipuladores");
+ vi.useFakeTimers({toFake:["Date"]});vi.setSystemTime(new Date(2026,10,10,12));
+ const {contaId}=prepararCenarioLiberdadeFinanceira({data:"2026-11-10",valorAporte:"50.00",coberto:"30.00"});
+ await chamar("/gastos",{metodo:"POST",corpo:{conta_id:contaId,valor:"100.00",descricao:"Outra compra fictícia",data:"2026-11-10",categoria:"conforto",tags:["loja"]}});
+ await chamar("/ganhos",{metodo:"POST",corpo:{conta_id:contaId,valor:"1000.00",descricao:"Renda fictícia",data:"2026-11-10",tags:[]}});
+ render(<App/>);
+ await waitFor(()=>expect(screen.getByRole("group",{name:/^Pode gastar este mês/}).textContent).toContain("800,00"), {timeout:10_000});
+ fireEvent.click(screen.getByRole("link",{name:"Orçamento"}));
+ await waitFor(()=>expect(screen.getByRole("group",{name:/^Gasto até agora/}).textContent).toContain("150,00"), {timeout:10_000});
+ expect(screen.getByRole("img",{name:/^Conforto: /}).getAttribute("aria-label")).toContain("150,00");
+ expect(screen.getByRole("img",{name:/^Liberdade financeira: /}).getAttribute("aria-label")).toContain(`R$${NBSP}50,00 de R$${NBSP}500,00`);
+ fireEvent.click(screen.getByRole("link",{name:"Transações"}));
+ await screen.findByText("Compra fictícia",{exact:true});
+ expect(screen.getByRole("listitem",{name:/Compra fictícia/}).textContent).toContain("80,00");
+ expect(screen.getByRole("listitem",{name:/Compra fictícia/}).textContent).toMatch(/Reserva «.+» R\$.30,00/);
+ fireEvent.click(screen.getByRole("link",{name:"Tags"}));
+ await waitFor(()=>expect(screen.getByRole("group",{name:"Total do mês em gastos"}).textContent).toContain("150,00"), {timeout:10_000});
+ vi.useRealTimers();
 });

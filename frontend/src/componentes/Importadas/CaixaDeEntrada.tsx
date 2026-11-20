@@ -2,20 +2,31 @@ import { useEffect, useRef, useState } from "react";
 
 import { ErroDaApiCliente } from "../../api/cliente";
 import {
+  useAceitarEmLote,
   useCategorias,
   useContas,
+  useInvestimentos,
   useSincronizarContasBancarias,
   useTags,
   useTransacoesImportadas,
 } from "../../api/consultas";
-import type { TransacaoImportada } from "../../api/tipos";
+import type { AceiteDaTransacao, TransacaoImportada } from "../../api/tipos";
 import { ehSemResposta, MENSAGEM_SERVIDOR_FORA } from "../../paginas/mensagens";
 import type { MensagemDoAviso } from "../Aviso/Aviso";
 import type { EstadoDoOlho } from "../Olho/Olho";
 import { EstadoVazio } from "../EstadoVazio/EstadoVazio";
 import { prefereMenosMovimento } from "../movimento";
 import { CartaoDeImportada, CartaoSaindo } from "./CartaoDeImportada";
+import { ListaDeIgnoradas } from "./ListaDeIgnoradas";
+import { ResumoDaRevisaoDaBolsa } from "../Investimentos/ResumoDaRevisaoDaBolsa";
+import { PainelDoLote } from "./PainelDoLote";
+import { Botao } from "../Botao/Botao";
+import { Titulo } from "../Titulo/Titulo";
+import { Caixa } from "../Campo/Caixa";
+import { Esqueleto } from "../Esqueleto/Esqueleto";
+import { EstadoDeErro } from "../EstadoDeErro/EstadoDeErro";
 import estilos from "./Importadas.module.css";
+import { textoDaConta } from "../../contas/identificacao";
 
 function textoDoErro(erro: unknown): string {
   return ehSemResposta(erro) ? MENSAGEM_SERVIDOR_FORA : (erro as ErroDaApiCliente).mensagem;
@@ -54,6 +65,10 @@ export function CaixaDeEntrada({ aoAvisar, aoSinalizarOlho }: Propriedades) {
   const categorias = useCategorias();
   const tags = useTags();
   const sincronizar = useSincronizarContasBancarias();
+  const investimentos = useInvestimentos();
+  const emLote = useAceitarEmLote();
+  const [selecionadas, definirSelecionadas] = useState<ReadonlySet<string>>(new Set());
+  const [verIgnoradas, definirVerIgnoradas] = useState(false);
 
   function avisarErro(erro: unknown): void {
     aoSinalizarOlho("erro");
@@ -99,11 +114,14 @@ export function CaixaDeEntrada({ aoAvisar, aoSinalizarOlho }: Propriedades) {
         : Array.from(lista.current?.querySelectorAll<HTMLElement>("[data-transacao]") ?? []).find(
             (elemento) => elemento.dataset.transacao === pendente.proximo,
           );
-    // Saída comum: a categoria é o próximo passo; sugerida a ignorar ou entrada: o botão principal.
+    // Saída comum: a categoria é o próximo passo; sugerida a ignorar ou entrada: o botão principal;
+    // aporte sugerido de uma posição: as destinações.
     const alvo = cartao?.querySelector<HTMLElement>(
       cartao.dataset.descarte === "true"
         ? "button[data-principal]"
-        : 'input[type="radio"], button[data-principal]:not(:disabled)',
+        : cartao.dataset.sugestao === "true"
+          ? 'input[aria-label="Tag da destinação 1"]'
+          : 'input[type="radio"], button[data-principal]:not(:disabled)',
     );
     (alvo ?? titulo.current)?.focus();
   }
@@ -149,8 +167,79 @@ export function CaixaDeEntrada({ aoAvisar, aoSinalizarOlho }: Propriedades) {
     }
   }
 
-  const nomesDasContas = new Map(contas.dados?.map((conta) => [conta.id, conta.nome]));
+  // Só as saídas pendentes entram no lote; o que saiu da fila sai da seleção.
+  const saidas = (dados ?? []).filter((transacao) => transacao.sentido === "saida");
+  const selecionadasValidas = saidas.filter((transacao) => selecionadas.has(transacao.id));
+  useEffect(() => {
+    if (selecionadas.size === selecionadasValidas.length) return;
+    definirSelecionadas(new Set(selecionadasValidas.map((transacao) => transacao.id)));
+  }, [dados]);
+
+  function alternarSelecao(id: string): void {
+    definirSelecionadas((atuais) => {
+      const novas = new Set(atuais);
+      if (!novas.delete(id)) novas.add(id);
+      return novas;
+    });
+  }
+
+  function alternarTodas(): void {
+    definirSelecionadas(
+      selecionadasValidas.length === saidas.length
+        ? new Set()
+        : new Set(saidas.map((transacao) => transacao.id)),
+    );
+  }
+
+  async function aceitarSelecionadas(dadosDoLote: AceiteDaTransacao): Promise<void> {
+    if (emLote.pendente || selecionadasValidas.length === 0) return;
+    const resposta = await emLote.executar({
+      ...dadosDoLote,
+      transacao_ids: selecionadasValidas.map((transacao) => transacao.id),
+    });
+    if (!resposta) return;
+    const quantidade = resposta.aceitas.length;
+    const aportes = resposta.aceitas[0]?.tipo === "aporte";
+    definirSelecionadas(new Set());
+    titulo.current?.focus();
+    aoSinalizarOlho("confirmando");
+    aoAvisar(
+      "confirmacao",
+      quantidade === 1
+        ? aportes
+          ? "1 aporte registrado."
+          : "1 gasto criado."
+        : `${quantidade} ${aportes ? "aportes registrados" : "gastos criados"}.`,
+    );
+  }
+
+  const nomesDasContas = new Map(contas.dados?.map((conta) => [conta.id, textoDaConta(conta)]));
   const vazia = dados !== undefined && dados.length === 0;
+
+  if (verIgnoradas) {
+    return (
+      <section className={estilos.coluna} aria-label="Caixa de entrada">
+        <div className={estilos.cabecalho}>
+          <Titulo nivel="secao" como="h2" ref={titulo} tabIndex={-1} className={estilos.titulo}>
+            Transações ignoradas
+          </Titulo>
+          <Botao variante="secundario"
+
+            onClick={() => definirVerIgnoradas(false)}
+          >
+            Ver pendentes
+          </Botao>
+        </div>
+        <ListaDeIgnoradas
+          aoRestaurar={(texto) => {
+            aoSinalizarOlho("confirmando");
+            aoAvisar("confirmacao", texto);
+          }}
+          aoFalhar={avisarErro}
+        />
+      </section>
+    );
+  }
 
   const itens = (dados ?? []).map((transacao) => (
     <CartaoDeImportada
@@ -159,7 +248,11 @@ export function CaixaDeEntrada({ aoAvisar, aoSinalizarOlho }: Propriedades) {
       nomeDaConta={nomesDasContas.get(transacao.conta_id) ?? ""}
       categorias={categorias.dados}
       sugestoesDeTags={tags.dados ?? []}
+      investimentos={investimentos.dados}
+      selecionada={selecionadas.has(transacao.id)}
+      aoAlternarSelecao={transacao.sentido === "saida" ? alternarSelecao : undefined}
       aoTratar={tratada}
+      aoAvisar={(texto) => aoAvisar("confirmacao", texto)}
       aoFalhar={(erro) => {
         aoSinalizarOlho("erro");
         if (ehSemResposta(erro)) aoAvisar("erro", MENSAGEM_SERVIDOR_FORA);
@@ -176,46 +269,80 @@ export function CaixaDeEntrada({ aoAvisar, aoSinalizarOlho }: Propriedades) {
     <section className={estilos.coluna} aria-label="Caixa de entrada">
       <div className={estilos.cabecalho}>
         <div>
-          <h2 ref={titulo} tabIndex={-1} className={estilos.titulo}>
+          <Titulo nivel="secao" como="h2" ref={titulo} tabIndex={-1} className={estilos.titulo}>
             Caixa de entrada
-          </h2>
+          </Titulo>
           {dados !== undefined && dados.length > 0 && (
             <p className={estilos.contagem} data-testid="contagem-da-fila" aria-live="polite">
               {dados.length} esperando
             </p>
           )}
         </div>
-        {!vazia && (
-          <button
-            type="button"
-            className={estilos.sincronizar}
-            disabled={sincronizar.pendente}
-            onClick={() => void sincronizarAgora()}
+        <div className={estilos.acoesDoCabecalho}>
+          <Botao variante="secundario"
+
+            onClick={() => definirVerIgnoradas(true)}
           >
-            {sincronizar.pendente ? "Sincronizando…" : "Sincronizar agora"}
-          </button>
-        )}
+            Ver ignoradas
+          </Botao>
+          {!vazia && (
+            <Botao variante="secundario"
+
+              disabled={sincronizar.pendente}
+              onClick={() => void sincronizarAgora()}
+            >
+              {sincronizar.pendente ? "Sincronizando…" : "Sincronizar agora"}
+            </Botao>
+          )}
+        </div>
       </div>
+      <ResumoDaRevisaoDaBolsa habilitada aoAvisar={texto => aoAvisar("confirmacao", texto)} />
       {dados === undefined ? (
-        <p className={estilos.estado}>
-          {transacoes.carregando
-            ? "Carregando as transações…"
-            : "Não foi possível carregar as transações."}
-        </p>
+        transacoes.carregando
+          ? <Esqueleto rotulo="Carregando as transações…" />
+          : <EstadoDeErro mensagem="Não foi possível carregar as transações." />
       ) : vazia && fantasmas.length === 0 ? (
         <EstadoVazio
           icone="ok"
-          titulo="Nada esperando você"
-          texto="As transações novas do banco chegam aqui para você aceitar ou ignorar."
+          titulo="Nada esperando você na caixa de entrada"
+          descricao="As transações novas do banco chegam aqui para você aceitar ou ignorar."
           acao={{
             rotulo: sincronizar.pendente ? "Sincronizando…" : "Sincronizar agora",
             aoClicar: () => void sincronizarAgora(),
           }}
         />
       ) : (
-        <ul ref={lista} className={estilos.lista} aria-label="Transações importadas">
-          {itens}
-        </ul>
+        <>
+          {saidas.length > 1 && (
+            <div className={estilos.barraDoLote}>
+              <Caixa
+                rotulo={`Selecionar todas as saídas (${saidas.length})`}
+                marcada={selecionadasValidas.length === saidas.length}
+                aoMudar={alternarTodas}
+              />
+              <span>Categorize várias de uma vez, em vez de aceitar uma por uma.</span>
+            </div>
+          )}
+          <ul ref={lista} className={estilos.lista} aria-label="Transações importadas">
+            {itens}
+          </ul>
+          {selecionadasValidas.length > 0 && (
+            <PainelDoLote
+              quantidade={selecionadasValidas.length}
+              categorias={categorias.dados}
+              sugestoesDeTags={tags.dados ?? []}
+              investimentos={investimentos.dados}
+              pendente={emLote.pendente}
+              erro={
+                emLote.erro === null || emLote.erro === undefined
+                  ? null
+                  : textoDoErro(emLote.erro)
+              }
+              aoAceitar={(dadosDoLote) => void aceitarSelecionadas(dadosDoLote)}
+              aoLimpar={() => definirSelecionadas(new Set())}
+            />
+          )}
+        </>
       )}
     </section>
   );

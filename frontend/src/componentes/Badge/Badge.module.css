@@ -1,0 +1,30 @@
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--espaco-1);
+  padding: 2px var(--espaco-2);
+  border-radius: var(--raio-chip);
+  background: var(--superficie-badge);
+  color: var(--cor-nevoa);
+  font-size: var(--texto-minimo);
+  line-height: var(--texto-minimo-linha);
+  font-weight: var(--peso-secao);
+  white-space: nowrap;
+  min-width: 0;
+  max-width: 100%; /* um selo com texto longo corta no texto, não estoura a linha */
+}
+
+.badge[data-tom="positivo"] {
+  background: var(--superficie-positiva);
+  color: var(--cor-positivo);
+}
+
+.badge[data-tom="negativo"] {
+  background: var(--superficie-negativa);
+  color: var(--cor-brasa);
+}
+
+.badge[data-tom="atencao"] {
+  background: var(--superficie-atencao);
+  color: var(--cor-atencao);
+}

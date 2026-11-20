@@ -1,0 +1,92 @@
+{
+  "results": [
+    {
+      "_datas": {
+        "date": 10
+      },
+      "accountId": "conta-remunerada-exemplo",
+      "amount": 1000.0,
+      "currencyCode": "BRL",
+      "description": "PIX RECEBIDO CONTA CORRENTE PROPRIA",
+      "id": "rem-001",
+      "operationType": "PIX",
+      "status": "POSTED",
+      "type": "CREDIT"
+    },
+    {
+      "_datas": {
+        "date": 20
+      },
+      "accountId": "conta-remunerada-exemplo",
+      "amount": 38.14,
+      "currencyCode": "BRL",
+      "description": "RENDIMENTO CONTA REMUNERADA",
+      "id": "rem-002",
+      "status": "POSTED",
+      "type": "CREDIT"
+    },
+    {
+      "_datas": {
+        "date": 50
+      },
+      "accountId": "conta-remunerada-exemplo",
+      "amount": -1500.0,
+      "currencyCode": "BRL",
+      "description": "APLICACAO AUTOMATICA CONTA REMUNERADA",
+      "id": "rem-003",
+      "status": "POSTED",
+      "type": "DEBIT"
+    },
+    {
+      "_datas": {
+        "date": 40
+      },
+      "accountId": "conta-remunerada-exemplo",
+      "amount": 300.0,
+      "currencyCode": "BRL",
+      "description": "RESGATE AUTOMATICO CONTA REMUNERADA",
+      "id": "rem-004",
+      "status": "POSTED",
+      "type": "CREDIT"
+    },
+    {
+      "_datas": {
+        "date": 10
+      },
+      "accountId": "conta-remunerada-exemplo",
+      "amount": -1000.0,
+      "currencyCode": "BRL",
+      "description": "CONTA REMUNERADA - APLICAÇÃO AUTOMÁTICA",
+      "id": "rem-005",
+      "operationType": "TRANSFERENCIA_MESMA_INSTITUICAO",
+      "status": "POSTED",
+      "type": "DEBIT"
+    },
+    {
+      "_datas": {
+        "date": 9
+      },
+      "accountId": "conta-remunerada-exemplo",
+      "amount": 900.0,
+      "currencyCode": "BRL",
+      "description": "CONTA REMUNERADA - RESGATE APLICAÇÃO",
+      "id": "rem-006",
+      "operationType": "RESGATE_APLIC_FINANCEIRA",
+      "status": "POSTED",
+      "type": "CREDIT"
+    },
+    {
+      "_datas": {
+        "date": 9
+      },
+      "accountId": "conta-remunerada-exemplo",
+      "amount": -900.0,
+      "currencyCode": "BRL",
+      "description": "EMISSAO - CDB BANCO EXEMPLO",
+      "id": "rem-007",
+      "operationType": "RESGATE_APLIC_FINANCEIRA",
+      "status": "POSTED",
+      "type": "DEBIT"
+    }
+  ]
+}

@@ -56,6 +56,10 @@ export function Olho({ estado = "normal", decorativo = false, className, ref }: 
       <g clipPath={`url(#${idGlobo})`}>
         <g className={estilos.olhar}>
           <circle r="24" fill={`url(#${idIris})`} />
+          <g fill="none" stroke="#C9B8FF" strokeOpacity=".16" strokeWidth=".5">
+            <circle r="21" />
+            <circle r="15" />
+          </g>
           <g className={estilos.giro}>
             <g className={estilos.marcas} fill="#0C0814">
               <use href={`#${idMarca}`} />

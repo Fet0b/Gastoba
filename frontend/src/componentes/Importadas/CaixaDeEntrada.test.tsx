@@ -1,6 +1,6 @@
 import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { useState } from "react";
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { chamar } from "../../api/cliente";
 import type { Conta, Ganho, Gasto, Sincronizacao, TransacaoImportada } from "../../api/tipos";
@@ -8,6 +8,7 @@ import { definirMidia } from "../../testes/preparar";
 import { entrarNaSimulacao } from "../../simulacao/fetchSimulado";
 import { Aviso, type MensagemDoAviso } from "../Aviso/Aviso";
 import { CaixaDeEntrada, textoDaSincronizacao } from "./CaixaDeEntrada";
+import { MENSAGEM_TAG_PENDENTE } from "../Compositor/CompositorDeGasto";
 
 // Contra o fetch simulado (vazio e sem sessão a cada teste, pelo preparar.ts; aqui com a sessão
 // da pessoa de exemplo, que é a dona da importação).
@@ -50,7 +51,7 @@ describe("CaixaDeEntrada", () => {
   it("com a caixa vazia, explica e oferece a sincronização", async () => {
     await abrir();
 
-    expect(await screen.findByText("Nada esperando você")).toBeTruthy();
+    expect(await screen.findByText("Nada esperando você na caixa de entrada")).toBeTruthy();
     expect(screen.getByRole("button", { name: "Sincronizar agora" })).toBeTruthy();
   });
 
@@ -93,10 +94,12 @@ describe("CaixaDeEntrada", () => {
     const item = await screen.findByRole("listitem", { name: "Farmácia" });
     const aceitar = within(item).getByRole("button", { name: /Aceitar como gasto/ }) as HTMLButtonElement;
 
-    expect(aceitar.disabled).toBe(true);
-    expect(within(item).getByText("Escolha a categoria para aceitar como gasto.")).toBeTruthy();
-    fireEvent.click(await within(item).findByLabelText("Conforto"));
     expect(aceitar.disabled).toBe(false);
+    expect(within(item).queryByText("Escolha uma categoria")).toBeNull();
+    fireEvent.click(aceitar);
+    expect(within(item).getByText("Escolha uma categoria")).toBeTruthy();
+    fireEvent.click(await within(item).findByLabelText("Conforto"));
+    expect(within(item).queryByText("Escolha uma categoria")).toBeNull();
     fireEvent.click(aceitar);
 
     expect(await screen.findByText("Gasto criado.")).toBeTruthy();
@@ -149,7 +152,8 @@ describe("CaixaDeEntrada", () => {
     fireEvent.click(within(item).getByRole("button", { name: "Adicionar tags" }));
     fireEvent.change(within(item).getByLabelText("Tags"), { target: { value: "pix" } });
 
-    expect((within(item).getByRole("button", { name: /Aceitar como ganho/ }) as HTMLButtonElement).disabled).toBe(true);
+    fireEvent.click(within(item).getByRole("button", { name: /Aceitar como ganho/ }));
+    expect(within(item).getByText(MENSAGEM_TAG_PENDENTE)).toBeTruthy();
   });
 
   it("ignorar tira da caixa sem criar gasto nem ganho", async () => {
@@ -162,6 +166,49 @@ describe("CaixaDeEntrada", () => {
     expect(await screen.findByText("Transação ignorada.")).toBeTruthy();
     await waitFor(() => expect(screen.queryByRole("listitem", { name: "Estorno de compra" })).toBeNull());
     expect(await chamar<Ganho[]>("/ganhos", { parametros: PERIODO_LARGO })).toEqual([]);
+  });
+
+  it("consulta as ignoradas e restaura uma para a caixa, sem criar lançamento", async () => {
+    await sincronizarNoServidor();
+    await abrir();
+    const item = await screen.findByRole("listitem", { name: "Estorno de compra" });
+    fireEvent.click(within(item).getByRole("button", { name: "Ignorar: Estorno de compra" }));
+    await waitFor(() => expect(screen.queryByRole("listitem", { name: "Estorno de compra" })).toBeNull());
+
+    fireEvent.click(screen.getByRole("button", { name: "Ver ignoradas" }));
+
+    const ignorada = await screen.findByRole("listitem", { name: "Estorno de compra" });
+    expect(screen.getByRole("listitem", { name: "Transferência entre contas" })).toBeTruthy();
+    expect(within(ignorada).queryByRole("button", { name: /^Ignorar/ })).toBeNull();
+    expect(within(ignorada).queryByRole("button", { name: /^Aceitar/ })).toBeNull();
+    fireEvent.click(
+      within(ignorada).getByRole("button", {
+        name: "Desfazer classificação: Estorno de compra",
+      }),
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Sim, desfazer" }));
+    expect(await screen.findByText("Transação restaurada para a caixa de entrada.")).toBeTruthy();
+    await waitFor(() => expect(screen.queryByRole("listitem", { name: "Estorno de compra" })).toBeNull());
+    fireEvent.click(screen.getByRole("button", { name: "Ver pendentes" }));
+    const volta = await screen.findByRole("listitem", { name: "Estorno de compra" });
+    expect(within(volta).getByRole("button", { name: "Ignorar: Estorno de compra" })).toBeTruthy();
+    expect(await chamar<Ganho[]>("/ganhos", { parametros: PERIODO_LARGO })).toEqual([]);
+  });
+
+  it("restaurar uma ignorada não impede aceitar outra pendente", async () => {
+    await sincronizarNoServidor();
+    await abrir();
+    const mercado = await screen.findByRole("listitem", { name: "Mercado Extra" });
+    fireEvent.click(within(mercado).getByRole("button", { name: "Ignorar: Mercado Extra" }));
+    await waitFor(() => expect(screen.queryByRole("listitem", { name: "Mercado Extra" })).toBeNull());
+
+    const salario = cartao("Salário");
+    fireEvent.click(within(salario).getByRole("button", { name: /Aceitar como ganho/ }));
+
+    expect(await screen.findByText("Ganho criado.")).toBeTruthy();
+    await waitFor(() => expect(screen.queryByRole("listitem", { name: "Salário" })).toBeNull());
+    expect((await chamar<Ganho[]>("/ganhos", { parametros: PERIODO_LARGO })).length).toBe(1);
   });
 
   it("sinaliza o possível duplicado de um lançamento manual", async () => {
@@ -318,8 +365,8 @@ describe("CaixaDeEntrada como fila", () => {
       await waitFor(() => expect(screen.queryByRole("listitem", { name: nome })).toBeNull());
     }
 
-    expect(await screen.findByText("Nada esperando você")).toBeTruthy();
-    expect(screen.getAllByRole("button", { name: "Sincronizar agora" })).toHaveLength(1);
+    expect(await screen.findByText("Nada esperando você na caixa de entrada")).toBeTruthy();
+    expect(await screen.findAllByRole("button", { name: "Sincronizar agora" })).toHaveLength(1);
     expect(screen.queryByTestId("contagem-da-fila")).toBeNull();
     await waitFor(() =>
       expect(document.activeElement).toBe(
@@ -361,4 +408,11 @@ describe("textoDaSincronizacao", () => {
     expect(textoDaSincronizacao(1, 0)).toBe("1 transação nova na caixa.");
     expect(textoDaSincronizacao(3, 2)).toBe("3 transações novas na caixa. 2 falha(s): tente de novo mais tarde.");
   });
+});
+
+it("mostra o cartão da Revisão da bolsa no lugar dos casamentos sugeridos", async () => {
+  await chamar("/sincronizacoes", { metodo: "POST" });
+  render(<CaixaDeEntrada aoAvisar={vi.fn()} aoSinalizarOlho={vi.fn()} />);
+  expect(await screen.findByRole("button", { name: "Revisar" })).toBeTruthy();
+  expect(screen.queryByText("Casamentos sugeridos")).toBeNull();
 });

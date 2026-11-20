@@ -1,0 +1,59 @@
+/* Campo de valor: o número em destaque, alinhado à direita em algarismos
+   tabulares, com o "R$" fixo à esquerda. */
+
+.campo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espaco-1);
+}
+
+.rotulo {
+  composes: rotulo from "./Campo.module.css";
+}
+
+.moldura {
+  position: relative;
+}
+
+.moeda {
+  position: absolute;
+  inset-block: 0;
+  inset-inline-start: var(--espaco-4);
+  display: flex;
+  align-items: center;
+  color: var(--cor-bruma);
+  font-size: var(--texto-base);
+  pointer-events: none;
+}
+
+.entrada {
+  width: 100%;
+  min-height: var(--altura-do-campo-de-valor);
+  color: var(--cor-nevoa);
+  font-variant-numeric: tabular-nums;
+  padding: var(--espaco-3) var(--espaco-4);
+  padding-inline-start: 3.5rem;
+  border: var(--borda-de-camada);
+  border-radius: var(--raio-campo);
+  background: var(--cor-veludo);
+  font-family: var(--fonte-titulo);
+  font-size: var(--texto-titulo);
+  font-weight: var(--peso-secao);
+  letter-spacing: -0.01em;
+  text-align: end;
+  caret-color: var(--cor-ametista);
+  transition: border-color var(--duracao-curta) var(--curva-saida);
+}
+
+.entrada:hover {
+  border-color: var(--cor-bruma);
+}
+
+.entrada[aria-invalid="true"] {
+  border-color: var(--cor-brasa);
+}
+
+.erro {
+  color: var(--cor-brasa);
+  font-size: var(--texto-corpo);
+}

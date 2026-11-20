@@ -52,12 +52,18 @@ function areaDeGastos(): HTMLElement {
   return screen.getByRole("region", { name: "Transações" });
 }
 
-function filtroDeTags(): HTMLElement {
-  return screen.getByRole("group", { name: "Filtrar por tag" });
+type Grupo = "Contas" | "Categorias" | "Tags";
+
+/** A caixa de uma opção do seletor de várias escolhas (abre o seletor se estiver fechado). */
+async function opcao(grupo: Grupo, nome: string): Promise<HTMLInputElement> {
+  const botao = await screen.findByRole("button", { name: new RegExp(`^${grupo}:`) });
+  if (botao.getAttribute("aria-expanded") !== "true") fireEvent.click(botao);
+  const lista = screen.getByRole("group", { name: grupo });
+  return (await within(lista).findByRole("checkbox", { name: nome })) as HTMLInputElement;
 }
 
-function filtroDeCategorias(): HTMLElement {
-  return screen.getByRole("group", { name: "Filtrar por categoria" });
+async function alternar(grupo: Grupo, nome: string): Promise<void> {
+  fireEvent.click(await opcao(grupo, nome));
 }
 
 /** Descrições dos gastos na lista, na ordem da tela. */
@@ -74,16 +80,15 @@ async function painelCarregado(): Promise<void> {
 }
 
 describe("Filtros do painel", () => {
-  it("clicar numa tag do filtro filtra a lista e clicar de novo limpa", async () => {
+  it("marcar uma tag do filtro filtra a lista e desmarcar limpa", async () => {
     await painelCarregado();
 
-    const mercado = await within(filtroDeTags()).findByRole("button", { name: "mercado" });
-    fireEvent.click(mercado);
-    expect(mercado.getAttribute("aria-pressed")).toBe("true");
+    await alternar("Tags", "mercado");
+    expect((await opcao("Tags", "mercado")).checked).toBe(true);
     await waitFor(() => expect(descricoesNaLista()).toEqual(["Feira do mês"]));
 
-    fireEvent.click(mercado);
-    expect(mercado.getAttribute("aria-pressed")).toBe("false");
+    await alternar("Tags", "mercado");
+    expect((await opcao("Tags", "mercado")).checked).toBe(false);
     await waitFor(() => expect(descricoesNaLista()).toHaveLength(3));
   });
 
@@ -95,8 +100,7 @@ describe("Filtros do painel", () => {
     fireEvent.click(within(linha).getByRole("button", { name: "Filtrar pela tag pix" }));
 
     await waitFor(() => expect(descricoesNaLista()).toEqual(["Feira do mês", "Livro de TS"]));
-    const pixNoFiltro = await within(filtroDeTags()).findByRole("button", { name: "pix" });
-    expect(pixNoFiltro.getAttribute("aria-pressed")).toBe("true");
+    expect((await opcao("Tags", "pix")).checked).toBe(true);
 
     const pixNaLinha = within(areaDeGastos()).getAllByRole("button", { name: "Filtrar pela tag pix" })[0];
     expect(pixNaLinha.getAttribute("aria-pressed")).toBe("true");
@@ -112,48 +116,41 @@ describe("Filtros do painel", () => {
     fireEvent.click(within(linha).getByRole("button", { name: "Filtrar por Lazer" }));
 
     await waitFor(() => expect(descricoesNaLista()).toEqual(["Cinema"]));
-    const lazerNoFiltro = await within(filtroDeCategorias()).findByRole("button", { name: /Lazer/ });
-    expect(lazerNoFiltro.getAttribute("aria-pressed")).toBe("true");
+    expect((await opcao("Categorias", "Lazer")).checked).toBe(true);
   });
 
-  it("clicar numa categoria filtra a lista e clicar de novo limpa", async () => {
+  it("marcar uma categoria filtra a lista e desmarcar limpa", async () => {
     await painelCarregado();
 
-    const lazer = within(filtroDeCategorias()).getByRole("button", { name: "Lazer" });
-    fireEvent.click(lazer);
-    expect(lazer.getAttribute("aria-pressed")).toBe("true");
+    await alternar("Categorias", "Lazer");
     await waitFor(() => expect(descricoesNaLista()).toEqual(["Cinema"]));
 
-    fireEvent.click(lazer);
+    await alternar("Categorias", "Lazer");
     await waitFor(() => expect(descricoesNaLista()).toHaveLength(3));
   });
 
-  it("escolher uma conta filtra a lista e Todas as contas limpa", async () => {
+  it("escolher uma conta filtra a lista e desmarcar a conta volta a todas", async () => {
     await painelCarregado();
 
-    const contas = screen.getByRole("group", { name: "Filtrar por conta" });
-    fireEvent.click(await within(contas).findByRole("button", { name: "Carteira" }));
+    await alternar("Contas", "Carteira, Conta corrente");
     await waitFor(() => expect(descricoesNaLista()).toEqual(["Livro de TS"]));
 
-    fireEvent.click(within(contas).getByRole("button", { name: "Todas as contas" }));
+    await alternar("Contas", "Carteira, Conta corrente");
     await waitFor(() => expect(descricoesNaLista()).toHaveLength(3));
   });
 
-  it("Limpar só aparece com filtro ativo e limpa o filtro", async () => {
+  it("Limpar filtros só aparece com filtro ativo e limpa todos de uma vez", async () => {
     await painelCarregado();
-    await within(filtroDeTags()).findByRole("button", { name: "pix" });
+    await opcao("Tags", "pix");
 
-    expect(within(filtroDeTags()).queryByRole("button", { name: /Limpar/ })).toBeNull();
-    expect(within(filtroDeCategorias()).queryByRole("button", { name: /Limpar/ })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Limpar filtros" })).toBeNull();
 
-    fireEvent.click(within(filtroDeTags()).getByRole("button", { name: "cartao" }));
-    fireEvent.click(within(filtroDeCategorias()).getByRole("button", { name: "Lazer" }));
+    await alternar("Tags", "cartao");
+    await alternar("Categorias", "Lazer");
     await waitFor(() => expect(descricoesNaLista()).toEqual(["Cinema"]));
 
-    fireEvent.click(within(filtroDeTags()).getByRole("button", { name: /Limpar/ }));
-    expect(within(filtroDeTags()).queryByRole("button", { name: /Limpar/ })).toBeNull();
-    fireEvent.click(within(filtroDeCategorias()).getByRole("button", { name: /Limpar/ }));
-    expect(within(filtroDeCategorias()).queryByRole("button", { name: /Limpar/ })).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Limpar filtros" }));
+    expect(screen.queryByRole("button", { name: "Limpar filtros" })).toBeNull();
     await waitFor(() => expect(descricoesNaLista()).toHaveLength(3));
   });
 
@@ -169,17 +166,16 @@ describe("Filtros do painel", () => {
   it("a troca de mês mantém os filtros, e Limpar filtros volta a lista inteira", async () => {
     await painelCarregado();
 
-    fireEvent.click(within(filtroDeCategorias()).getByRole("button", { name: "Lazer" }));
+    await alternar("Categorias", "Lazer");
     await waitFor(() => expect(descricoesNaLista()).toEqual(["Cinema"]));
 
     fireEvent.click(screen.getByRole("button", { name: "Próximo mês" }));
     expect(await within(areaDeGastos()).findByText("Nenhuma transação com esses filtros")).not.toBeNull();
     const limparFiltros = within(areaDeGastos()).getByRole("button", { name: "Limpar filtros" });
-    const lazer = within(filtroDeCategorias()).getByRole("button", { name: "Lazer" });
-    expect(lazer.getAttribute("aria-pressed")).toBe("true");
+    expect((await opcao("Categorias", "Lazer")).checked).toBe(true);
 
     fireEvent.click(limparFiltros);
-    expect(lazer.getAttribute("aria-pressed")).toBe("false");
+    expect((await opcao("Categorias", "Lazer")).checked).toBe(false);
     fireEvent.click(screen.getByRole("button", { name: "Mês anterior" }));
     await waitFor(() => expect(descricoesNaLista()).toHaveLength(3));
   });

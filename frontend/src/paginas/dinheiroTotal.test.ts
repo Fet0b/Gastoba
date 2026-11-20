@@ -4,7 +4,7 @@ import type { Conta } from "../api/tipos";
 import { dinheiroTotalDasContas } from "./dinheiroTotal";
 
 function conta(nome: string, saldo: string, tipo: Conta["tipo"], origem: Conta["origem"]): Conta {
-  return { id: nome, nome, saldo, origem, tipo };
+  return { id: nome, nome, saldo, origem, tipo, rotulo: nome, apelido: null, nome_no_banco: null, final_do_numero: null };
 }
 
 describe("dinheiroTotalDasContas", () => {
@@ -16,6 +16,15 @@ describe("dinheiroTotalDasContas", () => {
     ];
 
     expect(dinheiroTotalDasContas(contas)).toBe("150.50");
+  });
+
+  it("a conta remunerada é dinheiro investido (caixinha) e fica de fora", () => {
+    const contas = [
+      conta("Banco", "100.00", "corrente", "open_finance"),
+      conta("BTG", "962.17", "remunerada", "open_finance"),
+    ];
+
+    expect(dinheiroTotalDasContas(contas)).toBe("100.00");
   });
 
   it("sem contas correntes o total é zero", () => {

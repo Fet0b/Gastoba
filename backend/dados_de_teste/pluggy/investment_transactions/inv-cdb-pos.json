@@ -1,0 +1,14 @@
+{
+  "results": [
+    {
+      "_datas": {
+        "date": 150
+      },
+      "amount": 8000.0,
+      "id": "op-cdb-1",
+      "movementType": "CREDIT",
+      "quantity": 1.0,
+      "type": "TRANSFER"
+    }
+  ]
+}

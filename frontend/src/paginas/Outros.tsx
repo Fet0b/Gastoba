@@ -1,4 +1,4 @@
-import { useEffect, useId, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 
 import { ErroDaApiCliente } from "../api/cliente";
 import {
@@ -13,12 +13,16 @@ import type { MensagemDoAviso } from "../componentes/Aviso/Aviso";
 import type { Navegacao } from "../componentes/Navegacao/telas";
 import { Pagina } from "../componentes/Pagina/Pagina";
 import { useEstadoDoOlho } from "../componentes/Olho/useEstadoDoOlho";
+import { Botao } from "../componentes/Botao/Botao";
 import { Cartao } from "../componentes/Cartao/Cartao";
+import { Dialogo } from "../componentes/Dialogo/Dialogo";
+import { EstadoVazio } from "../componentes/EstadoVazio/EstadoVazio";
 import { ComprometidoPorMes } from "../componentes/Agenda/ComprometidoPorMes";
 import { ProximosLancamentos } from "../componentes/Agenda/ProximosLancamentos";
 import { FormularioDeRecorrencia } from "../componentes/Recorrencias/FormularioDeRecorrencia";
 import { ListaDeRecorrencias } from "../componentes/Recorrencias/ListaDeRecorrencias";
 import { hojeLocal } from "../periodo/periodo";
+import { Titulo } from "../componentes/Titulo/Titulo";
 import estilos from "./Outros.module.css";
 import { ehSemResposta, MENSAGEM_SERVIDOR_FORA } from "./mensagens";
 
@@ -39,8 +43,11 @@ export function Outros({ navegacao }: { navegacao: Navegacao }) {
   const encerrar = useEncerrarRecorrencia();
   const [mensagem, definirMensagem] = useState<MensagemDoAviso | null>(null);
   const [estadoDoOlho, sinalizarOlho] = useEstadoDoOlho();
+  const [formularioAberto, definirFormularioAberto] = useState(false);
+  const botaoNova = useRef<HTMLButtonElement>(null);
   const idTitulo = useId();
   const hoje = hojeLocal();
+  const vazio = recorrencias.dados !== undefined && recorrencias.dados.length === 0;
 
   function avisar(tipo: MensagemDoAviso["tipo"], texto: string): void {
     definirMensagem({ tipo, texto });
@@ -64,6 +71,12 @@ export function Outros({ navegacao }: { navegacao: Navegacao }) {
     if (encerrar.erro) avisarErro(encerrar.erro);
   }, [encerrar.erro]);
 
+  function fecharFormulario(): void {
+    definirFormularioAberto(false);
+    // O botão volta a existir no próximo quadro.
+    queueMicrotask(() => botaoNova.current?.focus());
+  }
+
   async function encerrarRecorrencia(recorrencia: Recorrencia): Promise<boolean> {
     const encerrada = await encerrar.executar(recorrencia.id);
     if (!encerrada) return false;
@@ -77,68 +90,91 @@ export function Outros({ navegacao }: { navegacao: Navegacao }) {
       estadoDoOlho={estadoDoOlho}
       mensagem={mensagem}
       aoDispensarMensagem={() => definirMensagem(null)}
+      cabecalho={{titulo: "Recorrências", subtitulo: "O que se repete todo mês.", dica: {
+            assunto: "as recorrências",
+            texto: "O Gastoba cria o ganho ou o gasto de cada mês sozinho, no dia combinado.",
+          }, acao: !formularioAberto && !vazio && recorrencias.dados !== undefined && (
+              <Botao
+                ref={botaoNova}
+                variante="secundario"
+                icone="adicionar"
+                onClick={() => definirFormularioAberto(true)}
+              >
+                Nova recorrência
+              </Botao>
+            )}}
     >
       <div className={estilos.conteudo}>
-        <div className={estilos.introducao}>
-          <h2 className={estilos.titulo}>Outros</h2>
-          <h2 id={idTitulo} className={estilos.titulo}>
-            Recorrências
-          </h2>
-          <p className={estilos.texto}>
-            O que se repete todo mês, como o salário ou o aluguel. O Gastoba cria o ganho ou o gasto
-            de cada mês sozinho, no dia combinado.
-          </p>
-        </div>
+        {formularioAberto && (
+          <Dialogo titulo="Nova recorrência" aberto aoFechar={fecharFormulario} devolverFocoPara={botaoNova}>
+            <FormularioDeRecorrencia
+              contas={contas.dados}
+              categorias={categorias.dados}
+              sugestoesDeTags={tags.dados}
+              aoCancelar={fecharFormulario}
+              aoCriar={() => {
+                sinalizarOlho("confirmando");
+                avisar("confirmacao", "Recorrência criada.");
+                fecharFormulario();
+              }}
+              aoFalhar={(erro) => {
+                sinalizarOlho("erro");
+                if (ehSemResposta(erro)) avisar("erro", MENSAGEM_SERVIDOR_FORA);
+              }}
+            />
+          </Dialogo>
+        )}
 
-        <Cartao como="div" variante="elevado" className={estilos.comprometido}>
-          <ComprometidoPorMes
-            recorrencias={recorrencias.dados}
-            hoje={hoje}
-            carregando={recorrencias.carregando}
-          />
-        </Cartao>
-        <Cartao como="div" className={estilos.agenda}>
-          <ProximosLancamentos
-            recorrencias={recorrencias.dados}
-            hoje={hoje}
-            carregando={recorrencias.carregando}
-          />
-        </Cartao>
+        {vazio ? (
+          !formularioAberto && (
+            <EstadoVazio
+              icone="repetir"
+              titulo="Nenhuma recorrência ainda"
+              descricao="Cadastre aluguel, assinaturas e salário para o Gastoba prever o mês."
+              acao={{ ref: botaoNova, rotulo: "Criar recorrência", aoClicar: () => definirFormularioAberto(true) }}
+            />
+          )
+        ) : (
+          <>
+            <Cartao como="div" className={estilos.comprometido}>
+              <ComprometidoPorMes
+                recorrencias={recorrencias.dados}
+                hoje={hoje}
+                carregando={recorrencias.carregando}
+              />
+            </Cartao>
+            <Cartao como="div" className={estilos.agenda}>
+              <ProximosLancamentos
+                recorrencias={recorrencias.dados}
+                hoje={hoje}
+                carregando={recorrencias.carregando}
+              />
+            </Cartao>
 
-        <div className={estilos.colunaDoFormulario}>
-          <FormularioDeRecorrencia
-            contas={contas.dados}
-            categorias={categorias.dados}
-            sugestoesDeTags={tags.dados}
-            aoCriar={() => {
-              sinalizarOlho("confirmando");
-              avisar("confirmacao", "Recorrência criada.");
-            }}
-            aoFalhar={(erro) => {
-              sinalizarOlho("erro");
-              if (ehSemResposta(erro)) avisar("erro", MENSAGEM_SERVIDOR_FORA);
-            }}
-          />
-        </div>
-
-        <section className={estilos.colunaDaLista} aria-labelledby={idTitulo}>
-          <ListaDeRecorrencias
-            recorrencias={recorrencias.dados}
-            carregando={recorrencias.carregando}
-            contas={contas.dados}
-            categorias={categorias.dados}
-            sugestoesDeTags={tags.dados ?? []}
-            aoEncerrar={encerrarRecorrencia}
-            aoAlterada={() => {
-              sinalizarOlho("confirmando");
-              avisar("confirmacao", "Recorrência alterada.");
-            }}
-            aoFalhar={(erro) => {
-              sinalizarOlho("erro");
-              if (ehSemResposta(erro)) avisar("erro", MENSAGEM_SERVIDOR_FORA);
-            }}
-          />
-        </section>
+            <section className={estilos.colunaDaLista} aria-labelledby={idTitulo}>
+              <Titulo nivel="secao" como="h2" id={idTitulo} className={estilos.tituloDaSecao}>
+                Suas recorrências
+              </Titulo>
+              <ListaDeRecorrencias
+                aoRevisar={() => navegacao.aoIrPara("investimentos")}
+                recorrencias={recorrencias.dados}
+                carregando={recorrencias.carregando}
+                contas={contas.dados}
+                categorias={categorias.dados}
+                sugestoesDeTags={tags.dados ?? []}
+                aoEncerrar={encerrarRecorrencia}
+                aoAlterada={() => {
+                  sinalizarOlho("confirmando");
+                  avisar("confirmacao", "Recorrência alterada.");
+                }}
+                aoFalhar={(erro) => {
+                  sinalizarOlho("erro");
+                  if (ehSemResposta(erro)) avisar("erro", MENSAGEM_SERVIDOR_FORA);
+                }}
+              />
+            </section>
+          </>
+        )}
       </div>
     </Pagina>
   );

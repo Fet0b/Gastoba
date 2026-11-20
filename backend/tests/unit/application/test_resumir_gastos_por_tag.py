@@ -8,6 +8,7 @@ from gastoba.application.resumir_gastos_por_tag import ResumirGastosPorTag
 from gastoba.domain.categoria import CategoriaDoGasto
 from gastoba.domain.dinheiro import Dinheiro
 from gastoba.domain.excecoes import ContaNaoEncontrada, PeriodoInvalido
+from gastoba.domain.tag import Tag
 
 USUARIO_ID = uuid4()
 INICIO = date(2026, 10, 1)
@@ -107,3 +108,35 @@ def test_conta_de_outro_usuario_nao_e_encontrada(unidade_de_trabalho, semear_con
         ResumirGastosPorTag(unidade_de_trabalho).executar(
             USUARIO_ID, INICIO, FIM, conta_id=alheia.id
         )
+
+
+def test_resume_liquido_com_coberturas_dos_gastos_filtrados(unidade_de_trabalho, semear_conta):
+    from datetime import date
+    from uuid import uuid4
+
+    from gastoba.domain.categoria import CategoriaDoGasto
+    from gastoba.domain.cobertura_de_compra import CoberturaDeCompra
+    from gastoba.domain.gasto import Gasto
+
+    dono = uuid4()
+    conta = semear_conta(usuario_id=dono)
+    outra = semear_conta(usuario_id=uuid4())
+    dia = date(2026, 10, 10)
+    g = Gasto(
+        conta.id, Dinheiro(8000), "Compra fictícia", dia, CategoriaDoGasto.CONFORTO, (Tag("loja"),)
+    )
+    with unidade_de_trabalho as u:
+        u.gastos.adicionar(g)
+        u.gastos.adicionar(
+            Gasto(outra.id, Dinheiro(9000), "Outra compra", dia, g.categoria, (Tag("outra"),))
+        )
+        u.coberturas.adicionar(CoberturaDeCompra(g.id, Tag("celular"), Dinheiro(3000)))
+        u.commit()
+    commits = unidade_de_trabalho.commits
+    resultado = ResumirGastosPorTag(unidade_de_trabalho).executar(
+        dono, dia, dia, conta_id=conta.id, categoria=g.categoria
+    )
+    assert resultado.total == Dinheiro(5000)
+    assert [(str(f.tag), f.valor) for f in resultado.fatias] == [("loja", Dinheiro(5000))]
+    assert unidade_de_trabalho.commits == commits
+    assert unidade_de_trabalho.confirmado.gastos[g.id].valor == Dinheiro(8000)

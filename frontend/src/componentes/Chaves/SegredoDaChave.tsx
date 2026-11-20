@@ -7,6 +7,8 @@ import {
   useState,
 } from "react";
 
+import { Botao } from "../Botao/Botao";
+import { Titulo } from "../Titulo/Titulo";
 import estilos from "./Chaves.module.css";
 
 type Propriedades = {
@@ -92,9 +94,9 @@ export function SegredoDaChave({ nome, segredo, aoFechar }: Propriedades) {
       onCancel={aoCancelar}
     >
       <div className={estilos.conteudoDoDialogo}>
-        <h2 id={idTitulo} className={estilos.subtitulo}>
+        <Titulo nivel="secao" como="h2" id={idTitulo} className={estilos.subtitulo}>
           Chave criada
-        </h2>
+        </Titulo>
         <p id={idExplicacao}>
           A chave {nome} foi criada. Copie o segredo agora: ele não será mostrado de novo.
         </p>
@@ -121,18 +123,13 @@ export function SegredoDaChave({ nome, segredo, aoFechar }: Propriedades) {
 
         <div className={estilos.acoes}>
           {area && (
-            <button
-              ref={botaoCopiar}
-              type="button"
-              className={estilos.primario}
-              onClick={() => void copiar()}
-            >
+            <Botao ref={botaoCopiar} variante="primario" onClick={() => void copiar()}>
               Copiar
-            </button>
+            </Botao>
           )}
-          <button type="button" className={estilos.secundario} onClick={aoFechar}>
+          <Botao variante="secundario" onClick={aoFechar}>
             Fechar
-          </button>
+          </Botao>
         </div>
       </div>
     </dialog>

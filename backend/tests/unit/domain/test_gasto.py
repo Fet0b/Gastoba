@@ -219,3 +219,8 @@ def test_gasto_comparado_com_outro_tipo_nao_e_igual():
     )
 
     assert (gasto == "x") is False
+
+
+def test_lancamento_sem_origem_importada_tem_vinculo_nulo():
+    lancamento = Gasto(uuid4(), Dinheiro(100), "Exemplo", DATA, LAZER)
+    assert getattr(lancamento, "transacao_importada_id", "ausente") is None

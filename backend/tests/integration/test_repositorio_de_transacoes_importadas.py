@@ -100,13 +100,16 @@ def test_atualizar_do_banco_substitui_saldo_e_tipo_e_recusa_conta_inexistente(uo
         assert uow.contas.obter(usuario.id, conta.id).tipo == TipoDaConta.CORRENTE
 
     with uow:
-        uow.contas.atualizar_do_banco(conta.id, Dinheiro(-5000), TipoDaConta.CARTAO)
+        uow.contas.atualizar_do_banco(
+            conta.id, Dinheiro(-5000), TipoDaConta.CARTAO, "Banco", "0412"
+        )
         uow.commit()
     with uow:
         atualizada = uow.contas.obter(usuario.id, conta.id)
         assert (atualizada.saldo, atualizada.tipo) == (Dinheiro(-5000), TipoDaConta.CARTAO)
+        assert (atualizada.nome_no_banco, atualizada.final_do_numero) == ("Banco", "0412")
         with pytest.raises(ContaNaoEncontrada):
-            uow.contas.atualizar_do_banco(uuid4(), Dinheiro(1), TipoDaConta.CORRENTE)
+            uow.contas.atualizar_do_banco(uuid4(), Dinheiro(1), TipoDaConta.CORRENTE, None, None)
 
 
 def test_adicionar_grava_o_tipo_da_conta(uow):
@@ -222,3 +225,218 @@ def test_data_mais_recente_considera_qualquer_estado(uow):
 
     with uow:
         assert uow.transacoes_importadas.data_mais_recente(conta.id) == date(2026, 10, 9)
+
+
+def _lancamento_para_conferencia(conta, tipo, transacao_id=None, **mudancas):
+    from gastoba.domain.categoria import CategoriaDoGasto
+    from gastoba.domain.ganho import Ganho, OrigemDoGanho
+    from gastoba.domain.gasto import Gasto, OrigemDoGasto
+    from gastoba.domain.movimento_de_investimento import MovimentoDeInvestimento, TipoDeMovimento
+
+    dados = dict(
+        conta_id=conta.id,
+        valor=Dinheiro(2590),
+        descricao="Mercado",
+        data=date(2026, 10, 10),
+        transacao_importada_id=transacao_id,
+    )
+    dados.update(mudancas)
+    if tipo == "gastos":
+        return Gasto(**dados, categoria=CategoriaDoGasto.LAZER, origem=OrigemDoGasto.OPEN_FINANCE)
+    if tipo == "ganhos":
+        return Ganho(**dados, origem=OrigemDoGanho.OPEN_FINANCE)
+    return MovimentoDeInvestimento(**dados, tipo=TipoDeMovimento.APORTE)
+
+
+@pytest.mark.parametrize("tipo", ["gastos", "ganhos", "movimentos_de_investimento"])
+def test_da_transacao_isola_a_pessoa_e_separa_os_vinculos(uow, tipo):
+    usuario, conta = _conta_importada(uow)
+    transacao = _transacao(conta)
+    with uow:
+        uow.transacoes_importadas.adicionar_se_nova(transacao)
+        uow.commit()
+    ligado = _lancamento_para_conferencia(conta, tipo, transacao.id)
+    solto = _lancamento_para_conferencia(conta, tipo)
+    with uow:
+        repo = getattr(uow, tipo)
+        repo.adicionar(ligado)
+        repo.adicionar(solto)
+        uow.commit()
+    with uow:
+        repo = getattr(uow, tipo)
+        assert [lancamento.id for lancamento in repo.da_transacao(usuario.id, transacao.id)] == [
+            ligado.id
+        ]
+        assert repo.da_transacao(uuid4(), transacao.id) == []
+        assert repo.da_transacao(usuario.id, uuid4()) == []
+    with uow:
+        repo = getattr(uow, tipo)
+        if tipo == "movimentos_de_investimento":
+            repo.excluir(ligado.id)
+        else:
+            repo.remover(ligado.id)
+        uow.commit()
+    with uow:
+        assert [
+            lancamento.id
+            for lancamento in getattr(uow, tipo).listar(
+                usuario.id, date(2026, 10, 1), date(2026, 10, 31)
+            )
+        ] == [solto.id]
+
+
+@pytest.mark.parametrize("tipo", ["gastos", "ganhos", "movimentos_de_investimento"])
+@pytest.mark.parametrize(
+    "diferenca", [None, "conta", "data", "valor", "descricao", "vinculo", "manual", "tipo"]
+)
+def test_correspondencia_de_lancamento_exige_todos_os_campos_e_sem_vinculo(uow, tipo, diferenca):
+    from gastoba.domain.ganho import OrigemDoGanho
+    from gastoba.domain.gasto import OrigemDoGasto
+    from gastoba.domain.movimento_de_investimento import TipoDeMovimento
+
+    usuario, conta = _conta_importada(uow)
+    t = _transacao(conta)
+    with uow:
+        uow.transacoes_importadas.adicionar_se_nova(t)
+        uow.commit()
+    mudancas = {}
+    if diferenca == "conta":
+        outra = Conta(usuario.id, "Outra", Dinheiro(0))
+        with uow:
+            uow.contas.adicionar(outra)
+            uow.commit()
+        mudancas["conta_id"] = outra.id
+    if diferenca == "data":
+        mudancas["data"] = date(2026, 10, 11)
+    if diferenca == "valor":
+        mudancas["valor"] = Dinheiro(2591)
+    if diferenca == "descricao":
+        mudancas["descricao"] = "Outro exemplo"
+    lancamento = _lancamento_para_conferencia(
+        conta, tipo, t.id if diferenca == "vinculo" else None, **mudancas
+    )
+    if diferenca == "manual" and tipo != "movimentos_de_investimento":
+        lancamento.origem = OrigemDoGasto.MANUAL if tipo == "gastos" else OrigemDoGanho.MANUAL
+    if diferenca == "tipo" and tipo == "movimentos_de_investimento":
+        lancamento.tipo = TipoDeMovimento.RESGATE
+    with uow:
+        getattr(uow, tipo).adicionar(lancamento)
+        uow.commit()
+    esperado = (
+        diferenca is None
+        or (diferenca == "manual" and tipo == "movimentos_de_investimento")
+        or (diferenca == "tipo" and tipo != "movimentos_de_investimento")
+    )
+    with uow:
+        repo = getattr(uow, tipo)
+        argumentos = (conta.id, t.data, t.valor, t.descricao)
+        if tipo == "movimentos_de_investimento":
+            assert repo.contar_correspondentes_sem_vinculo(
+                usuario.id, *argumentos, TipoDeMovimento.APORTE
+            ) == int(esperado)
+            assert (
+                repo.contar_correspondentes_sem_vinculo(
+                    uuid4(), *argumentos, TipoDeMovimento.APORTE
+                )
+                == 0
+            )
+        else:
+            assert repo.existe_correspondente_sem_vinculo(usuario.id, *argumentos) is esperado
+            assert repo.existe_correspondente_sem_vinculo(uuid4(), *argumentos) is False
+
+
+@pytest.mark.parametrize(
+    "diferenca",
+    [
+        None,
+        "conta",
+        "data",
+        "valor",
+        "descricao",
+        "sentido",
+        "estado",
+        "gastos",
+        "ganhos",
+        "movimentos_de_investimento",
+    ],
+)
+def test_candidata_exige_aceita_exata_e_sem_nenhum_lancamento_vinculado(uow, diferenca):
+    usuario, conta = _conta_importada(uow)
+    t = _transacao(conta)
+    t.aceitar()
+    if diferenca == "conta":
+        outra = Conta(usuario.id, "Outra", Dinheiro(0))
+        with uow:
+            uow.contas.adicionar(outra)
+            uow.commit()
+        t.conta_id = outra.id
+    if diferenca == "data":
+        t.data = date(2026, 10, 11)
+    if diferenca == "valor":
+        t.valor = Dinheiro(2591)
+    if diferenca == "descricao":
+        t.descricao = "Outro exemplo"
+    if diferenca == "sentido":
+        t.sentido = SentidoDaTransacao.ENTRADA
+    if diferenca == "estado":
+        t.estado = EstadoDaTransacaoImportada.IGNORADA
+    with uow:
+        uow.transacoes_importadas.adicionar_se_nova(t)
+        uow.commit()
+    if diferenca in ["gastos", "ganhos", "movimentos_de_investimento"]:
+        with uow:
+            getattr(uow, diferenca).adicionar(_lancamento_para_conferencia(conta, diferenca, t.id))
+            uow.commit()
+    argumentos = (conta.id, date(2026, 10, 10), Dinheiro(2590), "Mercado", SentidoDaTransacao.SAIDA)
+    with uow:
+        repo = uow.transacoes_importadas
+        assert [
+            c.id for c in repo.aceitas_correspondentes_sem_vinculo(usuario.id, *argumentos)
+        ] == ([t.id] if diferenca is None else [])
+        assert repo.aceitas_correspondentes_sem_vinculo(uuid4(), *argumentos) == []
+
+
+def test_remover_gasto_apaga_so_o_registro_pedido(uow):
+    usuario, conta = _conta_importada(uow)
+    gastos = [_lancamento_para_conferencia(conta, "gastos") for _ in range(2)]
+    with uow:
+        for gasto in gastos:
+            uow.gastos.adicionar(gasto)
+        uow.commit()
+    with uow:
+        uow.gastos.remover(gastos[0].id)
+        uow.commit()
+    with uow:
+        assert [g.id for g in uow.gastos.listar(usuario.id, date.min, date.max)] == [gastos[1].id]
+
+
+def test_correspondencia_preserva_ambiguidades_em_vez_de_escolher_um_registro(uow):
+    from gastoba.domain.movimento_de_investimento import TipoDeMovimento
+
+    usuario, conta = _conta_importada(uow)
+    transacoes = [_transacao(conta, id_externo=f"t-{n}") for n in range(2)]
+    with uow:
+        for transacao in transacoes:
+            transacao.aceitar()
+            uow.transacoes_importadas.adicionar_se_nova(transacao)
+        uow.commit()
+    with uow:
+        for _ in range(2):
+            uow.movimentos_de_investimento.adicionar(
+                _lancamento_para_conferencia(conta, "movimentos_de_investimento")
+            )
+        uow.commit()
+    argumentos = (conta.id, date(2026, 10, 10), Dinheiro(2590), "Mercado")
+    with uow:
+        assert (
+            uow.movimentos_de_investimento.contar_correspondentes_sem_vinculo(
+                usuario.id, *argumentos, TipoDeMovimento.APORTE
+            )
+            == 2
+        )
+        assert {
+            t.id
+            for t in uow.transacoes_importadas.aceitas_correspondentes_sem_vinculo(
+                usuario.id, *argumentos, SentidoDaTransacao.SAIDA
+            )
+        } == {t.id for t in transacoes}

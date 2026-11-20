@@ -62,5 +62,8 @@ HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
     CMD ["python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=3)"]
 
 # Aplica as migrations e sobe a API. Escuta em 0.0.0.0 só dentro do contêiner; o compose
-# publica a porta apenas em 127.0.0.1 porque a API não fornece HTTPS próprio.
-CMD ["sh", "-c", "alembic upgrade head && exec uvicorn gastoba.api.app:criar_app --factory --host 0.0.0.0 --port 8000"]
+# publica a porta apenas em 127.0.0.1 porque a API ainda não tem login.
+# --proxy-headers com '*': o nginx (outro contêiner) sobrescreve X-Forwarded-For com o endereço
+# real de cada aparelho, e o limite de login precisa dele. Só é seguro enquanto a porta 8000
+# ficar em loopback e o nginx for o único caminho até a API (spec 075).
+CMD ["sh", "-c", "alembic upgrade head && exec uvicorn gastoba.api.app:criar_app --factory --host 0.0.0.0 --port 8000 --proxy-headers --forwarded-allow-ips='*'"]

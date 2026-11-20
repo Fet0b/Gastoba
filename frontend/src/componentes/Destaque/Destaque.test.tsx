@@ -12,7 +12,7 @@ describe("Destaque", () => {
     expect(grupo.textContent).toContain("R$ 1.234,56");
   });
 
-  it("o valor não usa algarismos tabulares (classe .valor global ausente)", () => {
+  it("o valor não usa a classe global .valor (os algarismos tabulares vêm do próprio módulo CSS)", () => {
     const { container } = render(<Destaque rotulo="Total" valor="R$ 10,00" />);
 
     expect(container.querySelector(".valor")).toBeNull();
@@ -43,5 +43,27 @@ describe("Destaque", () => {
     expect(container.querySelector("svg")).not.toBeNull();
     expect(grupo.getAttribute("aria-label")).toBe("Faltou: R$ 10,00, negativo");
     expect(grupo.textContent).toContain("Negativo");
+  });
+
+  it("o tamanho padrão é grande e o informado é repassado em data-tamanho", () => {
+    const { container, rerender } = render(<Destaque rotulo="Total" valor="R$ 10,00" />);
+    expect(container.firstElementChild?.getAttribute("data-tamanho")).toBe("grande");
+
+    rerender(<Destaque rotulo="Total" valor="R$ 10,00" tamanho="heroi" />);
+    expect(container.firstElementChild?.getAttribute("data-tamanho")).toBe("heroi");
+
+    rerender(<Destaque rotulo="Total" valor="R$ 10,00" tamanho="medio" />);
+    expect(container.firstElementChild?.getAttribute("data-tamanho")).toBe("medio");
+  });
+});
+
+describe("Destaque, tipografia do valor (070 T015)", () => {
+  it("o valor tem peso de título e algarismos tabulares (XI.3)", async () => {
+    const { readFileSync } = await import("node:fs");
+    const css = readFileSync(`${process.cwd()}/src/componentes/Destaque/Destaque.module.css`, "utf-8");
+    const valor = /\.valor\s*\{([^}]*)\}/.exec(css)?.[1] ?? "";
+    expect(valor).toMatch(/font-weight:\s*var\(--peso-titulo\)/);
+    expect(valor).toMatch(/font-variant-numeric:\s*tabular-nums/);
+    expect(css).not.toContain("proportional-nums");
   });
 });

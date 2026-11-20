@@ -5,11 +5,17 @@ import { useCriarRecorrencia } from "../../api/consultas";
 import type { Categoria, Conta, Recorrencia, TipoDeRecorrencia } from "../../api/tipos";
 import { hojeLocal } from "../../periodo/periodo";
 import { aparar, normalizarTag } from "../../tags/tags";
+import { Botao } from "../Botao/Botao";
+import { ControleSegmentado } from "../ControleSegmentado/ControleSegmentado";
 import { CampoDeTags } from "../Compositor/CampoDeTags";
 import { MENSAGEM_TAG_PENDENTE } from "../Compositor/CompositorDeGasto";
 import { CampoDeValor } from "../Compositor/CampoDeValor";
 import { SeletorDeCategoria } from "../Compositor/SeletorDeCategoria";
+import { CampoDeData } from "../Campo/CampoDeData";
+import { CampoDeTexto } from "../Campo/CampoDeTexto";
+import { Seletor } from "../Campo/Seletor";
 import estilos from "./Recorrencias.module.css";
+import { textoDaConta } from "../../contas/identificacao";
 
 export const MENSAGEM_SEM_CONTAS_PARA_RECORRENCIA = "Crie uma conta antes de criar uma recorrência.";
 
@@ -21,6 +27,8 @@ type Propriedades = {
   aoCriar: (recorrencia: Recorrencia) => void;
   /** Toda falha ao criar (a tela pisca o olho e, sem resposta, avisa). */
   aoFalhar: (erro: unknown) => void;
+  /** Fecha o formulário sem criar. Sem ele, não há "Cancelar". */
+  aoCancelar?: () => void;
 };
 
 type Campo = "valor" | "descricao" | "dia" | "inicio" | "fim" | "conta" | "categoria" | "tags";
@@ -83,6 +91,7 @@ export function FormularioDeRecorrencia({
   sugestoesDeTags = [],
   aoCriar,
   aoFalhar,
+  aoCancelar,
 }: Propriedades) {
   const [tipo, definirTipo] = useState<TipoDeRecorrencia>("ganho");
   const [valor, definirValor] = useState("0.00");
@@ -146,20 +155,7 @@ export function FormularioDeRecorrencia({
     }
   }
 
-  const idDescricao = `${id}-descricao`;
-  const idDia = `${id}-dia`;
-  const idInicio = `${id}-inicio`;
-  const idFim = `${id}-fim`;
-  const idConta = `${id}-conta`;
   const idMotivos = `${id}-motivos`;
-  const idErro = (campo: Campo) => `${id}-erro-${campo}`;
-  const erroDe = (campo: Campo) =>
-    erros[campo] ? (
-      <p id={idErro(campo)} className={estilos.erro}>
-        {erros[campo]}
-      </p>
-    ) : null;
-
   return (
     <form
       className={estilos.formulario}
@@ -168,19 +164,15 @@ export function FormularioDeRecorrencia({
       aria-label="Nova recorrência"
       aria-busy={criar.pendente ? true : undefined}
     >
-      <div role="group" aria-label="O que a recorrência registra" className={estilos.tipos}>
-        {(["ganho", "gasto"] as const).map((opcao) => (
-          <button
-            key={opcao}
-            type="button"
-            className={estilos.tipo}
-            aria-pressed={tipo === opcao}
-            onClick={() => definirTipo(opcao)}
-          >
-            {opcao === "ganho" ? "Ganho" : "Gasto"}
-          </button>
-        ))}
-      </div>
+      <ControleSegmentado
+        nome="O que a recorrência registra"
+        opcoes={[
+          { valor: "ganho", rotulo: "Ganho" },
+          { valor: "gasto", rotulo: "Gasto" },
+        ]}
+        valor={tipo}
+        aoMudar={definirTipo}
+      />
 
       <CampoDeValor
         ref={campoValor}
@@ -190,84 +182,38 @@ export function FormularioDeRecorrencia({
         erro={erros.valor}
       />
 
-      <div className={estilos.campo}>
-        <label htmlFor={idDescricao}>Descrição</label>
-        <input
-          id={idDescricao}
-          className={estilos.entrada}
-          value={descricao}
-          maxLength={200}
+      <CampoDeTexto
+        rotulo="Descrição"
+        valor={descricao}
+        aoMudar={definirDescricao}
+        maxLength={200}
+        autoComplete="off"
+        erro={erros.descricao}
+      />
+
+      <div className={estilos.linha}>
+        <CampoDeTexto
+          rotulo="Dia do mês"
+          valor={dia}
+          aoMudar={definirDia}
+          inputMode="numeric"
           autoComplete="off"
-          onChange={(evento) => definirDescricao(evento.target.value)}
-          aria-invalid={erros.descricao ? true : undefined}
-          aria-describedby={erros.descricao ? idErro("descricao") : undefined}
+          erro={erros.dia}
+          aria-invalid={dia !== "" && diaLido === null ? true : undefined}
         />
-        {erroDe("descricao")}
+        <Seletor
+          rotulo="Conta"
+          valor={contaEscolhida}
+          aoMudar={definirContaId}
+          disabled={!contas || contas.length === 0}
+          opcoes={(contas ?? []).map((conta) => ({ valor: conta.id, rotulo: textoDaConta(conta) }))}
+          erro={erros.conta}
+        />
       </div>
 
       <div className={estilos.linha}>
-        <div className={estilos.campo}>
-          <label htmlFor={idDia}>Dia do mês</label>
-          <input
-            id={idDia}
-            className={estilos.entrada}
-            inputMode="numeric"
-            autoComplete="off"
-            value={dia}
-            onChange={(evento) => definirDia(evento.target.value)}
-            aria-invalid={dia !== "" && diaLido === null ? true : undefined}
-            aria-describedby={erros.dia ? idErro("dia") : undefined}
-          />
-          {erroDe("dia")}
-        </div>
-        <div className={estilos.campo}>
-          <label htmlFor={idConta}>Conta</label>
-          <select
-            id={idConta}
-            className={estilos.entrada}
-            value={contaEscolhida}
-            disabled={!contas || contas.length === 0}
-            onChange={(evento) => definirContaId(evento.target.value)}
-            aria-invalid={erros.conta ? true : undefined}
-            aria-describedby={erros.conta ? idErro("conta") : undefined}
-          >
-            {(contas ?? []).map((conta) => (
-              <option key={conta.id} value={conta.id}>
-                {conta.nome}
-              </option>
-            ))}
-          </select>
-          {erroDe("conta")}
-        </div>
-      </div>
-
-      <div className={estilos.linha}>
-        <div className={estilos.campo}>
-          <label htmlFor={idInicio}>Começa em</label>
-          <input
-            id={idInicio}
-            type="date"
-            className={estilos.entrada}
-            value={inicio}
-            onChange={(evento) => definirInicio(evento.target.value)}
-            aria-invalid={erros.inicio ? true : undefined}
-            aria-describedby={erros.inicio ? idErro("inicio") : undefined}
-          />
-          {erroDe("inicio")}
-        </div>
-        <div className={estilos.campo}>
-          <label htmlFor={idFim}>Termina em (opcional)</label>
-          <input
-            id={idFim}
-            type="date"
-            className={estilos.entrada}
-            value={fim}
-            onChange={(evento) => definirFim(evento.target.value)}
-            aria-invalid={erros.fim ? true : undefined}
-            aria-describedby={erros.fim ? idErro("fim") : undefined}
-          />
-          {erroDe("fim")}
-        </div>
+        <CampoDeData rotulo="Começa em" valor={inicio} aoMudar={definirInicio} erro={erros.inicio} />
+        <CampoDeData rotulo="Termina em (opcional)" valor={fim} aoMudar={definirFim} erro={erros.fim} />
       </div>
 
       {tipo === "gasto" && (
@@ -307,14 +253,21 @@ export function FormularioDeRecorrencia({
         </ul>
       )}
 
-      <button
-        type="submit"
-        className={estilos.primario}
-        disabled={motivos.length > 0 || criar.pendente}
-        aria-describedby={motivos.length > 0 ? idMotivos : undefined}
-      >
-        {criar.pendente ? "Criando…" : "Criar recorrência"}
-      </button>
+      <div className={estilos.acoesDoFormulario}>
+        <Botao
+          type="submit"
+          variante="primario"
+          disabled={motivos.length > 0 || criar.pendente}
+          aria-describedby={motivos.length > 0 ? idMotivos : undefined}
+        >
+          {criar.pendente ? "Criando…" : "Criar recorrência"}
+        </Botao>
+        {aoCancelar && (
+          <Botao variante="secundario" onClick={aoCancelar}>
+            Cancelar
+          </Botao>
+        )}
+      </div>
     </form>
   );
 }

@@ -15,8 +15,6 @@
 }
 
 .excluir {
-  grid-column: 2 / -1;
-  justify-self: end;
   color: var(--cor-bruma);
   font-size: var(--texto-pequeno);
 }
@@ -45,7 +43,7 @@
 }
 
 .confirmacao {
-  grid-column: 1 / -1;
+  flex: 1 1 100%;
   display: flex;
   flex-direction: column;
   gap: var(--espaco-2);

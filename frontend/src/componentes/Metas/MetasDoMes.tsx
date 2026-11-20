@@ -1,43 +1,36 @@
-import type { CSSProperties } from "react";
-
-import type { Categoria, ResumoDasMetas } from "../../api/tipos";
-import { formatar } from "../../dinheiro/dinheiro";
-import { Medidor } from "./Medidor";
+import type { AlvoDaMeta, ResumoDasMetas } from "../../api/tipos";
+import { ordenarPorRelevancia } from "../../metas/semanticaDaMeta";
+import { Botao } from "../Botao/Botao";
+import { Dica } from "../Dica/Dica";
+import { algumGuardado, EXPLICACAO_DO_GUARDADO } from "./guardadoDaMeta";
+import { Recolhivel } from "../Recolhivel/Recolhivel";
+import { Titulo } from "../Titulo/Titulo";
+import { LinhaDaMeta } from "./LinhaDaMeta";
+import { Esqueleto } from "../Esqueleto/Esqueleto";
+import { EstadoDeErro } from "../EstadoDeErro/EstadoDeErro";
 import estilos from "./Metas.module.css";
 
 type Propriedades = {
   /** `undefined` enquanto a primeira busca não respondeu (ou se ela falhou). */
   resumo: ResumoDasMetas | undefined;
   carregando: boolean;
-  categorias: Categoria[] | undefined;
+  categorias: AlvoDaMeta[] | undefined;
   /** Leva à aba de orçamento. */
   aoAbrirOrcamento: () => void;
-  /** Filtra a lista de gastos pela categoria (clicar na ativa limpa); sem ele, não há o botão. */
-  aoAlternarCategoria?: (codigo: string) => void;
-  categoriaAtiva?: string | null;
 };
 
 /**
- * "Metas do mês" na tela inicial: a renda do mês e uma barra por categoria que
- * tem meta, para ver de relance quão dentro ou fora da meta a pessoa está. O
- * nome da categoria filtra os gastos; sem metas, um convite para defini-las.
+ * "Metas do mês" na tela inicial: uma linha compacta por categoria que tem meta (barra,
+ * percentual da renda e o que resta), para ver de relance quão dentro ou fora da meta a pessoa
+ * está. Sem metas, um convite para defini-las. A renda do mês fica no resumo, não aqui.
  */
-export function MetasDoMes({
-  resumo,
-  carregando,
-  categorias,
-  aoAbrirOrcamento,
-  aoAlternarCategoria,
-  categoriaAtiva = null,
-}: Propriedades) {
+export function MetasDoMes({ resumo, carregando, categorias, aoAbrirOrcamento }: Propriedades) {
   const nomes = new Map(categorias?.map((categoria) => [categoria.codigo, categoria.nome]));
 
   let conteudo;
   if (resumo === undefined) {
     conteudo = (
-      <p className={estilos.estado}>
-        {carregando ? "Carregando as metas…" : "Não foi possível carregar as metas."}
-      </p>
+      carregando ? <Esqueleto rotulo="Carregando as metas…" /> : <EstadoDeErro mensagem="Não foi possível carregar as metas." />
     );
   } else if (resumo.metas.length === 0) {
     conteudo = (
@@ -46,45 +39,42 @@ export function MetasDoMes({
       </p>
     );
   } else {
-    conteudo = (
-      <ul className={estilos.lista}>
-        {resumo.metas.map((progresso, indice) => {
-          const nome = nomes.get(progresso.categoria) ?? progresso.categoria;
-          return (
-            <li
-              key={progresso.categoria}
-              className={estilos.itemDoPainel}
-              style={{ "--indice": indice } as CSSProperties}
-            >
-              <Medidor progresso={progresso} nomeDaCategoria={nome} />
-              {aoAlternarCategoria && (
-                <button
-                  type="button"
-                  className={estilos.filtrar}
-                  aria-pressed={categoriaAtiva === progresso.categoria}
-                  onClick={() => aoAlternarCategoria(progresso.categoria)}
-                >
-                  {categoriaAtiva === progresso.categoria ? "Limpar filtro" : `Ver gastos de ${nome}`}
-                </button>
-              )}
-            </li>
-          );
-        })}
+    const ordenadas = ordenarPorRelevancia(resumo.metas);
+    const principais = ordenadas.slice(0, 3);
+    const restantes = ordenadas.slice(3);
+    const linhas = (metas: typeof ordenadas, deslocamento = 0) => (
+      <ul className={estilos.linhasDoInicio}>
+        {metas.map((progresso, indice) => (
+          <LinhaDaMeta
+            key={progresso.categoria}
+            progresso={progresso}
+            nome={progresso.nome ?? nomes.get(progresso.categoria) ?? progresso.categoria}
+            indice={indice + deslocamento}
+            compacta
+          />
+        ))}
       </ul>
     );
+    conteudo = <>
+      {linhas(principais)}
+      {restantes.length > 0 && (
+        <Recolhivel resumo={`+ ${restantes.length} metas`}>
+          {linhas(restantes, principais.length)}
+        </Recolhivel>
+      )}
+    </>;
   }
 
   return (
     <div className={estilos.metasDoMes} aria-busy={carregando}>
       <div className={estilos.cabecalhoDoBloco}>
-        {resumo !== undefined && (
-          <p className={estilos.renda}>
-            Renda do mês <strong className="valor">{formatar(resumo.renda)}</strong>
-          </p>
+        <Titulo nivel="secao" className={estilos.tituloDoBloco}>Metas do mês</Titulo>
+        {resumo !== undefined && algumGuardado(resumo.metas) && (
+          <Dica assunto="o guardado para comprar">{EXPLICACAO_DO_GUARDADO}</Dica>
         )}
-        <button type="button" className={estilos.abrir} onClick={aoAbrirOrcamento}>
+        <Botao variante="terciario" seta onClick={aoAbrirOrcamento}>
           Ver orçamento
-        </button>
+        </Botao>
       </div>
       {conteudo}
     </div>

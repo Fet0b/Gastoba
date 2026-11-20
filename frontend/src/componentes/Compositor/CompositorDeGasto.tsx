@@ -16,8 +16,15 @@ import { hojeLocal } from "../../periodo/periodo";
 import { aparar, normalizarTag } from "../../tags/tags";
 import { CampoDeTags } from "./CampoDeTags";
 import { CampoDeValor } from "./CampoDeValor";
+import { Botao } from "../Botao/Botao";
+import { Chip } from "../Chip/Chip";
+import { Titulo } from "../Titulo/Titulo";
+import { CampoDeData } from "../Campo/CampoDeData";
+import { CampoDeTexto } from "../Campo/CampoDeTexto";
+import { Seletor } from "../Campo/Seletor";
 import estilos from "./CompositorDeGasto.module.css";
 import { SeletorDeCategoria } from "./SeletorDeCategoria";
+import { textoDaConta } from "../../contas/identificacao";
 
 /** Confirmação que o painel anuncia no aviso depois de `aoRegistrar`. */
 export const MENSAGEM_GASTO_REGISTRADO = "Gasto registrado.";
@@ -241,11 +248,7 @@ export function CompositorDeGasto({
   }
 
   const idTitulo = `${id}-titulo`;
-  const idDescricao = `${id}-descricao`;
-  const idData = `${id}-data`;
-  const idConta = `${id}-conta`;
   const idMotivos = `${id}-motivos`;
-  const idErro = (campo: Campo) => `${id}-erro-${campo}`;
 
   return (
     <dialog
@@ -261,136 +264,87 @@ export function CompositorDeGasto({
         noValidate
         aria-busy={registrar.pendente ? true : undefined}
       >
-        <header className={estilos.topo}>
-          <h2 id={idTitulo} className={estilos.titulo}>
-            {tipo === "gasto" ? "Novo gasto" : "Novo ganho"}
-          </h2>
-          <p className={estilos.atalho}>
-            <kbd>Esc</kbd> fecha
-          </p>
-        </header>
+        <div className={estilos.corpo} data-corpo-dialogo="">
+          <header className={estilos.topo}>
+            <Titulo nivel="secao" como="h2" id={idTitulo} className={estilos.titulo}>
+              {tipo === "gasto" ? "Novo gasto" : "Novo ganho"}
+            </Titulo>
+            <p className={estilos.atalho}>
+              <kbd>Esc</kbd> fecha
+            </p>
+          </header>
 
-        <div role="group" aria-label="O que registrar" className={estilos.tipos}>
-          {(["gasto", "ganho"] as const).map((opcao) => (
-            <button
-              key={opcao}
-              type="button"
-              className={estilos.tipo}
-              aria-pressed={tipo === opcao}
-              onClick={() => definirTipo(opcao)}
-            >
-              {opcao === "gasto" ? "Gasto" : "Ganho"}
-            </button>
-          ))}
-        </div>
+          <div role="group" aria-label="O que registrar" className={estilos.tipos}>
+            {(["gasto", "ganho"] as const).map((opcao) => (
+              <Chip
+                key={opcao}
+                selecionado={tipo === opcao}
+                aoAlternar={() => definirTipo(opcao)}
+              >
+                {opcao === "gasto" ? "Gasto" : "Ganho"}
+              </Chip>
+            ))}
+          </div>
 
-        <CampoDeValor
-          ref={campoValor}
-          rotulo="Valor"
-          valor={valor}
-          aoMudar={definirValor}
-          erro={erros.valor}
-        />
+          <CampoDeValor
+            ref={campoValor}
+            rotulo="Valor"
+            valor={valor}
+            aoMudar={definirValor}
+            erro={erros.valor}
+          />
 
-        <div className={estilos.campo}>
-          <label htmlFor={idDescricao} className={estilos.rotulo}>
-            Descrição
-          </label>
-          <input
+          <CampoDeTexto
             ref={campoDescricao}
-            id={idDescricao}
-            className={estilos.entrada}
-            value={descricao}
-            onChange={(evento) => definirDescricao(evento.target.value)}
+            rotulo="Descrição"
+            valor={descricao}
+            aoMudar={definirDescricao}
             maxLength={200}
             autoComplete="off"
-            aria-invalid={erros.descricao ? true : undefined}
-            aria-describedby={erros.descricao ? idErro("descricao") : undefined}
+            erro={erros.descricao}
           />
-          {erros.descricao && (
-            <p id={idErro("descricao")} className={estilos.erro}>
-              {erros.descricao}
+
+          <div className={estilos.linha}>
+            <CampoDeData ref={campoData} rotulo="Data" valor={data} aoMudar={definirData} erro={erros.data} />
+            <Seletor
+              ref={campoConta}
+              rotulo="Conta"
+              valor={contaId}
+              aoMudar={definirContaId}
+              disabled={contas.length === 0}
+              opcoes={contas.map((conta) => ({ valor: conta.id, rotulo: textoDaConta(conta) }))}
+              erro={erros.conta}
+            />
+          </div>
+
+          {tipo === "gasto" && (
+            <SeletorDeCategoria
+              ref={campoCategoria}
+              categorias={categorias}
+              valor={categoria}
+              aoMudar={definirCategoria}
+              erro={erros.categoria}
+            />
+          )}
+
+          <CampoDeTags
+            ref={campoTags}
+            tags={tags}
+            aoMudar={definirTags}
+            aoMudarTexto={definirTextoDaTag}
+            sugestoes={sugestoesDeTags}
+            erro={erros.tags}
+          />
+
+          {/* Sem campo ao qual ligar a mensagem: o alerta a anuncia. */}
+          {erros.geral && (
+            <p role="alert" className={estilos.erro}>
+              {erros.geral}
             </p>
           )}
         </div>
 
-        <div className={estilos.linha}>
-          <div className={estilos.campo}>
-            <label htmlFor={idData} className={estilos.rotulo}>
-              Data
-            </label>
-            <input
-              ref={campoData}
-              id={idData}
-              type="date"
-              className={estilos.entrada}
-              value={data}
-              onChange={(evento) => definirData(evento.target.value)}
-              aria-invalid={erros.data ? true : undefined}
-              aria-describedby={erros.data ? idErro("data") : undefined}
-            />
-            {erros.data && (
-              <p id={idErro("data")} className={estilos.erro}>
-                {erros.data}
-              </p>
-            )}
-          </div>
-
-          <div className={estilos.campo}>
-            <label htmlFor={idConta} className={estilos.rotulo}>
-              Conta
-            </label>
-            <select
-              ref={campoConta}
-              id={idConta}
-              className={estilos.entrada}
-              value={contaId}
-              onChange={(evento) => definirContaId(evento.target.value)}
-              disabled={contas.length === 0}
-              aria-invalid={erros.conta ? true : undefined}
-              aria-describedby={erros.conta ? idErro("conta") : undefined}
-            >
-              {contas.map((conta) => (
-                <option key={conta.id} value={conta.id}>
-                  {conta.nome}
-                </option>
-              ))}
-            </select>
-            {erros.conta && (
-              <p id={idErro("conta")} className={estilos.erro}>
-                {erros.conta}
-              </p>
-            )}
-          </div>
-        </div>
-
-        {tipo === "gasto" && (
-          <SeletorDeCategoria
-            ref={campoCategoria}
-            categorias={categorias}
-            valor={categoria}
-            aoMudar={definirCategoria}
-            erro={erros.categoria}
-          />
-        )}
-
-        <CampoDeTags
-          ref={campoTags}
-          tags={tags}
-          aoMudar={definirTags}
-          aoMudarTexto={definirTextoDaTag}
-          sugestoes={sugestoesDeTags}
-          erro={erros.tags}
-        />
-
-        {/* Sem campo ao qual ligar a mensagem: o alerta a anuncia. */}
-        {erros.geral && (
-          <p role="alert" className={estilos.erro}>
-            {erros.geral}
-          </p>
-        )}
-
-        <footer className={estilos.rodape}>
+        <footer className={estilos.rodape} data-rodape-dialogo="">
           {motivos.length > 0 && (
             <ul id={idMotivos} className={estilos.motivos}>
               {motivos.map((motivo) => (
@@ -399,12 +353,11 @@ export function CompositorDeGasto({
             </ul>
           )}
           <div className={estilos.acoes}>
-            <button type="button" className={estilos.secundario} onClick={aoFechar}>
+            <Botao variante="secundario" onClick={aoFechar}>
               Cancelar
-            </button>
-            <button
+            </Botao>
+            <Botao variante="primario"
               type="submit"
-              className={estilos.primario}
               disabled={motivos.length > 0 || registrar.pendente}
               aria-describedby={motivos.length > 0 ? idMotivos : undefined}
             >
@@ -413,7 +366,7 @@ export function CompositorDeGasto({
                 : tipo === "gasto"
                   ? "Registrar gasto"
                   : "Registrar ganho"}
-            </button>
+            </Botao>
           </div>
         </footer>
       </form>

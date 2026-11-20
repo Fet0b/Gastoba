@@ -1,0 +1,15 @@
+.base {
+  display: contents;
+  min-width: 0;
+}
+
+.base form {
+  max-width: 26rem;
+}
+
+.acoes {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--espaco-3);
+}

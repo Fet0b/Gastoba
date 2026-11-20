@@ -1,0 +1,34 @@
+.seletor {
+  position: relative;
+  min-width: 0;
+}
+
+.opcoes {
+  position: absolute;
+  z-index: 30;
+  inset-block-start: 100%;
+  inset-inline-start: 0;
+  width: max-content;
+  max-width: min(32rem, calc(100vw - var(--espaco-6)));
+  max-height: 24rem;
+  overflow: auto;
+  padding: var(--espaco-3);
+  background: var(--cor-veludo);
+  border: var(--borda-de-camada);
+  border-radius: var(--raio-campo);
+  box-shadow: var(--sombra-media);
+}
+
+.opcoes[data-alinhamento="fim"] {
+  inset-inline-start: auto;
+  inset-inline-end: 0;
+}
+
+@media (max-width: 45rem) {
+  .opcoes {
+  position: static;
+  width: auto;
+  box-shadow: none;
+}
+
+}

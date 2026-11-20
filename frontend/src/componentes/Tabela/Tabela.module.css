@@ -1,0 +1,39 @@
+.rolagem {
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+.tabela {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--texto-corpo);
+}
+
+.tabela th, .tabela td {
+  padding: var(--espaco-3);
+  text-align: start;
+  border-bottom: var(--borda-de-camada);
+}
+
+.tabela th {
+  color: var(--cor-bruma);
+  font-size: var(--texto-rotulo);
+  font-weight: 500;
+}
+
+/* Caixa alta só no cabeçalho das colunas: o nome na primeira coluna (`th scope="row"`) é um dado. */
+.tabela th[scope="col"] {
+  text-transform: uppercase;
+}
+
+.tabela th[scope="row"] {
+  color: var(--cor-nevoa);
+  font-size: var(--texto-corpo);
+  font-weight: 400;
+}
+
+.tabela [data-numerica] {
+  text-align: end;
+  font-family: var(--fonte-titulo);
+  font-variant-numeric: tabular-nums;
+}

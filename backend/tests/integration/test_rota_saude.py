@@ -24,14 +24,14 @@ def test_saude_com_banco_inacessivel_responde_503_sem_detalhes(tmp_path):
     assert resposta.json() == {"status": "indisponivel", "banco": "indisponivel"}
 
 
-def test_documentacao_interativa_disponivel(cliente):
-    resposta = cliente.get("/docs")
+def test_documentacao_interativa_disponivel(cliente_autenticado):
+    resposta = cliente_autenticado.get("/docs")
 
     assert resposta.status_code == 200
 
 
-def test_especificacao_openapi_contem_rota_de_saude(cliente):
-    resposta = cliente.get("/openapi.json")
+def test_especificacao_openapi_contem_rota_de_saude(cliente_autenticado):
+    resposta = cliente_autenticado.get("/openapi.json")
 
     assert resposta.status_code == 200
     assert "/health" in resposta.json()["paths"]

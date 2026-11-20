@@ -12,18 +12,18 @@ Referência da API HTTP/JSON do backend. A fonte da verdade é o contrato OpenAP
 - **Datas** são `AAAA-MM-DD`; o **mês** das metas é `AAAA-MM`. O servidor não calcula "hoje" nas consultas (o cliente informa o período), exceto na geração das recorrências, que usa o dia de Brasília (`America/Sao_Paulo`).
 - **Identificadores** são UUIDs.
 - **Isolamento**: cada pessoa só enxerga os próprios dados. Um recurso de outra pessoa responde **404**, nunca 403.
-- **Categorias** são um conjunto fixo: `investimentos`, `lazer`, `conhecimento`, `conforto` e `gasto_fixo` (`GET /categorias`). **Tags** são texto livre, normalizadas (espaços das pontas removidos, espaços internos colapsados e minúsculas), com 1 a 30 caracteres e no máximo 10 por gasto.
+- **Categorias** ativas: `lazer`, `conhecimento`, `conforto` e `gasto_fixo`. `GET /categorias` também devolve `investimentos`, com `legada: true` e nome "Investimentos (antiga)", exclusivamente para leitura e revisão; nenhuma escrita nova aceita esse código. **Tags** são texto livre, normalizadas (espaços das pontas removidos, espaços internos colapsados e minúsculas), com 1 a 30 caracteres e no máximo 10 por gasto.
 
 ## Autenticação
 
-Toda rota exige credencial, exceto `GET /health`, `POST /auth/cadastro` e `POST /auth/entrar`. A credencial é um token, de dois tipos:
+Toda rota exige credencial, exceto `GET /health`, `POST /auth/cadastro` e `POST /auth/entrar`. Isso inclui a documentação (`GET /openapi.json`, `GET /docs` e `GET /redoc`, fora do schema): aceitam sessão ou chave de API de qualquer escopo e, sem credencial, respondem 401 `nao_autenticado`. A credencial é um token, de dois tipos:
 
 | Tipo | Como obter | Como enviar | Vale |
 |---|---|---|---|
 | **Sessão** (`gsess_...`) | `POST /auth/entrar` | cookie `gastoba_sessao` (definido na resposta) ou `Authorization: Bearer <token>` | `GASTOBA_DURACAO_DA_SESSAO_HORAS` (padrão 12 h), sem renovação |
 | **Chave de API** (`gapi_<prefixo>_...`) | `POST /chaves-de-api` (só com sessão) | só `Authorization: Bearer <chave>` | até revogar ou expirar |
 
-- A chave tem escopo `leitura` (só `GET`, `HEAD` e `OPTIONS`) ou `escrita` (também `POST`, `PUT` e `DELETE`). A sessão tem tudo. O segredo da chave aparece **uma única vez**, na criação. As rotas de `/chaves-de-api` só aceitam sessão; com uma chave, respondem 403 `acesso_negado`.
+- A chave tem escopo `leitura` (só `GET`, `HEAD` e `OPTIONS`) ou `escrita` (também `POST`, `PUT` e `DELETE`). A sessão tem tudo. O segredo da chave aparece **uma única vez**, na criação. As rotas de `/chaves-de-api`, `POST /movimentos-de-investimento/{id}/desfazer-classificacao` e `DELETE /movimentos-de-investimento/{id}/caixinhas` só aceitam sessão; com uma chave, respondem 403 `acesso_negado`.
 - **Proteção contra CSRF**: uma requisição autenticada por **cookie** que escreve (`POST`, `PUT`, `DELETE`) precisa do cabeçalho `X-Gastoba-Requisicao: 1`; sem ele, 403 `requisicao_invalida_origem`. Com `Authorization: Bearer` o cabeçalho não é exigido.
 - Token ausente, malformado, expirado ou revogado: 401 `nao_autenticado`, com `WWW-Authenticate: Bearer`.
 - **Limite de tentativas de login**: depois de `GASTOBA_TENTATIVAS_DE_LOGIN` falhas (padrão 5) em 15 minutos, por e-mail e por IP, responde 429 `muitas_tentativas` com `Retry-After`.
@@ -58,27 +58,50 @@ Erros de validação da requisição trazem também `detalhes`, sem ecoar o valo
 |---|---|---|
 | Sem credencial, ou token inválido, expirado ou revogado | 401 | `nao_autenticado` |
 | E-mail inexistente ou senha errada no login (mesma resposta) | 401 | `credenciais_invalidas` |
-| Chave sem o escopo do método, ou gerindo chaves com chave | 403 | `acesso_negado` |
+| Chave sem o escopo do método, gerindo chaves ou desfazendo classificação de investimento | 403 | `acesso_negado` |
 | Cadastro com o cadastro fechado | 403 | `cadastro_fechado` |
+| Matiz fora de 0 a 359 ou nome do app vazio, com mais de 20 caracteres ou não imprimível | 422 | `aparencia_invalida` |
+| Guardado nas metas com caixinha repetida, inexistente ou mais de 20 marcações | 422 | `guardado_invalido` |
 | Escrita por cookie sem `X-Gastoba-Requisicao: 1` | 403 | `requisicao_invalida_origem` |
 | Conta inexistente (ou de outra pessoa) | 404 | `conta_nao_encontrada` |
 | Ganho inexistente (ou de outra pessoa) | 404 | `ganho_nao_encontrado` |
 | Excluir ganho gerado por uma recorrência | 409 | `ganho_de_recorrencia` |
 | Importação desligada, ou pessoa que não é a dona | 404 | `importacao_desligada` |
 | Transação importada inexistente (ou de outra pessoa) | 404 | `transacao_importada_nao_encontrada` |
-| Aceitar ou ignorar transação já tratada | 409 | `transacao_ja_tratada` |
+| Aceitar ou ignorar transação já tratada, ou restaurar uma que não está ignorada | 409 | `transacao_ja_tratada` |
+| Categoria legada `investimentos` em qualquer escrita nova | 422 | `categoria_invalida` |
+| Divisão de transação fora das regras (2 a 10 partes, 1 a 100%, soma 100) | 422 | `divisao_invalida` |
+| Destinações fora das regras (percentual de 1 a 100, soma 100, tag repetida) | 422 | `destinacao_invalida` |
+| Conta remunerada ou rendimento aceito como gasto ou ganho; imposto ou taxa como aporte; conta remunerada ligada a ação ou título | 422 | `movimento_incompativel_com_investimento` |
+| Resgate ou realocação acima do principal da destinação | 422 | `principal_insuficiente` |
+| Resgate maior que o valor da destinação antes do resgate (há saldo anterior no histórico) | 422 | `resgate_maior_que_o_valor` |
+| Investimento inexistente ou de outro usuário | 404 | `investimento_nao_encontrado` |
+| Aporte ou resgate inexistente ou de outro usuário | 404 | `movimento_de_investimento_nao_encontrado` |
+| Associar movimento que já tem investimento | 409 | `movimento_ja_associado` |
+| Desfazer movimento sem origem segura, com caixa indisponível, ou usar o DELETE para origem diferente de saldo inicial | 409 | `movimento_nao_desfazivel` |
+| Desfazer transação dividida sem confirmar a divisão inteira | 409 | `divisao_exige_confirmacao` |
+| Realocação inexistente ou de outro investimento | 404 | `realocacao_nao_encontrada` |
+| Desfazer realocação ou saldo inicial cujo valor a destinação já não tem | 422 | `principal_insuficiente` |
+| Definir destinações de posição já coberta pelo principal registrado | 409 | `sem_valor_a_destinar` |
 | Já há uma sincronização rodando | 409 | `sincronizacao_em_andamento` |
 | Aceitar saída sem categoria, ou entrada com categoria | 422 | `transacao_importada_invalida` |
 | Recorrência inexistente (ou de outra pessoa) | 404 | `recorrencia_nao_encontrada` |
 | Meta inexistente | 404 | `meta_nao_encontrada` |
 | Chave de API inexistente, revogada ou de outra pessoa | 404 | `chave_de_api_nao_encontrada` |
 | Nome de conta repetido | 409 | `conta_ja_existe` |
+| Apelido da conta vazio, com mais de 40 caracteres ou não imprimível | 422 | `apelido_invalido` |
+| Apelido já usado em outra conta da mesma pessoa | 409 | `apelido_ja_existe` |
 | E-mail já cadastrado | 409 | `email_ja_cadastrado` |
 | `inicio` depois de `fim` | 422 | `periodo_invalido` |
 | Valor inválido (zero, negativo, vírgula, acima do limite) | 422 | `valor_invalido` |
 | Descrição vazia ou longa demais (acima de 200) | 422 | `descricao_invalida` |
 | Nome vazio ou longo demais | 422 | `nome_invalido` |
 | Tag inválida ou tags demais | 422 | `tag_invalida` |
+| Nome de caixinha inválido (1–30 caracteres imprimíveis após normalização) | 422 | `tag_invalida` |
+| Caixinha já cadastrada para a pessoa, inclusive cadastro criado pelo uso de investimento | 409 | `destinacao_ja_cadastrada` |
+| Caixinha inexistente ou de outra pessoa | 404 | `destinacao_cadastrada_nao_encontrada` |
+| Caixinha com qualquer referência ou histórico | 409 | `destinacao_em_uso` |
+| Ícone de caixinha fora dos seis códigos | 422 | `icone_invalido` |
 | E-mail inválido | 422 | `email_invalido` |
 | Senha fora de 10 a 128 caracteres | 422 | `senha_invalida` |
 | Nome da chave inválido | 422 | `nome_de_chave_invalido` |
@@ -99,8 +122,9 @@ Erros de validação da requisição trazem também `detalhes`, sem ecoar o valo
 - **Gasto**: valor positivo, descrição, data, **categoria obrigatória** e tags. Debita o saldo da conta na mesma transação. Não há edição nem remoção.
 - **Ganho**: entrada de dinheiro (salário, reembolso): valor positivo, descrição, data e tags, **sem categoria**. Credita o saldo. Pode ser excluído (o saldo da conta é debitado do mesmo valor), exceto o gerado por uma recorrência, que a geração recriaria. Não há edição.
 - **Recorrência**: modelo **mensal** que gera um ganho ou um gasto por mês, no `dia_do_mes` (1 a 31; em mês mais curto vale o último dia). O servidor cria os lançamentos sozinho (ao subir e a cada hora), de forma idempotente, e recupera os meses perdidos; criar já gera os meses vencidos desde o início (no máximo 5 anos atrás). Os lançamentos gerados trazem `recorrencia_id`. Alterar vale dos próximos meses em diante; encerrar (`DELETE`) só marca `ativa = false`. No máximo 50 recorrências ativas por pessoa.
-- **Meta**: a porcentagem inteira (1 a 100) da **renda do mês** (soma dos ganhos do mês, em todas as contas) que uma categoria pode usar. A soma das metas nunca passa de 100%. Limite = `renda * percentual // 100`. Situação: `dentro` (gasto abaixo de 80% do limite), `alerta` (de 80% ao limite, inclusive), `estourou` (acima do limite) e `sem_renda` (renda zero no mês).
-- **Importação bancária** (só a pessoa dona, `GASTOBA_PLUGGY_EMAIL_DO_DONO`; para as outras as rotas dão 404 `importacao_desligada`): as contas e transações vêm da Pluggy (conector MeuPluggy). A conta importada tem origem `open_finance` e **o saldo é o do banco** (no cartão, o negativo do valor devido): aceitar uma transação, lançar à mão ou excluir um ganho nela não o altera. A transação chega **pendente** à caixa de entrada e só vira gasto (saída, com categoria) ou ganho (entrada) quando aceita; transferência entre as próprias contas (`TRANSFERENCIA_MESMA_INSTITUICAO`) e pagamento de fatura (`PAGAMENTO_FATURA`) entram **já ignoradas** (aparecem só em `?estado=ignorada` e não contam em `transacoes_novas`); `sugerir_descarte` marca o estorno (e as duas anteriores), e `possivel_duplicado` marca a que já tem um lançamento manual igual (mesma conta, dia e valor). `GET /auth/eu` traz `importacao_bancaria`.
+- **Renda-base**: previsão mensal positiva, única por pessoa e válida para todos os meses até ser alterada ou removida. Não cria ganhos nem muda saldos. Alterá-la também muda os indicadores consultados em meses passados, sem reescrever lançamentos.
+- **Meta**: a porcentagem inteira (1 a 100) da **renda de referência** que uma categoria pode usar. A referência é sempre a renda-base configurada (mesmo com ganhos maiores); sem base, usa a soma dos ganhos registrados no mês, em todas as contas. A soma das metas nunca passa de 100%. Limite = `renda_de_referencia * percentual // 100`. Situação: `dentro` (gasto abaixo de 80% do limite), `alerta` (de 80% ao limite, inclusive), `estourou` (acima do limite) e `sem_renda` (referência zero). A projeção financeira continua usando os ganhos registrados.
+- **Importação bancária** (só a pessoa dona, `GASTOBA_PLUGGY_EMAIL_DO_DONO`; para as outras as rotas dão 404 `importacao_desligada`): as contas e transações vêm da Pluggy (conector MeuPluggy). A conta importada tem origem `open_finance` e **o saldo é o do banco** (no cartão, o negativo do valor devido): aceitar uma transação, lançar à mão ou excluir um ganho nela não o altera. A transação chega **pendente** à caixa de entrada e só vira gasto (saída, com categoria) ou ganho (entrada) quando aceita; transferência entre as próprias contas (`TRANSFERENCIA_MESMA_INSTITUICAO`) e pagamento de fatura (`PAGAMENTO_FATURA`) entram **já ignoradas** (aparecem só em `?estado=ignorada` e não contam em `transacoes_novas`); `sugerir_descarte` marca o estorno (e as duas anteriores), `possivel_duplicado` marca a que já tem um lançamento manual igual (mesma conta, dia e valor), e `investimento_sugerido_id` aponta a posição de investimento de que a saída pendente parece ser o aporte (o nome da posição, sem acento nem pontuação, aparece na descrição; o valor aplicado é igual ao da transação; e a posição ainda não tem movimento associado), nulo se nenhuma ou mais de uma casa. A sugestão nunca aceita nada sozinha. `GET /auth/eu` traz `importacao_bancaria`.
 - **Resumo por tag**: o valor de cada gasto se divide em partes iguais entre as suas tags, em centavos; o resto vai de 1 em 1 centavo às primeiras tags, então a soma das fatias é sempre o total. Gasto sem tag vira a fatia `"tag": null`.
 
 ## Rotas
@@ -186,6 +210,11 @@ Resposta **200**: `PerfilResposta`
 | `email` | texto ou nulo | sim |
 | `nome` | texto | sim |
 | `importacao_bancaria` | booleano | não |
+| `gestao_de_investimentos` | booleano | não |
+
+`aparencia` (obrigatório) traz `{matiz, intensidade, textura, nome, marca, personalizada}`: a escolha da pessoa ou a padrão (matiz 258, `media`, `nenhuma`, "Gastoba", `olho`); `personalizada` é falso na padrão. Ver "Aparência" abaixo.
+
+`gestao_de_investimentos` é verdadeiro para a dona da importação ou para quem tem ao menos um investimento ou movimento próprio. Permite consultar e associar movimentos e desfazer saldo inicial mesmo com a importação desligada. Desfazer classificação exige a caixa de entrada disponível.
 
 Erros possíveis: `401`, `403`.
 
@@ -263,8 +292,19 @@ Resposta **200**: `lista de ContaResposta`
 | `saldo` | texto | sim |
 | `origem` | texto | sim |
 | `tipo` | texto | sim |
+| `rotulo` | texto | sim |
+| `apelido` | texto | não (nulo) |
+| `nome_no_banco` | texto | não (nulo) |
+| `final_do_numero` | texto (quatro dígitos) | não (nulo) |
 
 `tipo` é `corrente` ou `cartao`. A conta criada à mão é sempre `corrente`; a importada segue o tipo da conta no banco (cartão de crédito vira `cartao`).
+
+`rotulo` é como a conta aparece em toda a interface: o `apelido`, se existir; senão o `nome_no_banco`
+(conta importada); senão o `nome`. O `nome` continua sendo a chave única interna (a conta importada
+repetida do mesmo banco leva `(2)`, `(3)`, que nunca é exibido). `nome_no_banco` e `final_do_numero`
+vêm do banco a cada sincronização (conta manual: nulos); só os **quatro últimos dígitos** do número são
+guardados, nunca o número inteiro. `GET /contas` vem ordenada pelo `rotulo`, sem distinguir maiúsculas.
+`apelido`, `nome_no_banco` e `final_do_numero` são dados da própria pessoa: outra pessoa nunca os vê.
 
 Erros possíveis: `401`, `403`.
 
@@ -282,6 +322,23 @@ Corpo: `CriarContaRequisicao`
 Resposta **201**: `ContaResposta`
 
 Erros possíveis: `401`, `403`, `409`, `422`.
+
+#### `PUT /contas/{conta_id}/apelido`
+
+Corpo: `{"apelido": "Conta da casa"}` (texto de 1 a 40 caracteres imprimíveis, aparado; único entre os
+apelidos da pessoa). Autenticação comum: chave de escrita grava; chave de leitura recebe 403; cookie
+exige `X-Gastoba-Requisicao: 1`.
+
+Resposta **200**: `ContaResposta` (com `apelido` e `rotulo` novos).
+
+Erros possíveis: `401`, `403`, `404` (`conta_nao_encontrada`, também para conta de outra pessoa), `409`
+(`apelido_ja_existe`), `422` (`apelido_invalido`, `requisicao_invalida`).
+
+#### `DELETE /contas/{conta_id}/apelido`
+
+Remove o apelido; o `rotulo` volta ao nome no banco (ou ao nome da conta manual). Idempotente.
+
+Resposta **204**. Erros possíveis: `401`, `403`, `404`.
 
 ### Gastos
 
@@ -315,6 +372,8 @@ Resposta **201**: `GastoResposta`
 | `tags` | lista de texto | sim |
 | `origem` | texto | sim |
 | `recorrencia_id` | texto (uuid) ou nulo | não |
+| `valor_coberto` | texto decimal (soma das coberturas) | sim |
+| `coberturas` | lista de CoberturaResposta (`id`, `tag`, `valor`, `movimento_id` ou nulo) | sim |
 
 Erros possíveis: `401`, `403`, `404`, `422`.
 
@@ -466,6 +525,28 @@ Resposta **204** (sem corpo).
 
 Erros possíveis: `401`, `403`, `404`, `422`.
 
+### Renda-base mensal
+
+| Rota | Entrada | Resposta |
+|---|---|---|
+| `GET /renda-base` | — | 200 `RendaBaseResposta`: `{"valor": "5000.00"}` ou `{"valor": null}` |
+| `PUT /renda-base` | `DefinirRendaBaseRequisicao`: `{"valor": "5000.00"}` | 200 `RendaBaseResposta`; cria ou atualiza a mesma base |
+| `DELETE /renda-base` | — | 204, também quando não existe base |
+
+`valor` é obrigatório e aceita somente string decimal positiva no PUT, até R$ 1 trilhão. Zero, negativo, vírgula, fração de centavo ou acima do limite: 422 `valor_invalido`; número JSON: 422 `requisicao_invalida`. Sem credencial: 401. Chave de leitura só consulta; PUT/DELETE exigem escrita (403 `acesso_negado` sem o escopo). Escrita por cookie exige CSRF. A base pertence à pessoa autenticada.
+
+### Aparência
+
+Cor dominante, intensidade, textura, nome e logo do app, por pessoa (frente 065). Sem credencial: 401. Escrita por chave exige escopo de escrita; por cookie exige CSRF.
+
+| Rota | Entrada | Resposta |
+|---|---|---|
+| `GET /aparencia/opcoes` | — | 200 `{intensidades, texturas, marcas}`, cada uma `[{codigo, nome}]`, lidas dos enums (`suave`/`media`/`viva`; `nenhuma`/`pontos`/`linhas`/`grade`/`grao`; `olho`/`inicial`/`moeda`/`cofre`/`folha`/`grafico`) |
+| `PUT /aparencia` | `{"matiz", "intensidade", "textura", "nome", "marca"}` | 200 `AparenciaResposta` (o nome volta sem espaços nas pontas) |
+| `DELETE /aparencia` | — | 204, idempotente; volta à aparência padrão |
+
+`matiz` é inteiro (texto ou decimal: 422 `requisicao_invalida`); fora de 0 a 359, ou nome inválido: 422 `aparencia_invalida`. Código de intensidade, textura ou marca desconhecido: 422 `requisicao_invalida`.
+
 ### Metas
 
 #### `GET /metas`
@@ -478,6 +559,7 @@ Resposta **200**: `lista de MetaResposta`
 |---|---|---|
 | `categoria` | texto | sim |
 | `percentual` | inteiro | sim |
+| `nome` | texto (nome do alvo) | sim |
 
 Erros possíveis: `401`, `403`, `404`, `422`.
 
@@ -494,8 +576,16 @@ Resposta **200**: `ResumoDasMetasResposta`
 | Campo | Tipo | Obrigatório |
 |---|---|---|
 | `mes` | texto | sim |
-| `renda` | texto | sim |
+| `renda` | texto (ganhos registrados) | sim |
+| `renda_base` | texto ou nulo | sim |
+| `renda_de_referencia` | texto | sim |
 | `metas` | lista de ProgressoDaMetaResposta | sim |
+
+`renda` continua sendo a soma real dos ganhos. Limite, restante, percentual usado e situação das metas usam `renda_de_referencia`, igual à base quando definida e a `renda` caso contrário.
+
+Cada item de `metas` traz ainda, para o card mostrar a composição "R$ 4.200 de R$ 954 + R$ 3.500 da caixinha Computador": `gasto_bruto` (o `gasto` líquido mais `limite_adicional`), `limite_adicional` (o que compras pagas por resgate real de uma caixinha somaram no mês da data do gasto), `caixinhas` (`[{tag, valor, rentabilidade}]`: `valor` é o que a caixinha pagou no mês, possivelmente zero) e `rentabilidade` (% com duas casas das caixinhas da meta; em Liberdade financeira, das destinações sem vínculo; nulos sem dado). `gasto`, `percentual_usado`, `restante` e `situacao` seguem líquidos. Partes de aportes vinculados não são despesa; Liberdade financeira usa somente transferências líquidas externas confirmadas.
+
+Cada item de `metas` traz também, só para exibição (frente 066): `guardado` (string decimal, `"0.00"` por padrão), `percentual_guardado` (inteiro, `guardado * 100 // limite`; zero com limite zero e no mínimo 1 com guardado positivo; pode passar de 100) e `caixinhas_guardadas` (nomes das caixinhas marcadas que ficaram com saldo positivo no mês, em ordem alfabética). O guardado é a soma, no mês da meta, das partes de **aportes** nas caixinhas marcadas para a categoria, menos as partes de **resgates**, nunca abaixo de zero; saldo inicial, realocação, rendimento, custo e imposto não contam. Com a opção desligada (ou sem marcação para a categoria, ou na Liberdade financeira) os três campos são `"0.00"`, `0` e `[]` e nenhum movimento é lido. `gasto`, `limite`, `restante`, `percentual_usado`, `situacao` e o campo `caixinhas` (compras pagas, 051) **não mudam** com o guardado.
 
 Erros possíveis: `401`, `403`, `404`, `422`.
 
@@ -503,7 +593,7 @@ Erros possíveis: `401`, `403`, `404`, `422`.
 
 | Parâmetro | Em | Tipo | Obrigatório |
 |---|---|---|---|
-| `categoria` | caminho | CategoriaDoGasto | sim |
+| `categoria` | caminho | CodigoDaMetaNaRota (inclui alias obsoleto `investimentos`) | sim |
 
 Corpo: `DefinirMetaRequisicao`
 
@@ -521,11 +611,22 @@ Erros possíveis: `401`, `403`, `404`, `422`.
 
 | Parâmetro | Em | Tipo | Obrigatório |
 |---|---|---|---|
-| `categoria` | caminho | CategoriaDoGasto | sim |
+| `categoria` | caminho | CodigoDaMetaNaRota (inclui alias obsoleto `investimentos`) | sim |
 
 Resposta **204** (sem corpo).
 
 Erros possíveis: `401`, `403`, `404`, `422`.
+
+### Guardado nas metas
+
+Configuração por pessoa (frente 066): se o guardado para comprar aparece nas metas e quais caixinhas (destinações) estão marcadas em cada categoria de gasto ativa. É só exibição: não cria nem altera lançamento, aporte, resgate, saldo ou meta. Usa a autenticação comum (sem credencial 401; chave de leitura só consulta; escrita por cookie exige CSRF).
+
+| Rota | Entrada | Resposta |
+|---|---|---|
+| `GET /guardado-nas-metas` | — | 200 `{"ativo": false, "marcacoes": [{"categoria", "tag"}]}`; sem configuração, `ativo` falso e lista vazia; só traz marcação de caixinha que ainda existe |
+| `PUT /guardado-nas-metas` | o mesmo corpo | 200 o mesmo corpo; **troca o conjunto inteiro** numa transação; desligar (`ativo: false`) preserva as marcações enviadas |
+
+Cada caixinha só pode ser marcada em uma categoria, no máximo 20 marcações por pessoa, e a `tag` precisa existir entre as destinações da pessoa (a comparação é normalizada como nas tags). Erros: 422 `guardado_invalido` (tag repetida, inexistente ou mais de 20), 422 `categoria_invalida` (categoria legada, desconhecida ou `liberdade_financeira`, que já mede aportes).
 
 ### Resumos
 
@@ -575,6 +676,7 @@ Resposta **200**: `lista de TransacaoImportadaResposta`
 | `estado` | texto | sim |
 | `sugerir_descarte` | booleano | sim |
 | `possivel_duplicado` | booleano | sim |
+| `investimento_sugerido_id` | texto (uuid) ou nulo | sim |
 
 Erros possíveis: `401`, `403`, `404`, `409`, `422`.
 
@@ -592,6 +694,13 @@ Corpo: `AceitarTransacaoImportadaRequisicao`
 |---|---|---|
 | `categoria` | CategoriaDoGasto ou nulo | não |
 | `tags` | lista de texto | não |
+| `como_investimento` | booleano (padrão `false`) | não |
+| `investimento_id` | texto (uuid) ou nulo | não |
+| `destinacoes` | lista de `{tag, percentual}` | não |
+
+Com `como_investimento: true`, a saída vira **aporte** e a entrada vira **resgate**, sem categoria de despesa nem tags comuns. Categoria enviada dá 422 `transacao_importada_invalida`. A liquidação da bolsa ("LIQ BOLSA ... BRUTO", como as taxas) **não** vira gasto nem ganho comum, em aceitar, `aceitar-em-lote` (o lote inteiro é recusado) e `dividir`: 422 `transacao_importada_invalida` com mensagem que aponta a Revisão da bolsa (069, D6); como investimento ou ignorada continua valendo. IOF e IRRF só são recusados como gasto comum **na conta investimentos** (071, D4: imposto de investimento); em conta corrente ou cartão (o IOF de compra no exterior) são aceitos como gasto, em aceitar, `aceitar-em-lote` e `dividir`, e `tipo_de_movimento_sugerido` continua `imposto` nas duas. `tipo_de_movimento` permite explicitar `aporte`, `resgate`, `rendimento`, `custo` ou `imposto`; custo/imposto exigem posição e `movimento_relacionado_id` compatível. Nenhuma operação de posição é despesa nem demonstra, por si só, dinheiro novo. `AceiteResposta.tipo` identifica o lançamento criado.
+
+O antigo atalho `categoria: "investimentos"` foi removido: devolve 422 `categoria_invalida`, com ou sem `como_investimento`. Use o marcador explícito. Investimento e destinações continuam opcionais no aporte.
 
 Resposta **201**: `AceiteResposta`
 
@@ -604,7 +713,49 @@ Resposta **201**: `AceiteResposta`
 
 Erros possíveis: `401`, `403`, `404`, `409`, `422`.
 
+#### `POST /transacoes-importadas/{transacao_id}/dividir`
+
+Aceita a transação pendente **dividida por porcentagem**: de 2 a 10 partes, cada uma de 1 a 100%, somando exatamente 100%. Cada parte vira um gasto (saída, com a própria `categoria`, obrigatória), um **aporte** (saída com `como_investimento: true`, sem categoria de despesa nem tags comuns, com `investimento_id` e `destinacoes` opcionais aplicados à fatia da parte) ou um ganho (entrada, sem categoria), com as próprias `tags`, a mesma data e a descrição `"<descrição> (n/N)"`. O valor se divide em centavos inteiros (o resto de 1 em 1 centavo para a primeira parte); parte sem centavo é descartada. Tudo ou nada; o saldo de conta importada não muda.
+
+Corpo: `{"partes": [{"como_investimento", "categoria", "tags", "percentual", "investimento_id", "destinacoes"}]}` (`investimento_id` e `destinacoes` só na parte de aporte). Resposta **201**: `{"criados": [{"tipo", "id"}]}`, na ordem enviada (`tipo` é `gasto`, `ganho` ou `aporte`). Só a dona; erros: `401`, `403`, `404` (inclusive `investimento_nao_encontrado`), `409`, `422` (`divisao_invalida`, `transacao_importada_invalida`).
+
+#### `POST /transacoes-importadas/aceitar-em-lote`
+
+Aceita várias **saídas** pendentes de uma vez, com a mesma categoria e as mesmas tags (ou todas como aporte, com `como_investimento: true` e sem categoria de despesa). Tudo ou nada: se qualquer uma falhar (inexistente, já tratada ou entrada), nenhuma é aceita. De 1 a 200 transações; as entradas continuam sendo aceitas uma a uma.
+
+Corpo: o mesmo de `AceitarTransacaoImportadaRequisicao`, mais `transacao_ids` (lista de uuid, obrigatória).
+
+Resposta **201**: `{"aceitas": [AceiteResposta, ...]}`, na ordem enviada.
+
+Erros possíveis: `401`, `403`, `404`, `409`, `422`.
+
 #### `POST /transacoes-importadas/{transacao_id}/ignorar`
+
+| Parâmetro | Em | Tipo | Obrigatório |
+|---|---|---|---|
+| `transacao_id` | caminho | texto (uuid) | sim |
+
+Resposta **204** (sem corpo).
+
+Erros possíveis: `401`, `403`, `404`, `409`, `422`.
+
+#### `POST /transacoes-importadas/{transacao_id}/aceitar-como-transferencia`
+
+Registra uma transferência canônica entre contas próprias, sem criar gasto, ganho ou movimento
+de posição. Exige sessão da dona, `conta_contraparte_id` no corpo e papéis corrente/investimento
+confirmados. `par_transacao_id` é opcional: se faltar, a pessoa confirma a ponta ausente; completar
+o par depois atualiza a mesma transferência. `par_sugerido_id` é apenas sugestão e nunca é aceito
+implicitamente. As pontas ficam `aceita`, vinculadas ao registro persistido.
+`liquidacao_de_bolsa` (069, booleano em `GET /transacoes-importadas`) marca a liquidação da bolsa ("LIQ BOLSA ... BRUTO"): não é gasto nem ganho e se liga na Revisão da bolsa. `transferencia_sugerida_id` (069, aditivo em `GET /transacoes-importadas`) aponta a transferência já classificada com **uma só ponta** que esta pendente completaria: conta e sentido da ponta que falta, mesmo valor e no máximo um dia de diferença; só quando há uma única transferência candidata e uma única pendente para ela (senão nulo). É só sugestão: a pessoa completa por `POST /transferencias-entre-contas/{id}/completar-par`.
+
+Resposta **200** com a transferência (IDs, valor decimal, data, papéis históricos e aporte líquido).
+Sem corpo/contraparte: 422 `requisicao_invalida`; par incompatível ou papel não confirmado:
+422 `transacao_importada_invalida`; origem inexistente/de outra pessoa: 404. Ver contrato completo
+na seção 054/055. Chaves de API recebem 403; escrita por cookie exige CSRF.
+
+#### `POST /transacoes-importadas/{transacao_id}/restaurar`
+
+Devolve à caixa de entrada uma transação **ignorada** (`ignorada` → `pendente`). Só muda o estado: não aceita nem classifica, não cria gasto, ganho ou movimento de investimento e não altera saldo; id, descrição, valor, conta e data ficam como estavam. Transação pendente ou aceita dá 409 `transacao_ja_tratada`. Só a dona da importação.
 
 | Parâmetro | Em | Tipo | Obrigatório |
 |---|---|---|---|
@@ -628,6 +779,113 @@ Resposta **200**: `SincronizacaoResposta`
 
 Erros possíveis: `401`, `403`, `404`, `409`, `422`.
 
+### Faturas
+
+Somente leitura e só para a pessoa dona da importação bancária (as demais recebem 404 `importacao_desligada`). Aceita sessão ou chave de API de qualquer escopo. A situação da fatura (`aberta`, `fechada`, `paga`, `vencida`) é calculada com o `hoje` enviado pelo cliente, por isso `hoje` é obrigatório (ausente ou fora de `AAAA-MM-DD`: 422 `requisicao_invalida`).
+
+#### `GET /faturas`
+
+| Parâmetro | Em | Tipo | Obrigatório |
+|---|---|---|---|
+| `hoje` | query | texto (date) | sim |
+| `conta_id` | query | texto (uuid) | não |
+
+Resposta **200**: `ListaDeFaturasResposta` com `cartoes: lista de CartaoComFaturasResposta`
+
+**`CartaoComFaturasResposta`**
+
+| Campo | Tipo | Obrigatório |
+|---|---|---|
+| `conta_id` | texto (uuid) | sim |
+| `conta_nome` | texto | sim |
+| `valor_devido` | texto | sim |
+| `faturas` | lista de `FaturaResposta`, da mais recente para a mais antiga | sim |
+
+**`FaturaResposta`**
+
+| Campo | Tipo | Obrigatório |
+|---|---|---|
+| `id` | texto (uuid) | sim |
+| `inicio` | texto (date) ou nulo | sim |
+| `fechamento` | texto (date) | sim |
+| `vencimento` | texto (date) ou nulo | sim |
+| `total`, `pago`, `restante`, `a_favor` | texto | sim |
+| `minimo` | texto ou nulo | sim |
+| `situacao` | `aberta`, `fechada`, `paga` ou `vencida` | sim |
+| `fonte` | `banco` ou `estimada` | sim |
+| `quantidade_de_compras` | inteiro | sim |
+
+Erros possíveis: `401`, `404` (`importacao_desligada`, `conta_nao_encontrada`), `422`.
+
+#### `GET /faturas/{fatura_id}`
+
+Query: `hoje` (obrigatória). Resposta **200**: `FaturaDetalhadaResposta` (os campos de `FaturaResposta` mais `compras` e `pagamentos`).
+
+**`CompraDaFaturaResposta`**: `id`, `data`, `descricao`, `valor`, `sentido` (`saida` ou `entrada`; a entrada é estorno e abate o total), `parcela_numero` e `parcela_total` (inteiros ou nulos) e `estado` (`pendente`, `aceita` ou `ignorada`, o da transação importada).
+
+**`PagamentoDaFaturaResposta`**: `data`, `valor`, `forma` (texto ou nulo).
+
+Erros possíveis: `401`, `404` (`importacao_desligada`, `fatura_nao_encontrada`), `422`.
+
+### Cadastro de caixinhas
+
+Caixinhas cadastradas são finalidades vazias para organizar investimentos existentes. Criar uma não cria conta, posição, ativo, dinheiro nem saldo. O catálogo é independente de `POST /caixinhas`, que continua sendo o fluxo da conta remunerada.
+
+As quatro rotas usam a autenticação comum: sem credencial, 401 `nao_autenticado`; chave de leitura pode consultar, mas POST, PUT e DELETE exigem escopo `escrita` (403 `acesso_negado`); escrita autenticada por cookie exige `X-Gastoba-Requisicao: 1` (403 `requisicao_invalida_origem`). Os recursos são filtrados pela pessoa autenticada; UUID ausente, removido ou alheio retorna o mesmo 404.
+
+#### `GET /destinacoes-cadastradas`
+
+Sem corpo. Resposta **200**: lista ordenada por nome e UUID, cada item `{id: UUID, nome: string, icone: string | null, cor: string | null}`. `icone` é um de `aviao`, `casa`, `carro`, `computador`, `cofre` ou `exclamacao` (nulo = padrão, o cofre); `cor` é um código da paleta de destinações (`ametista`, `menta`, `orquidea`, `ceu`, `ambar`, `coral`, `glicinia`, `esmeralda`) ou nulo (automática). Uma lista sem cadastros é `[]`.
+
+Erros possíveis: `401`, `403`.
+
+#### `POST /destinacoes-cadastradas`
+
+Corpo: `{"nome": string, "cor"?: string | null, "icone"?: string | null}`. `cor` e `icone` são opcionais (ausente ou nulo = automática e padrão) e gravados na mesma transação do cadastro: um código inválido não cria nada (`icone` fora da lista é 422 `icone_invalido`, sem ecoar o valor; `cor` fora da paleta é 422 `requisicao_invalida`). O domínio aplica as regras de `Tag`: remove espaços das pontas, colapsa espaços internos e converte para minúsculas, preservando acentos; o resultado precisa ter de 1 a 30 caracteres imprimíveis. A resposta **201** é `{id: UUID, nome: string, icone: string | null, cor: string | null}` com o nome normalizado. Nome inválido retorna 422 `tag_invalida`; campo ausente ou de tipo incorreto retorna 422 `requisicao_invalida`; nome já cadastrado para a pessoa, inclusive criado implicitamente por um uso anterior, retorna 409 `destinacao_ja_cadastrada`. Pessoas distintas podem usar o mesmo nome.
+
+Erros possíveis: `401`, `403`, `409`, `422`.
+
+#### `PUT /destinacoes-cadastradas/{destinacao_id}/icone`
+
+Corpo: `{"icone": "aviao" | "casa" | "carro" | "computador" | "cofre" | "exclamacao" | null}` (nulo volta ao padrão). Resposta **200** com a caixinha `{id, nome, icone, cor}`; idempotente. Caixinha inexistente ou de outra pessoa: 404 `destinacao_cadastrada_nao_encontrada`; código fora da lista: 422 `icone_invalido`, sem ecoar o valor; tipo errado ou campo ausente: 422 `requisicao_invalida`. Só grava o ícone: não mexe em valor, saldo, cor nem referências. A cor continua pelas rotas `PUT`/`DELETE /cores-das-destinacoes`.
+
+Erros possíveis: `401`, `403`, `404`, `422`.
+
+#### `DELETE /destinacoes-cadastradas/{destinacao_id}`
+
+Sem corpo. Resposta **204**, sem corpo, quando a caixinha da pessoa não tem qualquer uso ou referência. A operação é definitiva; repetir a exclusão ou usar UUID alheio/inexistente retorna 404 `destinacao_cadastrada_nao_encontrada`. Se houver qualquer referência, a resposta é 409 `destinacao_em_uso`, inclusive quando o saldo atual é zero: usos em partes, coberturas, realocações, alocações ou mudanças de fração, marcação de guardado e snapshots de reversão/histórico bloqueiam a remoção. A **cor** e o **ícone** não bloqueiam: são só aparência e são apagados junto com a caixinha (a cor, em `cores_das_destinacoes`, na mesma transação). Nenhum outro dado dependente é apagado em cascata. Recriar o mesmo nome depois de uma exclusão permitida gera um UUID novo.
+
+Erros possíveis: `401`, `403`, `404`, `409`, `422`.
+
+### Investimentos
+
+Posições lidas da Pluggy (só a pessoa dona tem), aportes e resgates com destinações por tag. Um aporte ou resgate **não é gasto nem ganho**. As destinações dividem o valor em porcentagens inteiras que somam 100, em centavos inteiros (o resto vai de 1 em 1 centavo para a primeira); o saldo atual é rateado entre as tags **proporcionalmente ao principal**, então o rendimento acompanha o principal; com `valor_aplicado` informado, a parte aplicada que não está em nenhuma caixinha pesa como peso próprio e aparece em `destinacoes` com `tag: null` ("sem destinação"), em vez de ser absorvida pelas caixinhas. Nessa entrada `tag: null`, quando há `valor_aplicado`, `principal` é a parte sem caixinha (`valor_aplicado` menos a soma dos principais, mínimo zero), `rendimento` é `valor_atual` menos esse principal e `rentabilidade` é calculada; assim a soma dos `principal` e dos `rendimento` das partes fecha com a posição. Sem `valor_aplicado` não há essa parte no modelo antigo: o saldo todo vai às caixinhas, e uma posição sem nenhuma caixinha continua com `principal` e `rendimento` zero e `rentabilidade` nula. O **resgate abate o principal por custo médio**: quando há um saldo anterior à data do resgate em `investimentos_historico`, o principal abatido de cada tag é `principal × parte_resgatada ÷ valor_da_tag_antes` (truncado em centavos, no mínimo 1 centavo; resgate total zera o principal), e a parte maior que o valor da tag dá 422 `resgate_maior_que_o_valor`. Sem saldo anterior no histórico, vale a regra antiga (abate o valor em dinheiro, limitado ao principal, com 422 `principal_insuficiente`). Resgates já gravados não são recalculados. O contrato HTTP não muda. `GET /investimentos` traz também `valor_aplicado_das_operacoes` e `rendimento_das_operacoes` (nulos sem histórico completo): o custo médio das compras e o lucro sobre ele, que a tela prefere ao `valor_aplicado` da instituição, que pode estar defasado.
+
+| Rota | Entrada | Sucesso |
+|---|---|---|
+| `GET /investimentos` | — | 200 lista de posições **abertas** (saldo zero, vencida ou resgatada por inteiro, não aparece; o histórico fica) `{id, nome, tipo, subtipo, saldo, valor_aplicado, rendimento, rentabilidade, origem_da_rentabilidade, taxa, vencimento, atualizado_em, destinacoes: [{tag, principal, valor_atual, rendimento, rentabilidade}]}`; `tag` nula é a parte sem destinação. `valor_aplicado` e `rendimento` são o que a instituição informa (Pluggy: `amountOriginal` e `amountProfit`); sem isso, são **nulos** (a estimativa pelos aportes registrados foi retirada na T075 das posições com operações; nunca um número inventado) e `origem_da_rentabilidade` é `"instituicao"` ou nulo; **a conta remunerada (`CAIXINHA`) mostra só o saldo do banco**: aplicado, rendimento e rentabilidade vêm nulos, sem estimativa pelo principal registrado (T009 da 071); com o histórico das operações fechado, use `valor_aplicado_das_operacoes` e `rendimento_das_operacoes`; `taxa` é a remuneração contratada que a instituição informa, `{percentual, indexador, adicional_anual}` (Pluggy: `rate`, `rateType`, `fixedAnnualRate`; lida do registro guardado, sem esperar nova sincronização; nula sem taxa) e o que é zero vem nulo, então `101.2% CDI + 0% a.a.` é `{"percentual": "101.2", "indexador": "CDI", "adicional_anual": null}`; `rentabilidade` é `rendimento / valor_aplicado` em % com duas casas (`"4.32"`, truncada em direção ao zero; nula sem base). Nas destinações, `rendimento = valor_atual − principal` e a rentabilidade é sobre o principal |
+| `GET /investimentos/resumo` | query `visao` (`destinacao`, padrão, ou `tipo`) | 200 `{visao, total, fatias: [{rotulo, valor}]}`, maior valor primeiro |
+| `GET /investimentos/historico` | query `inicio` e `fim` (obrigatórias) | 200 lista `{investimento_id, data, saldo}`, um saldo por investimento e dia; só existe desde que o Gastoba começou a guardar |
+| `GET /investimentos/{id}/realocacoes` | — | 200 lista `{id, investimento_id, origem, destino, valor, data}`, da mais recente; na posição por fração junta as realocações da fração (072) e as antigas, no mesmo formato |
+| `POST /investimentos/{id}/realocacoes` | corpo `{origem, destino, data, valor` **ou** `percentual}` (percentual do principal da origem) | 201 realocação; 422 `principal_insuficiente`. **Posição por fração** (`alocacao_por_fracao`, 072): move o peso da caixinha de origem para a de destino (o `principal` das destinações e a divisão de `GET /investimentos` mudam; saldo e parte sem caixinha não), o percentual é do peso da origem, o destino precisa ser caixinha já cadastrada (422 `destinacao_invalida`), origem sem fração ou valor acima dela dá 422 `principal_insuficiente`; nada é gravado no histórico antigo de realocações |
+| `POST /investimentos/{id}/destinacoes` | corpo `{destinacoes: [{tag, percentual}]}` (soma 100, sem tag repetida) | 201 movimento de saldo inicial (`origem` `saldo_inicial`, `conta_id` nulo, `descricao` "Saldo inicial", data de hoje em Brasília) que reparte a parte da posição ainda sem principal: `valor_aplicado` (ou o saldo, se a instituição não informa) menos o principal já registrado; 409 `sem_valor_a_destinar` se não sobra nada. Não muda saldo de conta, gasto nem renda e não conta na meta Liberdade financeira |
+| `GET /movimentos-de-investimento` | query `inicio` e `fim` | 200 lista `{id, transacao_importada_id, conta_id, investimento_id, tipo, origem, descricao, valor, data, destinacoes: [{tag, valor}]}`; `origem` é `open_finance`, `manual` (gasto antigo convertido) ou `saldo_inicial`, o único com `conta_id` nulo |
+| `POST /movimentos-de-investimento/{id}/destinacoes` | corpo `{investimento_id, destinacoes: [{tag, percentual}]}` | 200 movimento (mesmo formato da lista, com `destinacoes` vazia); para o que ainda não tem investimento e, desde a 069 (D4), também para **resgate já ligado a este mesmo investimento e sem partes** (o criado pela Revisão da bolsa ou aceito sem caixinhas): grava as partes com o principal abatido por custo médio; aporte, resgate com partes ou de outra posição: 409 `movimento_ja_associado` |
+| `DELETE /movimentos-de-investimento/{id}/caixinhas` | — (só sessão; cookie exige CSRF) | 204; tira as partes do resgate, que continua ligado à posição, e o principal abatido volta às caixinhas; 404 `movimento_de_investimento_nao_encontrado`; 409 `movimento_nao_desfazivel` se não é resgate com partes, se paga uma compra (cobertura) ou se tem reaplicação vinculada |
+| `DELETE /investimentos/{id}/realocacoes/{realocacao_id}` | — | 204; apaga a realocação e o principal volta à destinação de origem; 404 `realocacao_nao_encontrada`; 422 `principal_insuficiente` se o destino já usou o valor. Na realocação de fração (072), o peso volta à caixinha de origem (422 se o destino já não tem esse peso); a realocação antiga de uma posição por fração, gravada antes da 072, segue a regra antiga do principal e não mexe na fração (decisão D3) |
+| `POST /movimentos-de-investimento/{id}/desfazer-classificacao` | corpo opcional `{"desfazer_divisao_inteira": false}`; só sessão | 200 `{"transacao_id": "<uuid>", "estado": "pendente", "lancamentos_removidos": 1}` |
+| `DELETE /movimentos-de-investimento/{id}` | — | 204; **por este DELETE, só o saldo inicial** (`origem: saldo_inicial`) se desfaz, e o valor volta a ficar sem destinação; 409 `movimento_nao_desfazivel` no aporte ou resgate da caixa; 422 `principal_insuficiente` se alguma destinação já não tem o valor |
+
+**MovimentoDeInvestimentoResposta**: o campo aditivo obrigatório `transacao_importada_id` é UUID ou nulo, na lista e nas respostas de associação e saldo inicial. Todo aceite novo (único, lote e divisão) guarda esse vínculo nos lançamentos. Os registros antigos permanecem nulos; as respostas de gastos, ganhos e aceites não mudam.
+
+**Desfazer classificação**: somente sessão válida; sem credencial, 401 `nao_autenticado`; chave de API, mesmo de escrita, recebe 403 `acesso_negado` antes de ler ou alterar os lançamentos. Cookie exige `X-Gastoba-Requisicao: 1` (403 `requisicao_invalida_origem` sem ele). A caixa precisa estar disponível para a pessoa; desligada, 409 `movimento_nao_desfazivel`, sem escrita.
+
+O POST apaga o movimento e suas destinações e reabre a transação vinculada. Se dividida, remove **todas** as partes (gastos, ganhos e movimentos) numa transação de banco. A primeira chamada devolve 409 `divisao_exige_confirmacao`, com a contagem e tipos; só repetir com `{"desfazer_divisao_inteira": true}` confirma. Nenhum saldo de conta muda. A transação volta inteira à caixa, onde pode ser aceita novamente ou ignorada. Aporte cujo principal já foi usado dá 422 `principal_insuficiente`, sem remoção parcial; o principal de vários aportes é conferido somado por investimento e tag.
+
+Sem vínculo, só aceita correspondência conservadora: exatamente uma transação aceita da pessoa, da mesma conta/data/valor/descrição e sentido compatível, sem qualquer lançamento vinculado; exatamente um movimento igual sem vínculo; nenhum gasto ou ganho Open Finance igual sem vínculo. Ambiguidade, ausência de candidato e divisão antiga não identificável dão 409 `movimento_nao_desfazivel`. Não há reclassificação automática nem preenchimento retroativo de vínculos. Movimento inexistente ou de outra pessoa dá 404 `movimento_de_investimento_nao_encontrado`; saldo inicial e origem manual são recusados por este POST.
+
+Erros possíveis em todas: `401`, `403`, `404`, `409`, `422`.
+
 ### Tags
 
 #### `GET /tags`
@@ -648,9 +906,250 @@ Resposta **200**: `lista de CategoriaResposta`
 |---|---|---|
 | `codigo` | texto | sim |
 | `nome` | texto | sim |
+| `legada` | booleano | sim |
 
 Erros possíveis: `401`, `403`.
 
 ## Regenerar a lista de rotas
 
 A seção "Rotas" foi gerada a partir de `GET /openapi.json`. Quando uma rota ou um campo mudar, confira o contrato publicado e atualize este arquivo no mesmo PR (Art. V.3 da constituição).
+
+
+## Liberdade financeira, reservas, revisão e cores
+
+Contrato conferido contra o OpenAPI gerado localmente em 2026-10-30, sem iniciar servidor, tarefas ou integrações externas.
+
+`GET /metas/alvos` devolve `{codigo, nome}` na ordem `liberdade_financeira`, `lazer`, `conhecimento`, `conforto`, `gasto_fixo`. Meta/progresso mantêm o campo HTTP `categoria` e acrescentam `nome`. `PUT` e `DELETE /metas/investimentos` são aliases compatíveis do alvo `liberdade_financeira`; respostas usam o código novo e exatamente "Liberdade financeira". Código desconhecido dá 422 `requisicao_invalida`. A soma dos percentuais continua limitada a 100.
+
+Liberdade financeira soma transferências próprias ativas pela fronteira corrente/investimento, líquidas e pela competência canônica; pode ser negativa. Compra/venda de posição, saldo inicial, rendimentos, custos e impostos não contam. Categorias ativas somam apenas gastos líquidos. Gastos legados continuam disponíveis para revisão explícita, sem inferência de origem. Campos históricos de categoria nos movimentos permanecem legíveis, mas novas classificações não aceitam categoria de despesa.
+
+`MovimentoDeInvestimentoResposta` acrescenta `categoria: string | null` e `revisao_pendente: boolean`. Destinações em posições e fatias do resumo de investimentos acrescentam `cor: string | null` (nula em "Sem destinação" e na visão por tipo).
+
+As rotas abaixo exigem **sessão**, inclusive os GET. Chaves de API de leitura e escrita recebem 403 `acesso_negado`. Escritas por cookie também exigem `X-Gastoba-Requisicao: 1`.
+
+| Rota | Entrada | Resposta |
+|---|---|---|
+| `GET /reservas-das-destinacoes` | query `categoria` ativa | 200 `[{tag, reservado, coberto, disponivel, cor}]` |
+| `POST /gastos/{id}/coberturas` | `{tag, valor, movimento_id?}` (valor string decimal; `movimento_id` é o resgate real já tagueado) | 201 `{id, tag, valor, movimento_id}` |
+| `DELETE /gastos/{id}/coberturas/{cobertura_id}` | — | 204 |
+| `GET /revisao-de-investimentos` | — | 200 `{aportes, gastos, recorrencias}` com os schemas das listagens |
+| `POST /revisao-de-investimentos/aportes/{id}` | `{categoria: null, investimento_id?, destinacoes?: [{tag, percentual}]}` | 200 movimento revisado |
+| `POST /revisao-de-investimentos/gastos/{id}` | `{categoria: ativa}` | 200 gasto revisado |
+| `POST /revisao-de-investimentos/recorrencias/{id}` | `{categoria: ativa}` | 200 recorrência revisada |
+
+Reserva de categoria C e tag T = partes positivas da destinação T em aportes categorizados em C; resgates, realocações e saldo inicial não a alteram. Coberto = coberturas de T em gastos de C. Disponível = reservado − coberto. A pessoa escolhe explicitamente tag e valor; nenhuma associação automática. Valor positivo, limitado ao disponível e ao restante do gasto. Pode usar várias tags; repetir a mesma tag no gasto dá 409 `cobertura_ja_existe`. Outros limites dão 422 `cobertura_invalida`; gasto alheio/inexistente dá 404 `gasto_nao_encontrado`; cobertura alheia, inexistente ou de outro gasto dá 404 `cobertura_nao_encontrada`. Desfazer devolve o disponível sem alterar finanças.
+
+Em `GET /gastos`, `valor` permanece bruto; `valor_coberto` e `coberturas` são separados. `GET /resumos/tags` mantém filtros/schema e retorna o líquido (bruto menos soma das coberturas), rateado entre as tags originais em centavos com resto na ordem original. Sem tags, o líquido vai para `tag: null`; zero não contribui. Aportes ficam fora de Tags. `GET /tags` conserva as tags originais, mesmo em gastos totalmente cobertos. Cobertura não muda gasto bruto, conta/saldo, aporte, destinação, posição, resgate ou retorno. Ao apagar um gasto, suas coberturas são removidas na mesma transação. Desfazer aporte que deixaria reserva abaixo do coberto restante dá 409 `movimento_nao_desfazivel`.
+
+Revisão só muda categoria, marca de pendência e associação opcional do aporte ainda sem investimento. Item já revisado dá 409 `revisao_nao_pendente`; associação já existente dá 409 `movimento_ja_associado`. Recorrência legada continua ativa e gerando gastos legados até revisão; qualquer `PUT /recorrencias/{id}` nela dá 409 `recorrencia_em_revisao`. Encerrar continua possível. Revisar recorrência não reclassifica gastos já gerados.
+
+**Contrato histórico da 051 (substituído pela 056 abaixo).** `GET /vinculos-das-destinacoes` (200 `[{tag, categoria}]`), `PUT /vinculos-das-destinacoes` (`{tag, categoria}`, 200) e `DELETE /vinculos-das-destinacoes?tag=...` (204, idempotente) usam a autenticação comum (chave de escrita escreve). Só categorias ativas servem (422 `categoria_invalida`). O vínculo vale só para os aportes classificados depois: cada parte do aporte guarda a categoria vigente (`destinacoes[].categoria` em `GET /movimentos-de-investimento`), então mudar ou remover o vínculo não reescreve o passado; o saldo inicial nunca entra numa categoria. Com `movimento_id`, a cobertura liga a compra a um resgate da pessoa já classificado com a tag: o valor cabe no restante do gasto, no que o resgate tirou da tag e ainda não foi usado (`destinacoes[].coberto` no resgate) e o principal correspondente (proporcional, truncado) cabe no que foi aportado na categoria; senão 422 `cobertura_invalida`. Nada é criado nem alterado em saldo, posição ou principal. Tag com vínculo exige `movimento_id`. Desfazer a classificação de um resgate usado por compra dá 409 `movimento_nao_desfazivel`. `GET /resgates-sem-destinacao` (só sessão) lista os resgates sem nenhuma tag, como `MovimentoDeInvestimentoResposta`, para o sininho de avisos.
+
+Cores usam a autenticação comum: sessão ou chave de escrita; chave de leitura não escreve. `PUT /cores-das-destinacoes` recebe `{tag, cor}` e devolve 200 `{tag, cor}`; `DELETE /cores-das-destinacoes?tag=...` devolve 204 idempotente. Tag no corpo/query admite `/`. Paleta: `ametista`, `menta`, `orquidea`, `ceu`, `ambar`, `coral`, `glicinia`, `esmeralda`; código inválido dá 422 `requisicao_invalida`, tag inválida dá 422 `tag_invalida`. Cor pertence à pessoa/tag e pode se repetir entre destinações; nome acompanha a cor em lista, legenda e tabela. Remover significa "Automática".
+
+## Contabilidade e relações normalizadas — 054/055
+
+A normalização 055 é interna: listas de tags e nomes das destinações continuam no contrato HTTP.
+UUIDs e FKs são persistidos no banco, sem JSON multivalorado nas tabelas de gastos/ganhos/recorrências.
+A posição remunerada usa FK explícita para a conta, sem depender de prefixo do identificador externo.
+
+As rotas de importação, transferências, caixinhas e revisão abaixo exigem sessão da dona
+da importação; definir papel exige sessão da pessoa proprietária da conta. Escritas por
+cookie mantêm CSRF.
+
+| Rota | Entrada | Resposta |
+|---|---|---|
+| `GET /transacoes-importadas/{transacao_id}/impacto-da-reversao` | — | 200 `{transacao_id, versao, lancamentos_removidos, coberturas_removidas, transacoes_reabertas, divisao_inteira}` |
+| `POST /transacoes-importadas/{transacao_id}/desfazer-classificacao` | `{versao_esperada?, desfazer_dependencias?, desfazer_divisao_inteira?}` | 200 `{transacao_id, estado, lancamentos_removidos}` |
+| `PUT /contas/{conta_id}/papel` | `{papel: corrente ou investimento}` | 200 conta com `papel` |
+| `POST /transacoes-importadas/{transacao_id}/aceitar-como-transferencia` | `{conta_contraparte_id, par_transacao_id?}` | 200 transferência |
+| `GET /transferencias-entre-contas` | query `inicio`, `fim` | 200 lista de transferências ativas |
+| `POST /transferencias-entre-contas/{transferencia_id}/completar-par` | `{transacao_id}` | 200 transferência atualizada |
+| `POST /caixinhas` | `{conta_id, saldo_remunerado, data_do_saldo}` | 200 `{id, nome, saldo}` |
+| `PUT /investimentos/{investimento_id}/referencias-da-caixinha/{mes}` | `{saldo_inicial, saldo_final, periodo_completo}` | 200 referência mensal |
+| `GET /investimentos/{investimento_id}/reconciliacao` | query `mes` | 200 `{saldo_inicial, saldo_observado, saldo_calculado, diferenca, completo, conciliado}` |
+| `GET /revisao-contabil` | query `inicio`, `fim` | 200 `{inicio, fim, meses}` com diferenças mensais; não altera dados |
+
+Transferência expõe `id`, contas de origem/destino, `valor`, `data`, `aporte_liquido`, papéis históricos,
+pontas opcionais e `competencia_provisoria`. Completar o par atualiza o mesmo registro. Desfazer
+qualquer ponta reabre ambas atomicamente e preserva histórico, liberando sua exclusividade ativa.
+Contas, pontas e lançamento precisam ser coerentes quanto a dono, conta, sentido e valor.
+
+A prévia de reversão informa o grupo e as coberturas. Versão obsoleta ou dependências sem
+confirmação são recusadas; a divisão inteira exige confirmação explícita. Cobertura derivada
+pode ser removida com confirmação; dependência financeira posterior deve ser revertida antes.
+O saldo bancário permanece o observado pela instituição. Gastos e ganhos listados expõem
+`transacao_importada_id`; movimentos incluem `movimento_relacionado_id` e `revisao_contabil_pendente`.
+`GET /metas/progresso` inclui `classificacoes_para_revisar`.
+
+O [modelo físico atualizado](MODELO_DO_BANCO.md) registra FKs, índices parciais e a view de pontas;
+a aplicação da migration em produção não faz parte da verificação local.
+
+
+### Reversibilidade de saldo inicial na integração 052–055
+
+Aporte importado que substitui principal já representado pelo saldo inicial grava snapshots
+antes/depois na auditoria da classificação. Desfazer restaura IDs, datas, centavos e rateio do
+saldo inicial na mesma transação de banco. Se houver alterações posteriores independentes,
+a reversão é recusada com 409 `movimento_nao_desfazivel`, sem escrita parcial, e pede desfazer
+as operações posteriores primeiro. Snapshots não alteram o contrato HTTP nem o saldo bancário.
+A prévia continua necessária para confirmar divisões, dependências e a versão da classificação.
+
+
+## Contrato vigente da 056: metas, histórico e descarte
+
+- `GET /metas/progresso?mes=AAAA-MM`: contrato de resposta preservado. Liberdade financeira soma os aportes elegíveis de `somar_aportes` (sem CAIXINHA nem saldo inicial, incluindo sem posição), mais gastos legados de Investimentos. Resgate, rendimento, imposto e custo não alteram o gasto. Percentual usado pode superar 100 e restante pode ser negativo. Categorias ativas somam só gastos líquidos.
+- `GET /metas/historico`: autenticação comum, 200 lista de até 100 registros do próprio usuário, do mais recente ao mais antigo: `{categoria, nome, acao, percentual_anterior, percentual_novo, instante}`. `acao`: `criada|alterada|removida`; percentuais são inteiros ou nulos; `instante` em ISO 8601 UTC. Sem credencial: 401. Mesmo percentual não escreve histórico; soma inválida também não. A escrita e a auditoria compartilham a mesma transação. O histórico começa vazio e não reconstrói o passado.
+- `/vinculos-das-destinacoes` foi removida (GET/PUT/DELETE retornam 404); investimentos e partes novas não recebem categoria. Colunas históricas são preservadas.
+- `POST /gastos/{id}/coberturas` com `movimento_id` continua ligando a compra a um resgate existente e tagueado, independente de categoria antiga. Valor limitado ao restante da compra e ao valor livre da tag nesse resgate; não cria resgate nem altera saldo/posição. Sem `movimento_id`, só reserva histórica da categoria é válida; sem reserva disponível, 422 `cobertura_invalida`. Desfazer libera o resgate.
+- `POST /transacoes-importadas/{id}/ignorar`: corpo opcional `{ "motivo": "transferencia_entre_contas" }`; sem corpo ou motivo nulo mantém compatibilidade. 204 no sucesso, 422 para motivo inválido, 409 para transação já tratada. Não cria lançamentos, transferências ou mudanças de saldo.
+- `GET /transacoes-importadas` acrescenta `motivo_ignorada` nulo, `transferencia_entre_contas` ou `movimento_interno_da_conta` (071: a aplicação e o resgate automáticos da conta investimentos, gravados já ignorados pela sincronização e fora de `transacoes_novas`); filtro opcional `motivo=...`, combinado com `estado=ignorada`. Restaurar limpa o motivo e volta a pendente, exceto no movimento interno da conta: restaurar, aceitar, aceitar em lote ou dividir uma transação ignorada respondem 409 `transacao_ja_tratada` (o estado é conferido antes das regras de natureza). `POST .../ignorar` continua aceitando só `transferencia_entre_contas`. Permissões do dono da importação permanecem.
+- `GET /investimentos/resumo` acrescenta `aportes_sem_destino: {total: string decimal, quantidade: inteiro}`: aportes do próprio usuário, sem partes de destinação e fora de saldo inicial, inclusive sem posição. É um resumo de movimentos, separado do total de saldo das posições; nenhuma tag é criada automaticamente.
+
+## Reaplicação confirmada de resgates — 057
+
+Um resgate pode financiar um aporte em outra posição da mesma pessoa. A pessoa confirma o vínculo e a parcela reaplicada; nada é pareado automaticamente. O valor confirmado reduz somente o gasto da Liberdade financeira no mês da data do aporte. Resgate de outubro usado em aporte de novembro reduz novembro. Exemplo fictício: resgate de `"100.00"`, aporte de `"150.00"`, parcela confirmada de `"100.00"` → gasto da meta `"50.00"`.
+
+Todas as rotas abaixo exigem **sessão**, inclusive os GET. Sem credencial: 401; chaves de API: 403; escritas por cookie exigem `X-Gastoba-Requisicao: 1`. Recurso individual inexistente ou de outra pessoa é 404.
+
+| Método e rota | Entrada | Resposta |
+|---|---|---|
+| `GET /reaplicacoes-de-resgates` | nenhuma | 200 lista de `{id, aporte_id, resgate_id, valor}` do próprio usuário |
+| `GET /movimentos-de-investimento/{aporte_id}/resgates-para-reaplicar` | UUID do aporte | 200 lista de `{id, data, descricao, investimento_nome, valor, disponivel}`; candidatos sem vínculo e com dinheiro livre, inclusive de meses anteriores |
+| `POST /reaplicacoes-de-resgates` | `{aporte_id, resgate_id, valor}` | 201 `{id, aporte_id, resgate_id, valor}` |
+| `DELETE /reaplicacoes-de-resgates/{id}` | UUID do vínculo | 204; vínculo inexistente/alheio é 404 `reaplicacao_nao_encontrada` |
+
+`valor` e `disponivel` são strings decimais; número JSON não é aceito. Vínculo exige resgate e aporte de posições existentes e distintas, fora de CAIXINHA e saldo inicial. O resgate deve ocorrer na mesma data ou antes do aporte. Cada ponta participa de no máximo um vínculo, mesmo com valor parcial; para corrigir, desfaça e confirme novamente. Duplicação: 409 `reaplicacao_ja_existe`; regras incoerentes ou valor fora do disponível: 422 `reaplicacao_invalida`.
+
+Compras cobertas e reaplicação compartilham o dinheiro do resgate: a soma não pode superar seu valor. Coberturas continuam respeitando também a parcela da tag. Remover o vínculo libera as pontas e restaura o progresso original; não desfaz movimentos. Reverter uma classificação ou divisão com ponta vinculada é 409 `movimento_nao_desfazivel`, orientando remover a reaplicação primeiro. Alterar o vínculo muda a versão da prévia de reversão. `movimento_relacionado_id` permanece exclusivo de custos/impostos.
+
+A migration inicia sem vínculos e não deduz dados antigos. O fluxo mantém valores, saldos, posições, destinações e percentuais intactos. Limite, restante e percentual usado das metas continuam no contrato anterior.
+
+### Total de aportes do mês (058)
+
+`GET /metas/progresso` acrescenta `aportes_do_mes` (string decimal): soma elegível de aportes menos reaplicações confirmadas, pela competência do aporte, mesmo sem meta configurada. Exclui saldo inicial e CAIXINHA, como a meta; não inclui gastos legados. O Início usa ganhos − gastos líquidos − esse total.
+
+`GET /investimentos` expõe `conta_id` nulo para posições comuns e a FK da conta para CAIXINHA. O resumo da conferência usa essa relação, sem inferir pelo nome ou id externo.
+
+### Classificação explícita de vencimento (058)
+
+`PUT /movimentos-de-investimento/{id}/natureza-do-resgate` recebe `{"tipo":"resgate"}` ou `{"tipo":"vencimento"}` e retorna 204. Só sessão; cookie exige CSRF. Movimento alheio/inexistente: 404; movimento que não seja resgate: 422. Não altera valor, data, destinações, custos, reaplicação ou saldo. A lista de movimentos mantém `tipo=resgate` financeiro e acrescenta `vencimento_confirmado` booleano. `GET /resgates-sem-destinacao` usa `tipo=resgate|vencimento` e acrescenta `investimento_nome` (nulo sem posição). Antigos resgates não são classificados automaticamente. A lista (069) **não traz** o resgate de transação ligada pela Revisão da bolsa nem o vencimento confirmado de posição sem principal em caixinhas; `casamento_id` é sempre nulo aqui (os ligados não entram). O resgate (aceitar, dividir e `POST /movimentos-de-investimento/{id}/destinacoes`) aceita `destinacoes` vazia só quando a posição não tem principal em caixinhas: o movimento fica ligado à posição, sem partes; com principal, a regra de somar 100% continua.
+
+`GET /investimentos` acrescenta `data_de_aplicacao` opcional: data do primeiro aporte registrado para a posição, excluído saldo inicial, nulo sem registro. Usada apenas para distinguir opções de Evolução; não é uma reconstrução do extrato histórico.
+
+### Posição pelas operações em `GET /investimentos` (060)
+
+Campos acrescentados (aditivos; os antigos seguem iguais): `quantidade` (texto decimal ou nulo; renda fixa usa `"1"`), `custo_medio` (texto decimal ou nulo; custo médio ponderado com custos somados à compra), `historico_completo` (booleano), `rentabilidade_do_periodo` e `rentabilidade_anualizada` (percentual com duas casas em texto, ex.: `"32.38"`), `motivo_sem_rentabilidade` (`"historico_incompleto"` ou nulo) e `pendencias: [{tipo, quantidade_estimada}]` com `tipo` `faltam_cotas` ou `sobram_cotas`.
+
+Regras: sem histórico completo a rentabilidade é nula com o motivo `historico_incompleto` (nunca um número inventado) e a pendência diz quantas cotas faltam. Uma quantidade **estimada** (abertura migrada) nunca fecha o histórico. O retorno do período sai com histórico completo; o anualizado (% a.a.) só com mais de 12 meses de histórico. O campo `rentabilidade` é o da instituição (sem estimativa pelos aportes em nenhuma posição: retirada na T075 nas posições com operações e, na 071, também na conta remunerada, que mostra só o saldo do banco).
+
+### Casamento de operações da corretora (060)
+
+Só sessão (chave de API recebe 403 `acesso_negado`); escrita por cookie exige o cabeçalho de CSRF.
+
+| Rota | Entrada | Sucesso |
+|---|---|---|
+| `POST /revisao-da-bolsa/trocar-gasto/{transacao_id}` | — (só sessão; cookie exige CSRF) | 201 `{casamento_id, chave}`; troca o **gasto antigo** de uma liquidação da bolsa (aceita como gasto antes da D6) pela ligação com as operações, tudo ou nada: o gasto sai com a reversão registrada e a transação é ligada à proposta exata que a contém. 404 `transacao_importada_nao_encontrada`; 409 `movimento_nao_desfazivel` (não é liquidação aceita como um só gasto), 409 `casamento_ambiguo` (sem proposta exata única; nada muda) |
+| `DELETE /casamentos/{id}` | — | 204; as transações voltam a pendentes na caixa, o vínculo sai, nada é apagado e dá para casar de novo. Os movimentos que a ligação criou saem **sem o valor como critério** (os de origem `open_finance` presos às transações brutas, na posição de alguma operação ligada, mesmo que a operação tenha mudado de valor); se sobrar outro movimento preso a uma dessas transações, 409 `movimento_nao_desfazivel` e nada é alterado (069) |
+
+Regras: só casa com **exatamente um** candidato (zero ou vários não casam sozinhos); a tolerância padrão é valor exato e pregão até D+2; o resgate de renda fixa casa pelo bruto, aceita crédito dividido e nunca usa o líquido. O custo da operação vem só das despesas dela ou, se vazias, dos débitos de taxa casados; nunca das duas somadas.
+
+Erros: 404 `operacao_nao_encontrada` e `casamento_nao_encontrado`; 409 `casamento_ja_existe`, `casamento_ambiguo` e `transacao_ja_tratada`; 422 `operacao_invalida`.
+
+### Reclassificar uma transação já aceita (060)
+
+`POST /transacoes-importadas/{id}/reclassificar`, só sessão (a pessoa dona da importação; chave de API recebe 403; cookie exige o cabeçalho de CSRF). Corpo: `{rotulo, versao_esperada, categoria?, tags?, investimento_id?, movimento_relacionado_id?, destinacoes?, desfazer_divisao_inteira?, desfazer_dependencias?}`; resposta 200 `{tipo, id}` do novo lançamento.
+
+- `rotulo`: `gasto`, `ganho`, `transferencia_para_investimento` (aporte, ou resgate na entrada; sem categoria de despesa), `imposto`, `custo` e `rendimento_da_posicao` (a entrada de rendimento de um título: sai da renda e vira movimento da posição). Imposto, custo e rendimento exigem `investimento_id`; imposto e custo exigem também `movimento_relacionado_id`.
+- Numa **só transação**: desfaz a classificação atual (com as mesmas regras e a mesma `versao_esperada` de `GET …/impacto-da-reversao`) e aplica a nova; se a nova falhar, a antiga continua intacta. Divisão exige `desfazer_divisao_inteira`; resgate que paga compras exige `desfazer_dependencias`; reaplicação, recorrência e saldo bancário seguem as recusas do desfazer. Não altera o saldo de conta importada e é desfazível.
+- Erros: 404 `transacao_importada_nao_encontrada`; 409 `movimento_nao_desfazivel` (versão mudou, ou o grupo não pode ser desfeito) e `divisao_exige_confirmacao`; 422 `transacao_importada_invalida` (rótulo inválido, investimento ausente).
+
+### Operações de investimento (060)
+
+Só sessão; escrita por cookie exige o cabeçalho de CSRF.
+
+| Rota | Entrada | Sucesso |
+|---|---|---|
+| `GET /investimentos/{id}/operacoes` | — | 200 `[{id, investimento_id, tipo, data, quantidade, valor, custos, origem, editavel, quantidade_estimada, operacao_relacionada_id}]`, da mais antiga para a mais recente |
+| `POST /investimentos/{id}/operacoes` | `{tipo, data, quantidade, valor, custos?, operacao_relacionada_id?, confirmar_duplicidade?}` | 201 operação manual (compra, venda, provento, taxa, imposto ou vencimento) |
+| `PUT /operacoes/{id}` | `{data?, quantidade?, valor?, custos?}` | 200; `manual` e `abertura`, e das `pluggy` só a quantidade que a corretora omitiu (`quantidade_confirmavel: true`, estimada pela posição); editar a quantidade a confirma |
+| `DELETE /operacoes/{id}` | — | 204; só `manual` e `abertura`; as caixinhas não mudam |
+
+`quantidade` é decimal em texto (renda fixa usa `"1"`). Taxa e imposto exigem `operacao_relacionada_id` da mesma posição. Lançar uma operação igual a uma da corretora (mesmo tipo, dia, valor e quantidade) é recusado como possível duplicidade; `confirmar_duplicidade: true` confirma que é outra operação. Excluir a abertura deixa a posição com histórico incompleto e a pendência visível. O DELETE antigo `/movimentos-de-investimento/{id}` (saldo inicial) continua e também remove a abertura estimada do modelo novo.
+
+Erros: 404 `investimento_nao_encontrado` e `operacao_nao_encontrada`; 409 `operacao_da_corretora_imutavel` e `operacao_possivelmente_duplicada`; 422 `operacao_invalida` (tipo, quantidade, valor, taxa sem operação relacionada, exclusão com taxa ligada).
+
+### Caixinhas como fração da posição (060)
+
+`GET /investimentos`: quando a posição já tem alocações (`alocacoes_de_caixinha`, criadas pelo backfill), `destinacoes` vem do modelo novo: cada caixinha é uma fração da posição, o rendimento acompanha o da posição e a **compra nova** aparece como `tag: null` ("sem caixinha") até ser alocada; com a compra alocada ou sem compra nova, o resultado é igual ao de antes (0 centavo). Sem alocações, vale o cálculo antigo.
+
+`POST /investimentos/{id}/alocar-sem-caixinha` com `{destinacoes: [{tag, percentual}]}` (soma 100, caixinhas que já existem): reparte a parte sem caixinha em centavos inteiros e soma ao peso de cada caixinha; 204. Erros: 409 `sem_valor_a_destinar` (nada sem caixinha), 422 `destinacao_invalida` (caixinha inexistente ou percentuais que não somam 100), 404 `investimento_nao_encontrado`.
+
+### Aportes sem investimento (060)
+
+Só sessão. `GET /aportes-sem-investimento` lista os aportes antigos sem investimento, com `duplicado_sugerido_id` (mesma conta, dia e valor), `descricao` (o texto do banco) e `natureza` (`liquidacao_de_bolsa`, `imposto_ou_taxa`, `conta_remunerada`, `vencimento`, `rendimento` ou `outra`; frente 061, aditivo). `POST …/{id}/mesclar` (`{mantido_id}`), `POST …/{id}/excluir` e `POST …/{id}/desfazer` são **lógicos e reversíveis**: nada é apagado, o original fica guardado e o aporte só sai das listas e dos totais depois de confirmado: `POST …/{id}/confirmar` (071, só sessão; 200 `{id, movimento_id, acao, aprovado: true}`, o mesmo formato de mesclar e excluir) ou o comando `tratar-aportes-sem-investimento --aprovar` (o padrão do comando é `--dry-run`). Confirmar reabre a transação de origem (volta à caixa), exceto o movimento interno da conta investimentos, que fica ignorado com o motivo `movimento_interno_da_conta`; desfazer o tratamento a devolve a aceita. Confirmar sem tratamento ativo, ou de outra pessoa, é 404 `tratamento_nao_encontrado` (tratamento desfeito não é ativo); já confirmado é 409 `aporte_ja_tratado`; chave de API é 403. Associar a um investimento reusa `POST /movimentos-de-investimento/{id}/destinacoes`. Erros: 404 `tratamento_nao_encontrado`; 409 `aporte_ja_tratado`; 422 `mescla_invalida`.
+
+### Complementos aditivos da 060 — 2026-11-11
+
+- `GET /casamentos`: só sessão, 200 `[{id, operacao_ids, vinculos: [{transacao_id, papel}]}]` (frente 061: `operacao_id` virou a lista `operacao_ids`, pois um casamento pode ligar várias operações; quebra de contrato entregue com o frontend),
+  apenas do próprio usuário. Inclui operações de posições encerradas. Vínculos têm ordem estável.
+  Chaves de API recebem 403; sem sessão, 401. O Desfazer da interface usa o DELETE existente.
+- `GET /reaplicacoes/sugestoes`: só sessão, 200 `[{operacao_id, aporte_id, valor}]`. `valor` é
+  dinheiro decimal em texto. Sugere a saída sem investimento, da mesma conta, com valor líquido
+  igual ao do resgate casado, da data do crédito a D+2. Ambiguidade em qualquer ponta não sugere.
+  É somente leitura: não cria movimento nem confirma reaplicação. Associar o aporte e confirmar
+  o vínculo continuam sujeitos às regras da 057; os identificadores de operação e movimento
+  pertencem a modelos distintos e não são intercambiáveis.
+- `GET /investimentos` acrescenta `alocacao_por_fracao` (booleano) e `pendencias_de_operacoes`
+  (`[{tipo, data, motivo}]`). Motivos: `tipo_sem_traducao`, `resgate_sem_historico`,
+  `possivel_duplicidade`. O retrato é substituído em sincronização válida, preservado quando o
+  provedor falha e não contém ids externos ou descrições. Sem pendências novas nem retrato
+  anterior, o registro bruto é preservado sem mudanças.
+- Frente 061 (fatia F0): `GET /investimentos` acrescenta `acao_do_historico` (`confirmar_quantidade`
+  com alguma operação de quantidade estimada, `conferir_operacoes` com "sobram cotas" ou
+  `possivel_duplicidade`, `completar` com "faltam cotas", ou nulo com histórico completo, caixinha
+  ou nada a fazer). `GET /movimentos-de-investimento` (e as respostas que reutilizam o mesmo
+  esquema) acrescenta `natureza` (`liquidacao_de_bolsa`, `imposto_ou_taxa`, `conta_remunerada`,
+  `vencimento`, `rendimento` ou `outra`, derivada da descrição) e `casamento_id` (UUID ou nulo;
+  por ora sempre nulo).
+- Frente 061 (fatia F4): **`GET /casamentos-sugeridos` e `POST /casamentos` foram removidos** (a SPA passou a usar a Revisão da bolsa, abaixo). `DELETE /casamentos/{id}` e `GET /casamentos` continuam.
+- Frente 061 (fatia F3), **Revisão da bolsa**. Todas as rotas abaixo exigem **sessão** (chave de
+  API recebe 403, até no `GET`) e, por cookie, o cabeçalho `X-Gastoba-Requisicao: 1` nas escritas.
+  Dinheiro em string; nenhum log traz valores, descrições nem ids.
+  - `GET /revisao-da-bolsa`: 200 `{propostas, sem_par, confirmados, conciliadas}`. `conciliadas` (069, aditivo) lista `{operacao_id, transacao_id, descricao, data, valor, sentido}` (`sentido` `entrada` ou `saida`, calculado no servidor pelo tipo da operação: compra é saída, venda e resgate são entrada) das operações que a pessoa já tratou na caixa: uma só transação aceita como aporte/resgate **na mesma posição**, de sentido e valor compatíveis (mesma tolerância) e que não serve a outra operação; elas não aparecem em `propostas` nem em `sem_par`. Movimento em outra posição mantém a proposta com o motivo "já está ligado a outra posição"; liquidação aceita como gasto aparece em `sem_par` com o motivo "Aceito como gasto", não "dividido". Cada item de `sem_par` também traz `sentido` (`entrada`/`saida`, pelo tipo da operação ou da transação) e `pode_trocar_pela_ligacao` (verdadeiro no gasto antigo de liquidação, que `POST /revisao-da-bolsa/trocar-gasto/{id}` troca). Cada proposta traz `chave`
+    (estável), `versao` (muda quando muda o estado de qualquer transação ou lançamento dela), `tipo`
+    (`compra_na_bolsa`, `venda_na_bolsa` ou `resgate_de_renda_fixa`), `data_do_pregao`, `operacoes`
+    (`id`, `posicao_id`, `rotulo`, `tipo`, `data`, `quantidade`, `valor_bruto`, `custos`), `bruto` e
+    `taxas` (`id`, `data`, `descricao`, `valor`, `situacao`), `diferenca` e `diferenca_de_custo`
+    (dinheiro **com sinal**: conta menos operações), `confianca` (`exata` ou `precisa_escolher`),
+    `motivo` e `efeitos` (`[{transacao_id, codigo}]`, com `aporte_passa_a_ser_da_posicao`,
+    `taxa_deixa_de_ser_aporte`, `ganho_deixa_de_ser_renda` ou `aceita_a_pendente`). `sem_par` lista
+    `{motivo, operacao_id, transacao_id, descricao, data, valor}` só para informar: `descricao` diz o que é
+    ("Compra de AUVP11 (3)" ou o texto do banco), com `data` e `valor` em dinheiro decimal. `confirmados` lista as ligações
+    existentes `{id, operacao_ids, vinculos, sem_aporte}`; `sem_aporte` é verdadeiro na ligação antiga
+    que não registrou aporte nem resgate.
+  - `POST /revisao-da-bolsa/confirmar`: corpo `{itens: [{chave, versao, operacao_ids?}]}` (1 a 50;
+    `operacao_ids` só vale em `precisa_escolher`). 201 `{confirmados: [{casamento_id, chave}]}`.
+    **Tudo ou nada.** Cria o casamento, aceita as transações e registra **um aporte (compra) ou resgate
+    (venda ou vencimento) por operação**, ligado à posição e sem destinações; taxa e imposto não geram
+    movimento. Lançamento que já estava aceito é desfeito antes, com a reversão registrada. Não muda
+    saldo, destinações, alocações nem o custo das operações. Erros: 409 `revisao_desatualizada`
+    (proposta inexistente ou de versão diferente), 409 `casamento_ambiguo` (falta a escolha ou ela é
+    inválida), 409 `movimento_nao_desfazivel` (reaplicação ou cobertura dependente), 422 para lista vazia
+    ou com mais de 50 itens.
+  - `POST /casamentos/{id}/refazer`: 200 `{casamento_id, chave}`. Para ligação antiga **sem movimento**:
+    desfaz e confirma de novo na mesma transação. 409 `casamento_ambiguo` se a proposta recalculada não
+    for exata com as mesmas operações (nada muda); 409 `movimento_nao_desfazivel` se a ligação já tem
+    aportes ou resgates (use `DELETE /casamentos/{id}`); 404 `casamento_nao_encontrado`.
+  - `DELETE /casamentos/{id}` agora remove **só os movimentos que a ligação criou** e devolve todas as
+    transações a pendentes; recusa (409) com reaplicação, cobertura ou destinações dependentes.
+  - `POST /movimentos-de-investimento/{id}/desfazer-classificacao` e a reclassificação recusam
+    transação ligada com 409 `transacao_casada` ("Desfaça a ligação na Revisão da bolsa.").
+  - `GET /movimentos-de-investimento` preenche `casamento_id` quando o movimento pertence a uma ligação.
+    `aportes_sem_destino` e o aviso de resgates sem destinação ignoram movimento de transação ligada.
+- Venda parcial de renda fixa usa o último saldo estritamente anterior para a fração da quantidade;
+  sem saldo válido mantém pendência. A fração é calculada com `Fraction` e convertida em `Decimal`
+  com precisão explícita de 50 dígitos para o contrato textual existente. Resgate total mantém 1.
+- Na reclassificação para `imposto` ou `custo`, a interface envia `movimento_relacionado_id`
+  selecionado explicitamente entre aportes/resgates da mesma posição. Esse id é de movimento,
+  diferente de `operacao_relacionada_id` dos lançamentos manuais de operação.

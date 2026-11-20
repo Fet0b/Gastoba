@@ -7,7 +7,7 @@ import type { Navegacao } from "../componentes/Navegacao/telas";
 import { MENSAGEM_SEM_CONTAS } from "../componentes/Compositor/CompositorDeGasto";
 import { hojeLocal } from "../periodo/periodo";
 import { entrarNaSimulacao } from "../simulacao/fetchSimulado";
-import { definirMidia } from "../testes/preparar";
+import { definirLayoutEstreito, definirMidia } from "../testes/preparar";
 import { Transacoes } from "./Transacoes";
 
 beforeEach(() => {
@@ -34,17 +34,38 @@ function botaoNovoGasto(): HTMLButtonElement {
   return screen.getByRole("button", { name: /Novo gasto/ }) as HTMLButtonElement;
 }
 
-function chipsDeConta(): HTMLElement {
-  return screen.getByRole("group", { name: "Filtrar por conta" });
+/** Abre o menu "Mais ações" da linha do ganho e escolhe Excluir (abre o diálogo de confirmação). */
+function abrirExclusao(lista: HTMLElement, descricao: string): void {
+  fireEvent.click(within(lista).getByRole("button", { name: `Mais ações de ${descricao}` }));
+  fireEvent.click(screen.getByRole("menuitem", { name: `Excluir o ganho ${descricao}` }));
 }
 
-function chipDeConta(nome: string): HTMLElement {
-  return within(chipsDeConta()).getByRole("button", { name: nome });
+type GrupoDeFiltro = "Contas" | "Categorias" | "Tags";
+
+/** Abre o seletor de várias escolhas do grupo (se ainda fechado) e devolve a lista de opções. */
+async function abrirSeletor(grupo: GrupoDeFiltro): Promise<HTMLElement> {
+  const botao = await screen.findByRole("button", { name: new RegExp(`^${grupo}:`) });
+  if (botao.getAttribute("aria-expanded") !== "true") fireEvent.click(botao);
+  return screen.getByRole("group", { name: grupo });
 }
 
-/** Espera as contas chegarem: o chip da conta passa a existir. */
+/** A caixa de uma opção; espera as opções chegarem da API. */
+async function opcaoDoFiltro(grupo: GrupoDeFiltro, nome: string): Promise<HTMLInputElement> {
+  const lista = await abrirSeletor(grupo);
+  // A conta se identifica por rótulo, tipo e final (Art. XI.5.6), não só pelo nome.
+  const rotulo = grupo === "Contas" ? `${nome}, Conta corrente` : nome;
+  return (await within(lista).findByRole("checkbox", { name: rotulo })) as HTMLInputElement;
+}
+
+/** Espera as contas chegarem (a opção da conta passa a existir) e deixa o seletor fechado. */
 async function esperarConta(nome: string): Promise<void> {
-  await waitFor(() => chipDeConta(nome));
+  await opcaoDoFiltro("Contas", nome);
+  fireEvent.click(screen.getByRole("button", { name: /^Contas:/ }));
+}
+
+/** Liga ou desliga uma opção do filtro, como a pessoa faz. */
+async function alternarFiltro(grupo: GrupoDeFiltro, nome: string): Promise<void> {
+  fireEvent.click(await opcaoDoFiltro(grupo, nome));
 }
 
 /** A seção da linha do tempo (gastos e ganhos juntos). */
@@ -69,6 +90,32 @@ async function ganhar(conta_id: string, descricao: string, extra: Record<string,
     corpo: { conta_id, valor: "20.00", descricao, data: hojeLocal(), tags: [], ...extra },
   });
 }
+
+describe("Transações: cabeçalho", () => {
+  it("traz o título e o subtítulo da tela pelo cabeçalho, com um só h2 Transações que nomeia a lista", async () => {
+    definirMidia(true);
+    const { container } = render(<Transacoes navegacao={navegacao()} />);
+
+    const titulos = screen.getAllByRole("heading", { level: 2, name: "Transações" });
+    expect(titulos).toHaveLength(1);
+    expect(screen.getByText("Tudo o que entrou e saiu, dia a dia.")).not.toBeNull();
+    expect(titulos[0]?.closest("[data-com-cabecalho]")).not.toBeNull();
+    expect(linhaDoTempo(container).getAttribute("aria-labelledby")).toBe(titulos[0]?.id);
+  });
+
+  it("limpar a busca devolve o foco ao título da tela", async () => {
+    definirMidia(true);
+    await criarConta();
+    render(<Transacoes navegacao={navegacao()} />);
+    await esperarConta("Nubank");
+
+    fireEvent.change(campoDeBusca(), { target: { value: "xyz" } });
+    await waitFor(() => expect(screen.getAllByRole("button", { name: "Limpar busca" }).length).toBe(2));
+    fireEvent.click(screen.getAllByRole("button", { name: "Limpar busca" }).at(-1) as HTMLElement);
+
+    expect(document.activeElement).toBe(screen.getByRole("heading", { level: 2, name: "Transações" }));
+  });
+});
 
 describe("Transações: compositor de gasto", () => {
   it("registrar um gasto atualiza a lista, anuncia e o olho confirma", async () => {
@@ -119,14 +166,13 @@ describe("Transações: compositor de gasto", () => {
     await criarConta("Carteira");
     await criarConta("Nubank");
     render(<Transacoes navegacao={navegacao()} />);
-    await esperarConta("Nubank");
 
-    fireEvent.click(chipDeConta("Nubank"));
+    await alternarFiltro("Contas", "Nubank");
     fireEvent.click(botaoNovoGasto());
     await screen.findByRole("dialog", { name: "Novo gasto" });
 
     const conta = within(screen.getByRole("dialog")).getByLabelText("Conta") as HTMLSelectElement;
-    expect(conta.selectedOptions[0].textContent).toBe("Nubank");
+    expect(conta.selectedOptions[0].textContent).toBe("Nubank, Conta corrente");
   });
 
   it("o atalho N abre o compositor, que não reabre com N digitado dentro dele", async () => {
@@ -134,7 +180,7 @@ describe("Transações: compositor de gasto", () => {
     render(<Transacoes navegacao={navegacao()} />);
     await esperarConta("Nubank");
 
-    fireEvent.keyDown(document.body, { key: "n" });
+    fireEvent.keyDown(window, { key: "n" });
     await screen.findByRole("dialog", { name: "Novo gasto" });
 
     fireEvent.keyDown(screen.getByLabelText("Descrição"), { key: "n" });
@@ -186,7 +232,7 @@ describe("Transações: compositor de gasto", () => {
 });
 
 describe("Transações: filtro de conta", () => {
-  it("restringe gastos e ganhos à conta escolhida e Todas as contas limpa", async () => {
+  it("restringe gastos e ganhos à conta escolhida e desmarcar a conta volta a todas", async () => {
     const a = await criarConta("Alfa");
     const b = await criarConta("Beta");
     for (const [conta, nome] of [[a, "Alfa"], [b, "Beta"]] as const) {
@@ -197,18 +243,87 @@ describe("Transações: filtro de conta", () => {
     const lista = linhaDoTempo(container);
     await waitFor(() => expect(lista.textContent).toContain("Gasto Beta"));
     await waitFor(() => expect(lista.textContent).toContain("Ganho Beta"));
-    await esperarConta("Beta");
 
-    fireEvent.click(chipDeConta("Alfa"));
-    expect(chipDeConta("Alfa").getAttribute("aria-pressed")).toBe("true");
+    await alternarFiltro("Contas", "Alfa");
+    expect((await opcaoDoFiltro("Contas", "Alfa")).checked).toBe(true);
 
     await waitFor(() => expect(lista.textContent).not.toContain("Gasto Beta"));
     await waitFor(() => expect(lista.textContent).not.toContain("Ganho Beta"));
     expect(lista.textContent).toContain("Gasto Alfa");
     expect(lista.textContent).toContain("Ganho Alfa");
 
-    fireEvent.click(chipDeConta("Todas as contas"));
+    await alternarFiltro("Contas", "Alfa");
     await waitFor(() => expect(lista.textContent).toContain("Gasto Beta"));
+  });
+});
+
+describe("Transações: barra de filtros", () => {
+  it("várias contas valem juntas, aparecem como filtros ativos removíveis e Limpar filtros esvazia tudo", async () => {
+    const a = await criarConta("Alfa");
+    const b = await criarConta("Beta");
+    const c = await criarConta("Gama");
+    for (const [conta, nome] of [[a, "Alfa"], [b, "Beta"], [c, "Gama"]] as const) await gastar(conta.id, `Gasto ${nome}`);
+    const { container } = render(<Transacoes navegacao={navegacao()} />);
+    const lista = linhaDoTempo(container);
+    await waitFor(() => expect(lista.querySelectorAll("li[data-sentido]")).toHaveLength(3));
+
+    await alternarFiltro("Contas", "Alfa");
+    await alternarFiltro("Contas", "Gama");
+    await waitFor(() => expect(lista.querySelectorAll("li[data-sentido]")).toHaveLength(2));
+    expect(lista.textContent).not.toContain("Gasto Beta");
+    expect(screen.getByRole("button", { name: "Contas: 2" })).toBeTruthy();
+    const ativos = screen.getByRole("list", { name: "Filtros ativos" });
+    expect(within(ativos).getAllByRole("button").map((b) => b.getAttribute("aria-label"))).toEqual([
+      "Remover filtro: Alfa, Conta corrente",
+      "Remover filtro: Gama, Conta corrente",
+    ]);
+
+    fireEvent.click(within(ativos).getByRole("button", { name: "Remover filtro: Alfa, Conta corrente" }));
+    await waitFor(() => expect(lista.querySelectorAll("li[data-sentido]")).toHaveLength(1));
+    expect(lista.textContent).toContain("Gasto Gama");
+
+    fireEvent.click(screen.getByRole("button", { name: "Limpar filtros" }));
+    await waitFor(() => expect(lista.querySelectorAll("li[data-sentido]")).toHaveLength(3));
+    expect(screen.queryByRole("list", { name: "Filtros ativos" })).toBeNull();
+  });
+
+  it("várias categorias e várias tags valem qualquer uma delas", async () => {
+    const conta = await criarConta();
+    await gastar(conta.id, "Cinema", { categoria: "lazer", tags: ["pix"] });
+    await gastar(conta.id, "Livro", { categoria: "conhecimento", tags: ["cartao"] });
+    await gastar(conta.id, "Sofá", { categoria: "conforto", tags: ["loja"] });
+    const { container } = render(<Transacoes navegacao={navegacao()} />);
+    const lista = linhaDoTempo(container);
+    await waitFor(() => expect(lista.querySelectorAll("li[data-sentido]")).toHaveLength(3));
+
+    await alternarFiltro("Categorias", "Lazer");
+    await alternarFiltro("Categorias", "Conforto");
+    await waitFor(() => expect(lista.querySelectorAll("li[data-sentido]")).toHaveLength(2));
+    expect(lista.textContent).not.toContain("Livro");
+
+    await alternarFiltro("Tags", "loja");
+    await waitFor(() => expect(lista.querySelectorAll("li[data-sentido]")).toHaveLength(1));
+    expect(lista.textContent).toContain("Sofá");
+  });
+
+  it("a tecla / foca a busca, mas não digitando num campo nem com um diálogo aberto", async () => {
+    await criarConta();
+    render(<Transacoes navegacao={navegacao()} />);
+    await screen.findByRole("button", { name: /^Contas:/ });
+
+    fireEvent.keyDown(window, { key: "/" });
+    expect(document.activeElement).toBe(campoDeBusca());
+
+    fireEvent.change(campoDeBusca(), { target: { value: "a" } });
+    campoDeBusca().focus();
+    fireEvent.keyDown(campoDeBusca(), { key: "/" });
+    expect(campoDeBusca().value).toBe("a");
+
+    fireEvent.click(botaoNovoGasto());
+    await screen.findByRole("dialog", { name: "Novo gasto" });
+    campoDeBusca().blur();
+    fireEvent.keyDown(window, { key: "/" });
+    expect(document.activeElement).not.toBe(campoDeBusca());
   });
 });
 
@@ -224,10 +339,10 @@ describe("Transações: linha do tempo, total e busca", () => {
     const lista = linhaDoTempo(container);
 
     await waitFor(() => expect(lista.querySelectorAll("li[data-sentido]")).toHaveLength(3));
-    const saldo = () => within(lista).getByText("Saldo").nextElementSibling?.textContent ?? "";
+    const saldo = () => within(lista).getByRole("group", { name: /^Saldo/ }).textContent ?? "";
     await waitFor(() => expect(saldo()).toContain(`R$${NBSP}35,00`));
 
-    fireEvent.click(chipDeConta("Beta"));
+    await alternarFiltro("Contas", "Beta");
     await waitFor(() => expect(saldo()).toContain(`\u{2212}R$${NBSP}5,00`));
   });
 
@@ -243,7 +358,7 @@ describe("Transações: linha do tempo, total e busca", () => {
     fireEvent.change(campoDeBusca(), { target: { value: "cafe" } });
     expect(lista.querySelectorAll("li[data-sentido]")).toHaveLength(1);
     expect(lista.textContent).toContain("Café da manhã");
-    expect(within(lista).getByText("Saldo").nextElementSibling?.textContent).toContain(
+    expect(within(lista).getByRole("group", { name: "Saldo da lista" }).textContent).toContain(
       `\u{2212}R$${NBSP}8,00`,
     );
 
@@ -281,17 +396,15 @@ describe("Transações: linha do tempo, total e busca", () => {
     await waitFor(() => expect(lista.querySelectorAll("li[data-sentido]")).toHaveLength(4));
     expect(lista.textContent).not.toContain("não têm categoria");
 
-    const tags = await screen.findByRole("group", { name: "Filtrar por tag" });
-    fireEvent.click(within(tags).getByRole("button", { name: "pix" }));
+    await alternarFiltro("Tags", "pix");
     await waitFor(() => expect(lista.querySelectorAll("li[data-sentido]")).toHaveLength(2));
     expect(lista.textContent).toContain("Cinema");
     expect(lista.textContent).toContain("Salário");
 
-    fireEvent.click(within(tags).getByRole("button", { name: "pix" }));
+    await alternarFiltro("Tags", "pix");
     await waitFor(() => expect(lista.querySelectorAll("li[data-sentido]")).toHaveLength(4));
 
-    const categorias = screen.getByRole("group", { name: "Filtrar por categoria" });
-    fireEvent.click(within(categorias).getByRole("button", { name: "Lazer" }));
+    await alternarFiltro("Categorias", "Lazer");
     await waitFor(() => expect(lista.querySelectorAll("li[data-sentido]")).toHaveLength(1));
     expect(lista.textContent).toContain("Cinema");
     expect(lista.textContent).not.toContain("Salário");
@@ -320,11 +433,11 @@ describe("Transações: linha do tempo, total e busca", () => {
     expect(screen.queryByRole("dialog")).toBeNull();
   });
 
-  it("mês sem nada mostra o estado vazio com a dica do N", async () => {
+  it("mês sem nada mostra o estado vazio com a ação de registrar o primeiro gasto", async () => {
     render(<Transacoes navegacao={navegacao()} />);
 
     expect(await screen.findByText("Nenhum gasto ou ganho neste mês")).not.toBeNull();
-    expect(screen.getByText(/Registre o primeiro com N/)).not.toBeNull();
+    expect(screen.getByRole("button", { name: "Registrar o primeiro gasto" })).not.toBeNull();
   });
 });
 
@@ -356,15 +469,14 @@ describe("Transações: resultado anunciado e foco", () => {
     const { container } = render(<Transacoes navegacao={navegacao()} />);
     const lista = linhaDoTempo(container);
     await waitFor(() => expect(lista.textContent).toContain("Cinema"));
-    const titulo = within(lista).getByRole("heading", { level: 2, name: "Transações" });
+    const titulo = screen.getByRole("heading", { level: 2, name: "Transações" });
 
     fireEvent.change(campoDeBusca(), { target: { value: "zzz" } });
     fireEvent.click(within(lista).getAllByRole("button", { name: "Limpar busca" }).at(-1) as HTMLElement);
     expect(document.activeElement).toBe(titulo);
     expect(lista.textContent).toContain("Cinema");
 
-    const categorias = screen.getByRole("group", { name: "Filtrar por categoria" });
-    fireEvent.click(within(categorias).getByRole("button", { name: "Conhecimento" }));
+    await alternarFiltro("Categorias", "Conhecimento");
     const limparFiltros = await within(lista).findByRole("button", { name: "Limpar filtros" });
     limparFiltros.focus();
     fireEvent.click(limparFiltros);
@@ -383,8 +495,7 @@ describe("Transações: resultado anunciado e foco", () => {
 
     fireEvent.change(campoDeBusca(), { target: { value: "cin" } });
     expect(lista.querySelector("ol > li")).toBe(dia);
-    const categorias = screen.getByRole("group", { name: "Filtrar por categoria" });
-    fireEvent.click(within(categorias).getByRole("button", { name: "Lazer" }));
+    await alternarFiltro("Categorias", "Lazer");
     await waitFor(() => expect(lista.querySelectorAll("li[data-sentido]")).toHaveLength(1));
     expect(lista.querySelector("ol > li")).toBe(dia);
   });
@@ -397,11 +508,11 @@ describe("Transações: resultado anunciado e foco", () => {
     const lista = linhaDoTempo(container);
     await waitFor(() => expect(lista.textContent).toContain("Errado"));
 
-    fireEvent.click(within(lista).getByRole("button", { name: "Excluir o ganho Errado" }));
-    fireEvent.click(within(lista).getByRole("button", { name: "Confirmar exclusão" }));
+    abrirExclusao(lista, "Errado");
+    fireEvent.click(screen.getByRole("button", { name: "Confirmar exclusão" }));
 
     await waitFor(() => expect(lista.textContent).not.toContain("Errado"));
-    expect(document.activeElement).toBe(within(lista).getByRole("heading", { level: 2 }));
+    expect(document.activeElement).toBe(screen.getByRole("heading", { level: 2, name: "Transações" }));
   });
 });
 
@@ -414,8 +525,8 @@ describe("Transações: excluir um ganho", () => {
     const lista = linhaDoTempo(container);
     await waitFor(() => expect(lista.textContent).toContain("Errado"));
 
-    fireEvent.click(within(lista).getByRole("button", { name: "Excluir o ganho Errado" }));
-    fireEvent.click(within(lista).getByRole("button", { name: "Confirmar exclusão" }));
+    abrirExclusao(lista, "Errado");
+    fireEvent.click(screen.getByRole("button", { name: "Confirmar exclusão" }));
 
     expect(await screen.findByText("Ganho excluído.")).toBeTruthy();
     await waitFor(() => expect(lista.textContent).not.toContain("Errado"));
@@ -432,8 +543,8 @@ describe("Transações: excluir um ganho", () => {
     });
     await chamar(`/ganhos/${existente.id}`, { metodo: "DELETE" });
 
-    fireEvent.click(within(lista).getByRole("button", { name: "Excluir o ganho Sumiu" }));
-    fireEvent.click(within(lista).getByRole("button", { name: "Confirmar exclusão" }));
+    abrirExclusao(lista, "Sumiu");
+    fireEvent.click(screen.getByRole("button", { name: "Confirmar exclusão" }));
 
     expect(await screen.findByText("Ganho não encontrado.")).toBeTruthy();
   });
@@ -457,13 +568,22 @@ describe("Transações: servidor fora do ar", () => {
 describe("Transações: caixa de entrada", () => {
   it("sem importação bancária não há o seletor", () => {
     render(<Transacoes navegacao={navegacao()} />);
-    expect(screen.queryByRole("button", { name: "Caixa de entrada" })).toBeNull();
+    expect(screen.queryByRole("button", { name: /^Caixa de entrada/ })).toBeNull();
+  });
+
+  it("a Caixa de entrada mostra quantas transações pendentes há", async () => {
+    await chamar("/sincronizacoes", { metodo: "POST" });
+    const pendentes = await chamar<unknown[]>("/transacoes-importadas");
+    render(<Transacoes navegacao={navegacao({ importacaoBancaria: true })} />);
+
+    const caixa = await screen.findByRole("button", { name: /^Caixa de entrada/ });
+    await waitFor(() => expect(caixa.textContent).toContain(`${pendentes.length} ${pendentes.length === 1 ? "pendente" : "pendentes"}`));
   });
 
   it("com importação bancária o seletor troca o conteúdo pela caixa de entrada", async () => {
     const { container } = render(<Transacoes navegacao={navegacao({ importacaoBancaria: true })} />);
     const gastosEGanhos = screen.getByRole("button", { name: "Gastos e ganhos" });
-    const caixa = screen.getByRole("button", { name: "Caixa de entrada" });
+    const caixa = screen.getByRole("button", { name: /^Caixa de entrada/ });
     expect(gastosEGanhos.getAttribute("aria-pressed")).toBe("true");
     expect(caixa.getAttribute("aria-pressed")).toBe("false");
 
@@ -477,15 +597,63 @@ describe("Transações: caixa de entrada", () => {
     expect(within(container).getByRole("region", { name: "Transações" })).not.toBeNull();
   });
 
-  it("o atalho N fica desligado na caixa de entrada", async () => {
+  it("o atalho N, na caixa de entrada, volta aos gastos e abre o compositor", async () => {
     await criarConta();
     render(<Transacoes navegacao={navegacao({ importacaoBancaria: true })} />);
     // As contas já chegaram (senão o N não faria nada de qualquer jeito).
     await esperarConta("Nubank");
-    fireEvent.click(screen.getByRole("button", { name: "Caixa de entrada" }));
+    fireEvent.click(screen.getByRole("button", { name: /^Caixa de entrada/ }));
 
     fireEvent.keyDown(document.body, { key: "n" });
 
-    expect(screen.queryByRole("dialog")).toBeNull();
+    expect(await screen.findByRole("dialog", { name: "Novo gasto" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Gastos e ganhos" }).getAttribute("aria-pressed")).toBe("true");
+  });
+});
+
+describe("Transações: aportes e resgates", () => {
+  it.each([{ importacaoBancaria: true }, { gestaoDeInvestimentos: true }])("abre a seção disponível por %j sem busca/categoria/tag e N volta aos gastos", async (permissoes) => {
+    await criarConta();
+    render(<Transacoes navegacao={navegacao(permissoes)} />);
+    await esperarConta("Nubank");
+    fireEvent.click(screen.getByRole("button", { name: "Aportes e resgates" }));
+    expect(screen.getByRole("button", { name: "Aportes e resgates" }).getAttribute("aria-pressed")).toBe("true");
+    expect(await screen.findByRole("region", { name: "Movimentos de investimento" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: /^Contas:/ })).toBeTruthy();
+    expect(screen.queryByLabelText("Buscar transações")).toBeNull();
+    expect(Boolean(screen.queryByRole("button", { name: /^Caixa de entrada/ }))).toBe(permissoes.importacaoBancaria === true);
+    fireEvent.keyDown(document.body, { key: "n" });
+    expect(await screen.findByRole("dialog", { name: "Novo gasto" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Gastos e ganhos" }).getAttribute("aria-pressed")).toBe("true");
+  });
+  it("vista inicial abre aportes quando disponível e recua para gastos sem permissão", async () => {
+    const vista = render(<Transacoes navegacao={navegacao({ gestaoDeInvestimentos: true })} vistaInicial="aportes" />);
+    expect(await screen.findByRole("region", { name: "Movimentos de investimento" })).toBeTruthy(); vista.unmount();
+    render(<Transacoes navegacao={navegacao()} vistaInicial="aportes" />);
+    expect(screen.getByRole("region", { name: "Transações" })).toBeTruthy();
+    expect(screen.queryByRole("group", { name: "Conteúdo" })).toBeNull();
+  });
+});
+
+describe("Transações: filtros no celular", () => {
+  it("abaixo de 45rem mostra só a busca e o botão Filtros; escolher na folha vira chip removível", async () => {
+    definirMidia(true);
+    definirLayoutEstreito(true);
+    await criarConta();
+    render(<Transacoes navegacao={navegacao()} />);
+
+    expect(screen.queryByRole("group", { name: "Filtrar por conta" })).toBeNull();
+    expect(campoDeBusca()).toBeTruthy();
+    fireEvent.click(await screen.findByRole("button", { name: "Filtros" }));
+    const folha = screen.getByRole("dialog", { name: "Filtros" });
+    await waitFor(() => within(folha).getByRole("button", { name: "Nubank, Conta corrente" }));
+    fireEvent.click(within(folha).getByRole("button", { name: "Nubank, Conta corrente" }));
+    fireEvent.click(within(folha).getByRole("button", { name: "Concluir" }));
+
+    expect(screen.getByRole("button", { name: "Filtros (1)" })).toBeTruthy();
+    const ativos = screen.getByRole("list", { name: "Filtros ativos" });
+    fireEvent.click(within(ativos).getByRole("button", { name: "Remover filtro: Nubank, Conta corrente" }));
+    expect(screen.getByRole("button", { name: "Filtros" })).toBeTruthy();
+    expect(screen.queryByRole("list", { name: "Filtros ativos" })).toBeNull();
   });
 });

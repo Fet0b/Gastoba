@@ -1,0 +1,182 @@
+{
+  "results": [
+    {
+      "_datas": {
+        "dueDate": -700
+      },
+      "amountOriginal": 10000.0,
+      "amountProfit": 450.0,
+      "balance": 10450.0,
+      "code": "CDBEX110",
+      "currencyCode": "BRL",
+      "fixedAnnualRate": 0,
+      "id": "inv-cdb-pos",
+      "issuer": "Banco Exemplo",
+      "itemId": "item-exemplo-1",
+      "name": "CDB Banco Exemplo 110% CDI",
+      "rate": 110,
+      "rateType": "CDI",
+      "subtype": "CDB",
+      "type": "FIXED_INCOME"
+    },
+    {
+      "_datas": {
+        "dueDate": -500
+      },
+      "amountOriginal": 6000.0,
+      "amountProfit": 200.0,
+      "balance": 6200.0,
+      "code": "LCIEX95",
+      "currencyCode": "BRL",
+      "id": "inv-lci",
+      "issuer": "Banco Exemplo",
+      "itemId": "item-exemplo-1",
+      "name": "LCI Banco Exemplo",
+      "rate": 95,
+      "rateType": "CDI",
+      "subtype": "LCI",
+      "type": "FIXED_INCOME"
+    },
+    {
+      "_datas": {
+        "dueDate": -6000
+      },
+      "amountOriginal": 3000.0,
+      "amountProfit": 120.55,
+      "balance": 3120.55,
+      "code": "TESOURO IPCA+ 2045",
+      "currencyCode": "BRL",
+      "fixedAnnualRate": 6.1,
+      "id": "inv-tesouro-longo",
+      "issuer": "Tesouro Nacional",
+      "itemId": "item-exemplo-1",
+      "name": "Tesouro IPCA+ 2045",
+      "rate": 0,
+      "rateType": "IPCA",
+      "subtype": "TREASURY",
+      "type": "FIXED_INCOME"
+    },
+    {
+      "_datas": {
+        "dueDate": -1100
+      },
+      "amountOriginal": 2400.0,
+      "amountProfit": 140.1,
+      "balance": 2540.1,
+      "code": "TESOURO IPCA+ 2029",
+      "currencyCode": "BRL",
+      "fixedAnnualRate": 5.8,
+      "id": "inv-tesouro-curto",
+      "issuer": "Tesouro Nacional",
+      "itemId": "item-exemplo-1",
+      "name": "Tesouro IPCA+ 2029",
+      "rate": 0,
+      "rateType": "IPCA",
+      "subtype": "TREASURY",
+      "type": "FIXED_INCOME"
+    },
+    {
+      "_datas": {
+        "dueDate": -1800
+      },
+      "amountOriginal": 1700.0,
+      "amountProfit": 190.0,
+      "balance": 1890.0,
+      "code": "TESOURO PREFIXADO 2031",
+      "currencyCode": "BRL",
+      "fixedAnnualRate": 12.3,
+      "id": "inv-tesouro-pre",
+      "issuer": "Tesouro Nacional",
+      "itemId": "item-exemplo-1",
+      "name": "Tesouro Prefixado 2031",
+      "rate": 0,
+      "rateType": "PRE",
+      "subtype": "TREASURY",
+      "type": "FIXED_INCOME"
+    },
+    {
+      "balance": 1900.0,
+      "code": "EXMP3",
+      "currencyCode": "BRL",
+      "id": "inv-acao",
+      "itemId": "item-exemplo-1",
+      "name": "Ação Exemplo ON",
+      "quantity": 80,
+      "subtype": "STOCK",
+      "type": "EQUITY"
+    },
+    {
+      "balance": 1210.0,
+      "code": "EXFI11",
+      "currencyCode": "BRL",
+      "id": "inv-fii",
+      "itemId": "item-exemplo-1",
+      "name": "Fundo Imobiliário Exemplo",
+      "quantity": 10,
+      "subtype": "REAL_ESTATE_FUND",
+      "type": "EQUITY"
+    },
+    {
+      "balance": 1040.0,
+      "code": "EXBD34",
+      "currencyCode": "BRL",
+      "id": "inv-bdr",
+      "itemId": "item-exemplo-1",
+      "name": "BDR Exemplo",
+      "quantity": 20,
+      "subtype": "BDR",
+      "type": "EQUITY"
+    },
+    {
+      "balance": 1060.0,
+      "code": "EXET11",
+      "currencyCode": "BRL",
+      "id": "inv-etf",
+      "itemId": "item-exemplo-1",
+      "name": "ETF Exemplo",
+      "quantity": 8,
+      "subtype": "ETF",
+      "type": "ETF"
+    },
+    {
+      "amountOriginal": 7000.0,
+      "amountProfit": 800.0,
+      "balance": 7800.0,
+      "code": "FUNDO MM EXEMPLO",
+      "currencyCode": "BRL",
+      "id": "inv-multimercado",
+      "itemId": "item-exemplo-1",
+      "name": "Fundo Multimercado Exemplo",
+      "subtype": "MULTIMARKET_FUND",
+      "type": "MUTUAL_FUND"
+    },
+    {
+      "_datas": {
+        "dueDate": 5
+      },
+      "amountOriginal": 0.0,
+      "amountProfit": 0.0,
+      "balance": 0.0,
+      "code": "CDBEX2026",
+      "currencyCode": "BRL",
+      "id": "inv-cdb-vencido",
+      "issuer": "Banco Exemplo",
+      "itemId": "item-exemplo-1",
+      "name": "CDB Banco Exemplo 2026 (vencido)",
+      "rate": 100,
+      "rateType": "CDI",
+      "subtype": "CDB",
+      "type": "FIXED_INCOME"
+    },
+    {
+      "amountOriginal": 850.0,
+      "amountProfit": 50.0,
+      "balance": 900.0,
+      "currencyCode": "BRL",
+      "id": "inv-fundo-sem-classe",
+      "itemId": "item-exemplo-1",
+      "name": "Fundo Exemplo Sem Classe",
+      "type": "MUTUAL_FUND"
+    }
+  ]
+}

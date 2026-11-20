@@ -1,7 +1,9 @@
 import { deCentavos, formatar, paraCentavos } from "../../dinheiro/dinheiro";
 import type { Periodo } from "../../periodo/periodo";
 import { MINIMO_DE_DIAS, projetarGastoDoMes, type EntradaDaProjecao } from "../../projecao/projecao";
+import { Dica } from "../Dica/Dica";
 import { Icone } from "../Icone/Icone";
+import { Indicador } from "../Indicador/Indicador";
 import estilos from "./ProjecaoDoMes.module.css";
 
 type Propriedades = {
@@ -14,6 +16,7 @@ type Propriedades = {
   hoje: string;
   carregando?: boolean;
   erro?: boolean;
+  comoIndicador?: boolean;
 };
 
 type Situacao =
@@ -29,12 +32,13 @@ type Situacao =
 const NOTA = "Estimativa simples, pelo ritmo dos gastos até hoje";
 
 /** A frase da situação do mês: quanto se espera gastar até o fim e se isso cabe na renda. */
-export function ProjecaoDoMes({ periodo, gastos, renda, hoje, carregando, erro }: Propriedades) {
+export function ProjecaoDoMes({ periodo, gastos, renda, hoje, carregando, erro, comoIndicador = false }: Propriedades) {
   let situacao: Situacao;
   let titulo: string | null = null;
   let frase: string;
   let icone: "ok" | "alerta" | null = null;
   let observacao: string | null = null;
+  let sobra: string | null = null;
 
   if (erro) {
     situacao = "erro";
@@ -64,7 +68,8 @@ export function ProjecaoDoMes({ periodo, gastos, renda, hoje, carregando, erro }
       } else if (estimativa <= rendaCentavos) {
         situacao = "cabe";
         icone = "ok";
-        frase = `Cabe na renda · sobram ${formatar(deCentavos(rendaCentavos - estimativa))}`;
+        frase = "Cabe na renda";
+        sobra = `Sobram ${formatar(deCentavos(rendaCentavos - estimativa))}`;
       } else {
         situacao = "passa";
         icone = "alerta";
@@ -73,18 +78,35 @@ export function ProjecaoDoMes({ periodo, gastos, renda, hoje, carregando, erro }
     }
   }
 
+  if (comoIndicador) {
+    const tom = situacao === "cabe" ? "positivo" : situacao === "passa" ? "negativo" : "neutro";
+    const nota = <>
+      <span className={estilos.frase}>
+      {icone !== null && <Icone nome={icone} tamanho={16} />}
+        <span>{frase}</span>
+      </span>
+      {sobra !== null && <span className={estilos.sobra}>{sobra}</span>}
+    </>;
+    return <div className={`${estilos.projecao} ${estilos.comoIndicador}`} data-situacao={situacao}>
+      <Indicador rotulo="Projeção do mês" tom={tom} dica={NOTA} valor={titulo ?? "—"} nota={nota} />
+    </div>;
+  }
+
   return (
     <div className={estilos.projecao} data-situacao={situacao}>
-      <span className={estilos.rotulo}>Projeção do mês</span>
+      <span className={estilos.cabecalho}>
+        <span className={estilos.rotulo}>Projeção do mês</span>
+        {situacao !== "futuro" && situacao !== "carregando" && situacao !== "erro" && (
+          <Dica assunto="a projeção">{NOTA}</Dica>
+        )}
+      </span>
       {titulo !== null && <span className={estilos.valor}>{titulo}</span>}
       {observacao !== null && <span className={estilos.observacao}>{observacao}</span>}
       <span className={estilos.frase}>
         {icone !== null && <Icone nome={icone} tamanho={16} />}
         <span>{frase}</span>
       </span>
-      {situacao !== "futuro" && situacao !== "carregando" && situacao !== "erro" && (
-        <span className={estilos.nota}>{NOTA}</span>
-      )}
+      {sobra !== null && <span className={estilos.sobra}>{sobra}</span>}
     </div>
   );
 }

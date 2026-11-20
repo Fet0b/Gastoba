@@ -4,7 +4,7 @@
 
 .comprometido,
 .proximos {
-  --marca-de-ganho: var(--cor-lavanda);
+  --marca-de-ganho: var(--cor-positivo);
   --marca-de-gasto: var(--cor-brasa);
 
   display: flex;
@@ -16,7 +16,7 @@
 .titulo {
   font-size: var(--texto-grande);
   line-height: var(--texto-grande-linha);
-  font-weight: 650;
+  font-weight: var(--peso-secao);
 }
 
 .nota {
@@ -29,6 +29,25 @@
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: var(--espaco-4);
+  margin: 0;
+}
+
+.total dd {
+  margin: 0;
+}
+
+/* P2: a diferença é o número principal; os ganhos e os gastos fixos são secundários. */
+.total[data-principal] .valorDoTotal {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espaco-1);
+  font-size: var(--numero-heroi);
+  line-height: var(--texto-destaque-linha);
+  white-space: normal;
+}
+
+.total[data-principal] .valorDoTotal > :first-child {
+  white-space: nowrap;
 }
 
 .total {
@@ -48,7 +67,7 @@
   font-family: var(--fonte-titulo);
   font-size: var(--texto-grande);
   line-height: var(--texto-grande-linha);
-  font-variant-numeric: proportional-nums;
+  font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
 
@@ -61,21 +80,26 @@
   line-height: var(--texto-pequeno-linha);
 }
 
-.totais[data-tom="positivo"] .situacao svg {
+.grupo[data-tom="positivo"] .situacao svg {
   color: var(--cor-dentro);
 }
 
-.totais[data-tom="negativo"] .situacao svg {
+.grupo[data-tom="negativo"] .situacao svg {
   color: var(--cor-brasa);
 }
 
 .lista {
   display: flex;
   flex-direction: column;
-  gap: var(--espaco-2);
+  gap: 0;
   margin: 0;
   padding: 0;
   list-style: none;
+}
+
+/* P3: cabeçalho visual das colunas, só no computador; as linhas têm o mesmo molde. */
+.cabecalhoDaLista {
+  display: none;
 }
 
 .item {
@@ -83,9 +107,21 @@
   grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
   gap: var(--espaco-3);
-  padding: var(--espaco-3);
-  border-radius: var(--raio-cartao);
-  background: var(--cor-veludo);
+  padding: var(--espaco-3) 0;
+  border-top: 1px solid var(--cor-veludo);
+}
+
+@media (min-width: 48rem) {
+  .cabecalhoDaLista {
+    display: grid;
+    grid-template-columns: var(--espaco-4) minmax(0, 1fr) auto;
+    gap: var(--espaco-3);
+    color: var(--cor-bruma);
+    font-size: var(--texto-minimo);
+    line-height: var(--texto-minimo-linha);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
 }
 
 .marca {
@@ -139,6 +175,6 @@
 @keyframes entrada {
   from {
     opacity: 0;
-    transform: translateY(6px);
+    transform: translateY(0.375rem);
   }
 }

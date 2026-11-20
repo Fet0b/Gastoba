@@ -8,6 +8,9 @@ import { CampoDeValor } from "../Compositor/CampoDeValor";
 import { MENSAGEM_TAG_PENDENTE } from "../Compositor/CompositorDeGasto";
 import { SeletorDeCategoria } from "../Compositor/SeletorDeCategoria";
 import { errosDaApi, lerDiaDoMes } from "./FormularioDeRecorrencia";
+import { Botao } from "../Botao/Botao";
+import { CampoDeData } from "../Campo/CampoDeData";
+import { CampoDeTexto } from "../Campo/CampoDeTexto";
 import estilos from "./Recorrencias.module.css";
 
 type Propriedades = {
@@ -22,7 +25,7 @@ type Propriedades = {
 };
 
 /**
- * Edição na própria linha: valor, descrição, dia do mês, fim e, conforme o tipo,
+ * Edição em diálogo: valor, descrição, dia do mês, fim e, conforme o tipo,
  * a categoria; mais as tags. Conta, tipo e início não mudam. Vale dos próximos
  * meses em diante: o que já foi gerado continua como está.
  */
@@ -84,11 +87,7 @@ export function EdicaoDeRecorrencia({
     if (alterada) aoAlterar(alterada);
   }
 
-  const idDescricao = `${id}-descricao`;
-  const idDia = `${id}-dia`;
-  const idFim = `${id}-fim`;
   const idMotivos = `${id}-motivos`;
-  const idErro = (campo: string) => `${id}-erro-${campo}`;
 
   return (
     <form
@@ -106,61 +105,26 @@ export function EdicaoDeRecorrencia({
         erro={erros.valor}
       />
 
-      <div className={estilos.campo}>
-        <label htmlFor={idDescricao}>Descrição</label>
-        <input
-          id={idDescricao}
-          className={estilos.entrada}
-          value={descricao}
-          maxLength={200}
-          autoComplete="off"
-          onChange={(evento) => definirDescricao(evento.target.value)}
-          aria-invalid={erros.descricao ? true : undefined}
-          aria-describedby={erros.descricao ? idErro("descricao") : undefined}
-        />
-        {erros.descricao && (
-          <p id={idErro("descricao")} className={estilos.erro}>
-            {erros.descricao}
-          </p>
-        )}
-      </div>
+      <CampoDeTexto
+        rotulo="Descrição"
+        valor={descricao}
+        aoMudar={definirDescricao}
+        maxLength={200}
+        autoComplete="off"
+        erro={erros.descricao}
+      />
 
       <div className={estilos.linha}>
-        <div className={estilos.campo}>
-          <label htmlFor={idDia}>Dia do mês</label>
-          <input
-            id={idDia}
-            className={estilos.entrada}
-            inputMode="numeric"
-            autoComplete="off"
-            value={dia}
-            onChange={(evento) => definirDia(evento.target.value)}
-            aria-invalid={(dia !== "" && diaLido === null) || erros.dia ? true : undefined}
-            aria-describedby={erros.dia ? idErro("dia") : undefined}
-          />
-          {erros.dia && (
-            <p id={idErro("dia")} className={estilos.erro}>
-              {erros.dia}
-            </p>
-          )}
-        </div>
-        <div className={estilos.campo}>
-          <label htmlFor={idFim}>Termina em (opcional)</label>
-          <input
-            id={idFim}
-            type="date"
-            className={estilos.entrada}
-            value={fim}
-            onChange={(evento) => definirFim(evento.target.value)}
-            aria-invalid={erros.fim ? true : undefined}
-            aria-describedby={erros.fim ? idErro("fim") : undefined}
-          />
-          {erros.fim && (
-            <p id={idErro("fim")} className={estilos.erro}>
-              {erros.fim}
-            </p>
-          )}
-        </div>
+        <CampoDeTexto
+          rotulo="Dia do mês"
+          valor={dia}
+          aoMudar={definirDia}
+          inputMode="numeric"
+          autoComplete="off"
+          erro={erros.dia}
+          aria-invalid={dia !== "" && diaLido === null ? true : undefined}
+        />
+        <CampoDeData rotulo="Termina em (opcional)" valor={fim} aoMudar={definirFim} erro={erros.fim} />
       </div>
 
       {gasto && (
@@ -196,18 +160,17 @@ export function EdicaoDeRecorrencia({
         </ul>
       )}
 
-      <div className={estilos.acoes}>
-        <button
+      <div className={estilos.acoesDoFormulario}>
+        <Botao variante="primario"
           type="submit"
-          className={estilos.primario}
           disabled={motivos.length > 0 || alterar.pendente}
           aria-describedby={motivos.length > 0 ? idMotivos : undefined}
         >
           {alterar.pendente ? "Salvando…" : "Salvar alterações"}
-        </button>
-        <button type="button" className={estilos.secundario} disabled={alterar.pendente} onClick={aoCancelar}>
+        </Botao>
+        <Botao variante="secundario" disabled={alterar.pendente} onClick={aoCancelar}>
           Cancelar
-        </button>
+        </Botao>
       </div>
     </form>
   );

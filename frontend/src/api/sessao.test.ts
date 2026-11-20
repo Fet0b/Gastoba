@@ -32,6 +32,8 @@ describe("eu", () => {
       email: "voce@exemplo.com",
       nome: "Você",
       importacao_bancaria: true,
+      gestao_de_investimentos: true,
+      aparencia: expect.objectContaining({ nome: "Gastoba", personalizada: false }),
     });
   });
 

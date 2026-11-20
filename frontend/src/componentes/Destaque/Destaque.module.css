@@ -10,13 +10,24 @@
   line-height: var(--texto-pequeno-linha);
 }
 
-/* Número de destaque: algarismos proporcionais (não tabulares), como pede o guia dataviz */
+/* Número de destaque: peso de título e algarismos tabulares (XI.3). */
 .valor {
   font-family: var(--fonte-titulo);
-  font-size: var(--texto-destaque);
-  line-height: var(--texto-destaque-linha);
-  font-variant-numeric: proportional-nums;
+  font-size: var(--numero-grande);
+  line-height: var(--texto-titulo-linha);
+  font-weight: var(--peso-titulo);
+  font-variant-numeric: tabular-nums;
   white-space: nowrap;
+}
+
+.destaque[data-tamanho="heroi"] .valor {
+  font-size: var(--numero-heroi);
+  line-height: var(--texto-destaque-linha);
+}
+
+.destaque[data-tamanho="medio"] .valor {
+  font-size: var(--numero-medio);
+  line-height: var(--texto-grande-linha);
 }
 
 .tom {
@@ -25,7 +36,7 @@
   gap: var(--espaco-1);
   font-size: var(--texto-minimo);
   line-height: var(--texto-minimo-linha);
-  font-weight: 600;
+  font-weight: var(--peso-secao);
 }
 
 .destaque[data-tom="positivo"] .valor,

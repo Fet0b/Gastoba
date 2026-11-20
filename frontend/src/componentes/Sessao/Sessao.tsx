@@ -19,7 +19,7 @@ import {
   eu,
   sair as sairDaApi,
 } from "../../api/sessao";
-import type { Usuario } from "../../api/tipos";
+import type { Aparencia, Usuario } from "../../api/tipos";
 
 /** Aviso mostrado na tela de entrar quando a sessão acaba no meio do uso. */
 export const MENSAGEM_SESSAO_TERMINOU = "Sua sessão terminou. Entre de novo.";
@@ -36,6 +36,8 @@ export type ValorDaSessao = {
   entrar: (credenciais: Credenciais) => Promise<void>;
   /** Cria a conta da pessoa e já entra; lança o ErroDaApiCliente se não conseguir. */
   cadastrar: (dados: DadosDeCadastro) => Promise<void>;
+  /** Guarda a aparência salva (ou `undefined` ao restaurar) no perfil da pessoa conectada. */
+  atualizarAparencia: (aparencia: Aparencia | undefined) => void;
   /** Sai; volta a `anonimo` mesmo sem resposta do servidor. Nunca falha. */
   sair: () => Promise<void>;
 };
@@ -126,9 +128,15 @@ export function ProvedorDeSessao({ children }: { children: ReactNode }) {
     mudar({ estado: "anonimo", usuario: null, aviso: null });
   }, [mudar]);
 
+  const atualizarAparencia = useCallback((aparencia: Aparencia | undefined) => {
+    definirSituacao((atual) =>
+      atual.usuario === null ? atual : { ...atual, usuario: { ...atual.usuario, aparencia } },
+    );
+  }, []);
+
   const valor = useMemo<ValorDaSessao>(
-    () => ({ ...situacao, entrar, cadastrar, sair }),
-    [situacao, entrar, cadastrar, sair],
+    () => ({ ...situacao, entrar, cadastrar, sair, atualizarAparencia }),
+    [situacao, entrar, cadastrar, sair, atualizarAparencia],
   );
 
   return <Contexto value={valor}>{children}</Contexto>;

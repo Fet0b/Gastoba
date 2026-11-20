@@ -51,4 +51,33 @@ describe("Icone", () => {
     expect(caminhos.length).toBeGreaterThan(0);
     for (const caminho of caminhos) expect((caminho.getAttribute("d") ?? "").trim()).not.toBe("");
   });
+
+  it.each(["info", "repetir", "verificado"] as const)("o ícone novo %s existe e é um SVG com caminho", (nome) => {
+    expect(NOMES).toContain(nome);
+    const { container } = render(<Icone nome={nome} />);
+    expect(container.querySelector("svg path")).not.toBeNull();
+  });
+
+  it("o ícone novo com rótulo vira imagem", () => {
+    const { container } = render(<Icone nome="info" rotulo="Informação" />);
+    expect(container.querySelector("svg")?.getAttribute("role")).toBe("img");
+  });
+
+  it.each(["aviao", "casa", "carro", "computador", "exclamacao"] as const)(
+    "o ícone da caixinha %s existe, em traço e distinto dos demais",
+    (nome) => {
+      expect(NOMES).toContain(nome);
+      const { container } = render(<Icone nome={nome} tamanho={16} rotulo={nome} />);
+      expect(container.querySelector("svg")?.getAttribute("stroke")).toBe("currentColor");
+      expect(container.querySelectorAll("path").length).toBeGreaterThan(0);
+      for (const outro of NOMES.filter((n) => n !== nome)) {
+        expect(CAMINHOS_DOS_ICONES[outro].join("|")).not.toBe(CAMINHOS_DOS_ICONES[nome].join("|"));
+      }
+    },
+  );
+
+  it("o cofre (padrão da caixinha) e a exclamação não repetem o alerta nem a informação", () => {
+    expect(CAMINHOS_DOS_ICONES.exclamacao).not.toEqual(CAMINHOS_DOS_ICONES.alerta);
+    expect(CAMINHOS_DOS_ICONES.exclamacao).not.toEqual(CAMINHOS_DOS_ICONES.info);
+  });
 });

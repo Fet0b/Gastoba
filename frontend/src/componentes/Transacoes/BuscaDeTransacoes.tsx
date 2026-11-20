@@ -1,10 +1,14 @@
-import { useId, useRef } from "react";
+import { type RefObject, useRef } from "react";
 
+import { Botao } from "../Botao/Botao";
+import { CampoDeTexto } from "../Campo/CampoDeTexto";
 import estilos from "./BuscaDeTransacoes.module.css";
 
 type Propriedades = {
   valor: string;
   aoMudar: (texto: string) => void;
+  /** Para a página focar o campo com a tecla "/". */
+  campoRef?: RefObject<HTMLInputElement | null>;
 };
 
 /** A lupa, local a este campo (não faz parte do mapa de ícones compartilhado). */
@@ -29,29 +33,27 @@ function IconeDeBusca() {
 }
 
 /** Campo de busca por descrição e tag, com o botão de limpar (que devolve o foco ao campo). */
-export function BuscaDeTransacoes({ valor, aoMudar }: Propriedades) {
-  const id = useId();
-  const campo = useRef<HTMLInputElement>(null);
+export function BuscaDeTransacoes({ valor, aoMudar, campoRef }: Propriedades) {
+  const interno = useRef<HTMLInputElement>(null);
+  const campo = campoRef ?? interno;
 
   return (
     <div className={estilos.busca}>
-      <label htmlFor={id} className="visualmente-oculto">
-        Buscar transações
-      </label>
       <IconeDeBusca />
-      <input
+      <CampoDeTexto
         ref={campo}
-        id={id}
-        type="search"
         className={estilos.campo}
-        placeholder="Buscar por descrição ou tag"
+        tipo="search"
+        rotulo="Buscar transações"
+        placeholder="Buscar por descrição ou tag (tecla /)"
+        aria-keyshortcuts="/"
         autoComplete="off"
-        value={valor}
-        onChange={(evento) => aoMudar(evento.target.value)}
+        valor={valor}
+        aoMudar={aoMudar}
       />
       {valor !== "" && (
-        <button
-          type="button"
+        <Botao
+          variante="terciario"
           className={estilos.limpar}
           aria-label="Limpar busca"
           onClick={() => {
@@ -60,7 +62,7 @@ export function BuscaDeTransacoes({ valor, aoMudar }: Propriedades) {
           }}
         >
           Limpar
-        </button>
+        </Botao>
       )}
     </div>
   );

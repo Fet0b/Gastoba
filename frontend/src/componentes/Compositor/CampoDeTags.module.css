@@ -9,8 +9,7 @@
 }
 
 .rotulo {
-  color: var(--cor-bruma);
-  font-size: 0.9375rem;
+  composes: rotulo from "../Campo/Campo.module.css";
 }
 
 .moldura {
@@ -19,9 +18,9 @@
   align-items: center;
   gap: var(--espaco-2);
   padding: var(--espaco-2) var(--espaco-3);
-  border: 1px solid var(--cor-veludo);
+  border: var(--borda-de-camada);
   border-radius: var(--raio-campo);
-  background: var(--cor-noite);
+  background: var(--cor-veludo);
   transition: border-color var(--duracao-curta) var(--curva-saida);
 }
 
@@ -55,7 +54,7 @@
   padding: 2px var(--espaco-1) 2px var(--espaco-3);
   border-radius: var(--raio-chip);
   background: var(--cor-veludo);
-  font-size: 0.9375rem;
+  font-size: var(--texto-corpo);
   overflow-wrap: anywhere;
   animation: chegar var(--duracao-curta) var(--curva-saida);
 }
@@ -103,7 +102,7 @@
   border: 1px solid var(--cor-veludo);
   border-radius: var(--raio-campo);
   background: var(--cor-ameixa);
-  box-shadow: 0 12px 32px rgb(0 0 0 / 0.45);
+  box-shadow: var(--sombra-alta);
 }
 
 .lista[hidden] {
@@ -112,7 +111,7 @@
 
 .opcao {
   padding: var(--espaco-2) var(--espaco-3);
-  border-radius: calc(var(--raio-campo) - 4px);
+  border-radius: var(--raio-campo);
   cursor: pointer;
 }
 
@@ -128,7 +127,7 @@
 
 .dica {
   color: var(--cor-bruma);
-  font-size: 0.875rem;
+  font-size: var(--texto-pequeno);
 }
 
 .aviso:empty {
@@ -138,7 +137,7 @@
 .aviso,
 .erro {
   color: var(--cor-brasa);
-  font-size: 0.9375rem;
+  font-size: var(--texto-corpo);
 }
 
 @keyframes chegar {

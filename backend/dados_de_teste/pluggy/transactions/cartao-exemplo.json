@@ -1,0 +1,587 @@
+{
+  "results": [
+    {
+      "_datas": {
+        "date": 1
+      },
+      "accountId": "cartao-exemplo",
+      "amount": 143.2,
+      "currencyCode": "BRL",
+      "description": "SUPERMERCADO BOM PRECO",
+      "id": "cart-001",
+      "status": "POSTED",
+      "type": "DEBIT"
+    },
+    {
+      "_datas": {
+        "date": 3
+      },
+      "accountId": "cartao-exemplo",
+      "amount": 210.0,
+      "currencyCode": "BRL",
+      "description": "POSTO COMBUSTIVEL EXEMPLO",
+      "id": "cart-002",
+      "status": "POSTED",
+      "type": "DEBIT"
+    },
+    {
+      "_datas": {
+        "date": 5
+      },
+      "accountId": "cartao-exemplo",
+      "amount": 78.9,
+      "currencyCode": "BRL",
+      "description": "RESTAURANTE SABOR CASEIRO",
+      "id": "cart-003",
+      "status": "POSTED",
+      "type": "DEBIT"
+    },
+    {
+      "_datas": {
+        "date": 7
+      },
+      "accountId": "cartao-exemplo",
+      "amount": 89.9,
+      "currencyCode": "BRL",
+      "description": "LIVRARIA PAGINA UM",
+      "id": "cart-004",
+      "status": "POSTED",
+      "type": "DEBIT"
+    },
+    {
+      "_datas": {
+        "date": 9
+      },
+      "accountId": "cartao-exemplo",
+      "amount": 52.0,
+      "currencyCode": "BRL",
+      "description": "CINE EXEMPLO",
+      "id": "cart-005",
+      "status": "POSTED",
+      "type": "DEBIT"
+    },
+    {
+      "_datas": {
+        "date": 11
+      },
+      "accountId": "cartao-exemplo",
+      "amount": 37.45,
+      "currencyCode": "BRL",
+      "description": "FARMACIA SAUDE",
+      "id": "cart-006",
+      "status": "POSTED",
+      "type": "DEBIT"
+    },
+    {
+      "_datas": {
+        "date": 13
+      },
+      "accountId": "cartao-exemplo",
+      "amount": 24.6,
+      "currencyCode": "BRL",
+      "description": "APP TRANSPORTE EXEMPLO",
+      "id": "cart-007",
+      "status": "POSTED",
+      "type": "DEBIT"
+    },
+    {
+      "_datas": {
+        "date": 15
+      },
+      "accountId": "cartao-exemplo",
+      "amount": 18.75,
+      "currencyCode": "BRL",
+      "description": "PADARIA PAO QUENTE",
+      "id": "cart-008",
+      "status": "POSTED",
+      "type": "DEBIT"
+    },
+    {
+      "_datas": {
+        "date": 17
+      },
+      "accountId": "cartao-exemplo",
+      "amount": 39.9,
+      "currencyCode": "BRL",
+      "description": "STREAMING VIDEO EXEMPLO",
+      "id": "cart-009",
+      "status": "POSTED",
+      "type": "DEBIT"
+    },
+    {
+      "_datas": {
+        "date": 19
+      },
+      "accountId": "cartao-exemplo",
+      "amount": 169.0,
+      "currencyCode": "BRL",
+      "description": "LOJA DE ROUPAS EXEMPLO",
+      "id": "cart-010",
+      "status": "POSTED",
+      "type": "DEBIT"
+    },
+    {
+      "_datas": {
+        "date": 21
+      },
+      "accountId": "cartao-exemplo",
+      "amount": 119.0,
+      "currencyCode": "BRL",
+      "description": "ACADEMIA FORMA EXEMPLO",
+      "id": "cart-011",
+      "status": "POSTED",
+      "type": "DEBIT"
+    },
+    {
+      "_datas": {
+        "date": 23
+      },
+      "accountId": "cartao-exemplo",
+      "amount": 201.35,
+      "currencyCode": "BRL",
+      "description": "SUPERMERCADO BOM PRECO",
+      "id": "cart-012",
+      "status": "POSTED",
+      "type": "DEBIT"
+    },
+    {
+      "_datas": {
+        "date": 25
+      },
+      "accountId": "cartao-exemplo",
+      "amount": 96.8,
+      "currencyCode": "BRL",
+      "description": "PET SHOP AMIGO FIEL",
+      "id": "cart-013",
+      "status": "POSTED",
+      "type": "DEBIT"
+    },
+    {
+      "_datas": {
+        "date": 4
+      },
+      "accountId": "cartao-exemplo",
+      "amount": 249.9,
+      "creditCardMetadata": {
+        "billId": "fatura-exemplo-0",
+        "installmentNumber": 2,
+        "totalInstallments": 6
+      },
+      "currencyCode": "BRL",
+      "description": "LOJA ELETRO EXEMPLO PARC 2/6",
+      "id": "cart-014",
+      "status": "POSTED",
+      "type": "DEBIT"
+    },
+    {
+      "_datas": {
+        "date": 9
+      },
+      "accountId": "cartao-exemplo",
+      "amount": 1100.0,
+      "currencyCode": "BRL",
+      "description": "PAGAMENTO RECEBIDO",
+      "id": "cart-015",
+      "operationType": "PAGAMENTO_FATURA",
+      "status": "POSTED",
+      "type": "CREDIT"
+    },
+    {
+      "_datas": {
+        "date": 31
+      },
+      "accountId": "cartao-exemplo",
+      "amount": 143.2,
+      "currencyCode": "BRL",
+      "description": "SUPERMERCADO BOM PRECO",
+      "id": "cart-016",
+      "status": "POSTED",
+      "type": "DEBIT"
+    },
+    {
+      "_datas": {
+        "date": 33
+      },
+      "accountId": "cartao-exemplo",
+      "amount": 210.0,
+      "currencyCode": "BRL",
+      "description": "POSTO COMBUSTIVEL EXEMPLO",
+      "id": "cart-017",
+      "status": "POSTED",
+      "type": "DEBIT"
+    },
+    {
+      "_datas": {
+        "date": 35
+      },
+      "accountId": "cartao-exemplo",
+      "amount": 78.9,
+      "currencyCode": "BRL",
+      "description": "RESTAURANTE SABOR CASEIRO",
+      "id": "cart-018",
+      "status": "POSTED",
+      "type": "DEBIT"
+    },
+    {
+      "_datas": {
+        "date": 37
+      },
+      "accountId": "cartao-exemplo",
+      "amount": 89.9,
+      "currencyCode": "BRL",
+      "description": "LIVRARIA PAGINA UM",
+      "id": "cart-019",
+      "status": "POSTED",
+      "type": "DEBIT"
+    },
+    {
+      "_datas": {
+        "date": 39
+      },
+      "accountId": "cartao-exemplo",
+      "amount": 52.0,
+      "currencyCode": "BRL",
+      "description": "CINE EXEMPLO",
+      "id": "cart-020",
+      "status": "POSTED",
+      "type": "DEBIT"
+    },
+    {
+      "_datas": {
+        "date": 41
+      },
+      "accountId": "cartao-exemplo",
+      "amount": 37.45,
+      "currencyCode": "BRL",
+      "description": "FARMACIA SAUDE",
+      "id": "cart-021",
+      "status": "POSTED",
+      "type": "DEBIT"
+    },
+    {
+      "_datas": {
+        "date": 43
+      },
+      "accountId": "cartao-exemplo",
+      "amount": 24.6,
+      "currencyCode": "BRL",
+      "description": "APP TRANSPORTE EXEMPLO",
+      "id": "cart-022",
+      "status": "POSTED",
+      "type": "DEBIT"
+    },
+    {
+      "_datas": {
+        "date": 45
+      },
+      "accountId": "cartao-exemplo",
+      "amount": 18.75,
+      "currencyCode": "BRL",
+      "description": "PADARIA PAO QUENTE",
+      "id": "cart-023",
+      "status": "POSTED",
+      "type": "DEBIT"
+    },
+    {
+      "_datas": {
+        "date": 47
+      },
+      "accountId": "cartao-exemplo",
+      "amount": 39.9,
+      "currencyCode": "BRL",
+      "description": "STREAMING VIDEO EXEMPLO",
+      "id": "cart-024",
+      "status": "POSTED",
+      "type": "DEBIT"
+    },
+    {
+      "_datas": {
+        "date": 49
+      },
+      "accountId": "cartao-exemplo",
+      "amount": 169.0,
+      "currencyCode": "BRL",
+      "description": "LOJA DE ROUPAS EXEMPLO",
+      "id": "cart-025",
+      "status": "POSTED",
+      "type": "DEBIT"
+    },
+    {
+      "_datas": {
+        "date": 51
+      },
+      "accountId": "cartao-exemplo",
+      "amount": 119.0,
+      "currencyCode": "BRL",
+      "description": "ACADEMIA FORMA EXEMPLO",
+      "id": "cart-026",
+      "status": "POSTED",
+      "type": "DEBIT"
+    },
+    {
+      "_datas": {
+        "date": 53
+      },
+      "accountId": "cartao-exemplo",
+      "amount": 201.35,
+      "currencyCode": "BRL",
+      "description": "SUPERMERCADO BOM PRECO",
+      "id": "cart-027",
+      "status": "POSTED",
+      "type": "DEBIT"
+    },
+    {
+      "_datas": {
+        "date": 55
+      },
+      "accountId": "cartao-exemplo",
+      "amount": 96.8,
+      "currencyCode": "BRL",
+      "description": "PET SHOP AMIGO FIEL",
+      "id": "cart-028",
+      "status": "POSTED",
+      "type": "DEBIT"
+    },
+    {
+      "_datas": {
+        "date": 34
+      },
+      "accountId": "cartao-exemplo",
+      "amount": 249.9,
+      "creditCardMetadata": {
+        "billId": "fatura-exemplo-1",
+        "installmentNumber": 3,
+        "totalInstallments": 6
+      },
+      "currencyCode": "BRL",
+      "description": "LOJA ELETRO EXEMPLO PARC 3/6",
+      "id": "cart-029",
+      "status": "POSTED",
+      "type": "DEBIT"
+    },
+    {
+      "_datas": {
+        "date": 39
+      },
+      "accountId": "cartao-exemplo",
+      "amount": 1100.0,
+      "currencyCode": "BRL",
+      "description": "PAGAMENTO RECEBIDO",
+      "id": "cart-030",
+      "operationType": "PAGAMENTO_FATURA",
+      "status": "POSTED",
+      "type": "CREDIT"
+    },
+    {
+      "_datas": {
+        "date": 61
+      },
+      "accountId": "cartao-exemplo",
+      "amount": 143.2,
+      "currencyCode": "BRL",
+      "description": "SUPERMERCADO BOM PRECO",
+      "id": "cart-031",
+      "status": "POSTED",
+      "type": "DEBIT"
+    },
+    {
+      "_datas": {
+        "date": 63
+      },
+      "accountId": "cartao-exemplo",
+      "amount": 210.0,
+      "currencyCode": "BRL",
+      "description": "POSTO COMBUSTIVEL EXEMPLO",
+      "id": "cart-032",
+      "status": "POSTED",
+      "type": "DEBIT"
+    },
+    {
+      "_datas": {
+        "date": 65
+      },
+      "accountId": "cartao-exemplo",
+      "amount": 78.9,
+      "currencyCode": "BRL",
+      "description": "RESTAURANTE SABOR CASEIRO",
+      "id": "cart-033",
+      "status": "POSTED",
+      "type": "DEBIT"
+    },
+    {
+      "_datas": {
+        "date": 67
+      },
+      "accountId": "cartao-exemplo",
+      "amount": 89.9,
+      "currencyCode": "BRL",
+      "description": "LIVRARIA PAGINA UM",
+      "id": "cart-034",
+      "status": "POSTED",
+      "type": "DEBIT"
+    },
+    {
+      "_datas": {
+        "date": 69
+      },
+      "accountId": "cartao-exemplo",
+      "amount": 52.0,
+      "currencyCode": "BRL",
+      "description": "CINE EXEMPLO",
+      "id": "cart-035",
+      "status": "POSTED",
+      "type": "DEBIT"
+    },
+    {
+      "_datas": {
+        "date": 71
+      },
+      "accountId": "cartao-exemplo",
+      "amount": 37.45,
+      "currencyCode": "BRL",
+      "description": "FARMACIA SAUDE",
+      "id": "cart-036",
+      "status": "POSTED",
+      "type": "DEBIT"
+    },
+    {
+      "_datas": {
+        "date": 73
+      },
+      "accountId": "cartao-exemplo",
+      "amount": 24.6,
+      "currencyCode": "BRL",
+      "description": "APP TRANSPORTE EXEMPLO",
+      "id": "cart-037",
+      "status": "POSTED",
+      "type": "DEBIT"
+    },
+    {
+      "_datas": {
+        "date": 75
+      },
+      "accountId": "cartao-exemplo",
+      "amount": 18.75,
+      "currencyCode": "BRL",
+      "description": "PADARIA PAO QUENTE",
+      "id": "cart-038",
+      "status": "POSTED",
+      "type": "DEBIT"
+    },
+    {
+      "_datas": {
+        "date": 77
+      },
+      "accountId": "cartao-exemplo",
+      "amount": 39.9,
+      "currencyCode": "BRL",
+      "description": "STREAMING VIDEO EXEMPLO",
+      "id": "cart-039",
+      "status": "POSTED",
+      "type": "DEBIT"
+    },
+    {
+      "_datas": {
+        "date": 79
+      },
+      "accountId": "cartao-exemplo",
+      "amount": 169.0,
+      "currencyCode": "BRL",
+      "description": "LOJA DE ROUPAS EXEMPLO",
+      "id": "cart-040",
+      "status": "POSTED",
+      "type": "DEBIT"
+    },
+    {
+      "_datas": {
+        "date": 81
+      },
+      "accountId": "cartao-exemplo",
+      "amount": 119.0,
+      "currencyCode": "BRL",
+      "description": "ACADEMIA FORMA EXEMPLO",
+      "id": "cart-041",
+      "status": "POSTED",
+      "type": "DEBIT"
+    },
+    {
+      "_datas": {
+        "date": 83
+      },
+      "accountId": "cartao-exemplo",
+      "amount": 201.35,
+      "currencyCode": "BRL",
+      "description": "SUPERMERCADO BOM PRECO",
+      "id": "cart-042",
+      "status": "POSTED",
+      "type": "DEBIT"
+    },
+    {
+      "_datas": {
+        "date": 85
+      },
+      "accountId": "cartao-exemplo",
+      "amount": 96.8,
+      "currencyCode": "BRL",
+      "description": "PET SHOP AMIGO FIEL",
+      "id": "cart-043",
+      "status": "POSTED",
+      "type": "DEBIT"
+    },
+    {
+      "_datas": {
+        "date": 64
+      },
+      "accountId": "cartao-exemplo",
+      "amount": 249.9,
+      "creditCardMetadata": {
+        "billId": "fatura-exemplo-2",
+        "installmentNumber": 4,
+        "totalInstallments": 6
+      },
+      "currencyCode": "BRL",
+      "description": "LOJA ELETRO EXEMPLO PARC 4/6",
+      "id": "cart-044",
+      "status": "POSTED",
+      "type": "DEBIT"
+    },
+    {
+      "_datas": {
+        "date": 69
+      },
+      "accountId": "cartao-exemplo",
+      "amount": 1100.0,
+      "currencyCode": "BRL",
+      "description": "PAGAMENTO RECEBIDO",
+      "id": "cart-045",
+      "operationType": "PAGAMENTO_FATURA",
+      "status": "POSTED",
+      "type": "CREDIT"
+    },
+    {
+      "_datas": {
+        "date": 6
+      },
+      "accountId": "cartao-exemplo",
+      "amount": 52.0,
+      "currencyCode": "BRL",
+      "description": "ESTORNO CINE EXEMPLO",
+      "id": "cart-046",
+      "operationType": "ESTORNO",
+      "status": "POSTED",
+      "type": "CREDIT"
+    },
+    {
+      "_datas": {
+        "date": 0
+      },
+      "accountId": "cartao-exemplo",
+      "amount": 33.3,
+      "currencyCode": "BRL",
+      "description": "PADARIA PAO QUENTE HOJE",
+      "id": "cart-047",
+      "status": "POSTED",
+      "type": "DEBIT"
+    }
+  ]
+}

@@ -1,0 +1,108 @@
+/* Cartão da caixinha: o botão cobre o cartão todo; o menu "Mais ações" flutua só na linha do nome.
+   Cartões irmãos têm a mesma altura. */
+div.cartao {
+  position: relative;
+  min-width: 0;
+  padding: 0;
+  border-radius: var(--raio-cartao);
+}
+
+.principal {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  grid-template-rows: auto 1fr auto;
+  align-items: center;
+  gap: var(--espaco-1) var(--espaco-3);
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  padding: var(--espaco-4);
+  color: inherit;
+  font: inherit;
+  text-align: start;
+  border: 0;
+  border-radius: var(--raio-cartao);
+  background: transparent;
+  cursor: pointer;
+}
+
+.principal:focus-visible {
+  outline: var(--anel-de-foco);
+  outline-offset: var(--afastamento-do-foco);
+}
+
+.principal[aria-expanded="true"] .nome {
+  color: var(--cor-lavanda);
+}
+
+.icone {
+  display: inline-grid;
+  place-items: center;
+  width: var(--espaco-6);
+  height: var(--espaco-6);
+  color: var(--cor-noite);
+  border-radius: 50%;
+}
+
+/* O nome deixa livre o lugar do menu, que está sobre a linha dele. */
+.nome {
+  min-width: 0;
+  margin-inline-end: var(--alvo-de-toque);
+  overflow: hidden;
+  font-family: var(--fonte-titulo);
+  font-size: var(--texto-base);
+  font-weight: var(--peso-secao);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.valor {
+  grid-column: 1 / -1;
+  align-self: end;
+  margin-top: var(--espaco-3);
+  min-width: 0;
+  overflow: hidden;
+  font-family: var(--fonte-titulo);
+  font-size: var(--numero-medio);
+  font-variant-numeric: tabular-nums;
+  font-weight: var(--peso-titulo);
+  text-align: end;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.rendimento {
+  grid-column: 1 / -1;
+  font-family: var(--fonte-titulo);
+  font-size: var(--texto-pequeno);
+  font-variant-numeric: tabular-nums;
+  text-align: end;
+}
+
+.rendimento[data-tom="positivo"] { color: var(--cor-positivo); }
+.rendimento[data-tom="negativo"] { color: var(--cor-negativo); }
+.rendimento[data-tom="neutro"] { color: var(--cor-bruma); }
+.rendimento[data-vazio] { font-family: var(--fonte-corpo); }
+
+.menu {
+  position: absolute;
+  inset-block-start: var(--espaco-2);
+  inset-inline-end: var(--espaco-2);
+}
+
+/* O menu legível no repouso (contraste de 3:1 ou mais), ainda mais discreto que o conteúdo. */
+.menu button {
+  opacity: 1;
+  color: var(--cor-bruma);
+}
+
+.menu button:hover,
+.menu button[aria-expanded="true"] {
+  color: var(--cor-lavanda);
+}
+
+/* A caixinha aberta ganha anel na cor de destaque, além do nome. */
+div.cartao:has(.principal[aria-expanded="true"]) {
+  border-color: var(--cor-lavanda);
+  box-shadow: 0 0 0 2px var(--cor-lavanda);
+}

@@ -1,0 +1,61 @@
+/* Esqueleto único (Art. XI.4.4 e XI.5.1): rótulo, valor e nota, sempre nas mesmas três linhas.
+   Dentro da GradeDeIndicadores as linhas são compartilhadas (subgrade) e têm a altura do maior
+   conteúdo da linha: o valor de cartões irmãos fica alinhado, e a linha da nota só ocupa espaço
+   quando algum cartão da mesma linha da grade tem nota. */
+.indicador {
+  display: grid;
+  grid-template-rows: auto auto auto;
+  grid-row: span 3;
+  min-width: 0;
+  /* O espaço entre linhas da grade é margem do cartão (ver GradeDeIndicadores): um `row-gap` na
+     grade viraria folga dentro das linhas da subgrade e deixaria uma área vazia na linha da nota. */
+  margin-block-start: var(--espaco-3);
+  padding: var(--espaco-4);
+  background: var(--cor-veludo);
+  border: var(--borda-de-camada);
+  border-radius: var(--raio-cartao);
+}
+
+@supports (grid-template-rows: subgrid) {
+  .indicador {
+    grid-template-rows: subgrid;
+  }
+}
+
+.rotulo {
+  display: flex;
+  align-items: center;
+  gap: var(--espaco-2);
+  font-size: var(--texto-rotulo);
+  color: var(--cor-bruma);
+}
+
+.valor {
+  align-self: end;
+  font-family: var(--fonte-titulo);
+  font-size: var(--numero-medio);
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+
+.nota {
+  margin-top: var(--espaco-2);
+  font-size: var(--texto-pequeno);
+  color: var(--cor-bruma);
+}
+
+.nota[data-vazia="true"] {
+  margin-top: 0;
+}
+
+.indicador[data-tom="positivo"] .valor {
+  color: var(--cor-positivo);
+}
+
+.indicador[data-tom="negativo"] .valor {
+  color: var(--cor-negativo);
+}
+
+.indicador[data-tom="atencao"] .valor {
+  color: var(--cor-atencao);
+}

@@ -1,0 +1,15 @@
+{
+  "results": [
+    {
+      "_datas": {
+        "date": 12,
+        "tradeDate": 12
+      },
+      "amount": 1000.0,
+      "id": "op-bdr-1",
+      "movementType": "DEBIT",
+      "quantity": 20.0,
+      "type": "BUY"
+    }
+  ]
+}

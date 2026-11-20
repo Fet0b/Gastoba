@@ -2,7 +2,7 @@ from datetime import date
 from uuid import UUID
 
 from gastoba.application.processar_recorrencias import ProcessarRecorrencias
-from gastoba.domain.categoria import CategoriaDoGasto
+from gastoba.domain.categoria import CategoriaDoGasto, exigir_categoria_ativa
 from gastoba.domain.dinheiro import Dinheiro
 from gastoba.domain.excecoes import ContaNaoEncontrada, RecorrenciaInvalida
 from gastoba.domain.mes import hoje_no_fuso_do_negocio
@@ -41,6 +41,8 @@ class CriarRecorrencia:
                 f"O início da recorrência não pode ser mais de {ANOS_MAXIMOS_NO_PASSADO} anos "
                 "no passado."
             )
+        if categoria is not None:
+            exigir_categoria_ativa(categoria)
         with self._unidade_de_trabalho as uow:
             if uow.contas.obter(usuario_id, conta_id) is None:
                 raise ContaNaoEncontrada("Conta não encontrada.")

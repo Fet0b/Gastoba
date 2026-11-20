@@ -1,5 +1,5 @@
-/* Tela de entrar: um cartão em Ameixa no centro da página em Noite, com o
-   olho grande acima do formulário. Campos em Veludo, como nos outros formulários. */
+/* Tela de entrar e de criar conta: o olho grande e a marca centralizados na página em Noite e o
+   formulário num cartão comum (só borda, sem sombra). Campos em Veludo, como nos outros formulários. */
 
 .pagina {
   display: grid;
@@ -9,15 +9,15 @@
 }
 
 .cartao {
+  box-sizing: border-box;
   display: flex;
   flex-direction: column;
   gap: var(--espaco-4);
   width: min(26rem, 100%);
   padding: var(--espaco-6) var(--espaco-5);
-  border: 1px solid var(--cor-veludo);
+  border: var(--borda-de-camada);
   border-radius: var(--raio-painel);
   background: var(--cor-ameixa);
-  box-shadow: 0 24px 64px rgb(0 0 0 / 0.45);
   animation: surgir var(--duracao-media) var(--curva-saida);
 }
 
@@ -29,13 +29,16 @@
 }
 
 .olho {
-  --tamanho-do-olho: 72px;
+  --tamanho-do-olho: 7rem;
 }
 
 .nome {
-  font-size: 2rem;
-  font-weight: 700;
+  font-family: var(--fonte-titulo);
+  font-size: var(--texto-titulo);
+  line-height: var(--texto-titulo-linha);
+  font-weight: var(--peso-titulo);
   letter-spacing: -0.02em;
+  text-transform: lowercase;
 }
 
 .chamada {
@@ -65,7 +68,7 @@
 
 .campo > label {
   color: var(--cor-bruma);
-  font-size: 0.9375rem;
+  font-size: var(--texto-corpo);
 }
 
 .entrada {
@@ -87,7 +90,7 @@
 .erroDoCampo,
 .erroGeral {
   color: var(--cor-brasa);
-  font-size: 0.9375rem;
+  font-size: var(--texto-corpo);
 }
 
 /* Vazia, a região continua na árvore de acessibilidade (sem display: none),
@@ -102,7 +105,7 @@
   border-radius: var(--raio-campo);
   background: var(--cor-ametista);
   color: var(--cor-noite);
-  font-weight: 650;
+  font-weight: var(--peso-secao);
   transition:
     transform var(--duracao-curta) var(--curva-saida),
     filter var(--duracao-curta) var(--curva-saida);
@@ -124,7 +127,7 @@
 .alternativa {
   margin: var(--espaco-4) 0 0;
   text-align: center;
-  font-size: 0.9rem;
+  font-size: var(--texto-corpo);
 }
 
 .ligacao {
@@ -133,7 +136,7 @@
   background: none;
   color: inherit;
   font: inherit;
-  font-weight: 650;
+  font-weight: var(--peso-secao);
   text-decoration: underline;
   cursor: pointer;
 }
@@ -141,7 +144,7 @@
 @keyframes surgir {
   from {
     opacity: 0;
-    transform: translateY(8px);
+    transform: translateY(var(--espaco-2));
   }
   to {
     opacity: 1;

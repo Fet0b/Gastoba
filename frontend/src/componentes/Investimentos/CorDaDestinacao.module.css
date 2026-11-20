@@ -1,0 +1,7 @@
+.seletor { display: inline-flex; flex-wrap: wrap; align-items: center; gap: var(--espaco-2); max-width: 100%; }
+.amostra { display: inline-block; width: 0.75rem; height: 0.75rem; border-radius: 50%; flex-shrink: 0; }
+.botao { display: inline-flex; align-items: center; justify-content: center; min-width: var(--alvo-de-toque); min-height: var(--alvo-de-toque); padding: 0; color: var(--cor-lavanda); border: 0; background: transparent; cursor: pointer; }
+.botao:focus-visible { outline: var(--anel-de-foco); outline-offset: var(--afastamento-do-foco); }
+.cores { display: flex; flex-wrap: wrap; gap: var(--espaco-2); border: 1px solid var(--cor-veludo); padding: var(--espaco-2); }
+.cores label { min-height: var(--alvo-de-toque); display: inline-flex; align-items: center; gap: var(--espaco-2); }
+.seletor [role="alert"] { color: var(--cor-brasa); }

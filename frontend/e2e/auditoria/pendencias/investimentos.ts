@@ -1,0 +1,42 @@
+import type { Pendencia } from "../comparar";
+
+export const simulacao: Pendencia[] = [
+  { regra: "R6", largura: 1366 },
+  { regra: "R6", largura: 1366, estado: "vazio" },
+  { regra: "R6", largura: 1366, estado: "carregando" },
+  { regra: "R12", largura: 1366 },
+  { regra: "R12", largura: 1366, estado: "vazio" },
+  { regra: "R12", largura: 1366, estado: "carregando" },
+  { regra: "R15", largura: 390 },
+  { regra: "R15", largura: 390, estado: "vazio" },
+  { regra: "R15", largura: 390, estado: "carregando" },
+];
+
+export const teste: Pendencia[] = [
+  { regra: "R1", largura: 390 },
+  { regra: "R2", largura: 390 },
+  { regra: "R4", largura: 1366 },
+  { regra: "R4", largura: 1366, estado: "vazio" },
+  { regra: "R4", largura: 390 },
+  { regra: "R4", largura: 390, estado: "vazio" },
+  { regra: "R5", largura: 1366 },
+  { regra: "R6", largura: 1366 },
+  { regra: "R6", largura: 1366, estado: "vazio" },
+  { regra: "R6", largura: 1366, estado: "carregando" },
+  { regra: "R10", largura: 390 },
+  { regra: "R11", largura: 390 },
+  { regra: "R12", largura: 1366 },
+  { regra: "R12", largura: 1366, estado: "vazio" },
+  { regra: "R12", largura: 1366, estado: "carregando" },
+  { regra: "R12", largura: 390 },
+  { regra: "R13", largura: 1366 },
+  { regra: "R13", largura: 390 },
+  { regra: "R14", largura: 390 },
+  { regra: "R15", largura: 390 },
+  { regra: "R15", largura: 390, estado: "vazio" },
+  { regra: "R15", largura: 390, estado: "carregando" },
+  { regra: "R17", largura: 1366 },
+  { regra: "R17", largura: 390 },
+  { regra: "R20", largura: 1366 },
+  { regra: "R20", largura: 390 },
+];

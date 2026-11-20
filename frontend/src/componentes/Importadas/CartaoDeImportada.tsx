@@ -1,16 +1,44 @@
+import { EditorDeOperacaoDoInvestimento } from "./EditorDeOperacaoDoInvestimento";
+import { PainelDaTransferencia } from "./ClassificarTransferencia";
 import { useEffect, useId, useRef, useState } from "react";
 
 import { ErroDaApiCliente, MENSAGEM_SEM_RESPOSTA } from "../../api/cliente";
-import { useAceitarTransacaoImportada, useIgnorarTransacaoImportada } from "../../api/consultas";
-import type { Categoria, TransacaoImportada } from "../../api/tipos";
+import {
+  useAceitarTransacaoImportada,
+  useCompletarParDaTransferencia,
+  useDividirTransacaoImportada,
+  useIgnorarTransacaoImportada,
+} from "../../api/consultas";
+import type { Categoria, Investimento, TransacaoImportada, TipoDeMovimento } from "../../api/tipos";
+import {
+  destinacoesParaEnvio,
+  type LinhaDeDestinacao,
+  motivoDasDestinacoes,
+  posicaoSemCaixinhas,
+} from "../../investimentos/destinacoes";
 import { deCentavos, formatar, paraCentavos } from "../../dinheiro/dinheiro";
 import { rotuloDoDia } from "../../periodo/periodo";
 import { normalizarTag } from "../../tags/tags";
+import {
+  type LinhaDaDivisao,
+  motivoDaDivisao,
+  partesParaEnvio,
+} from "../../transacoes/divisao";
 import { CampoDeTags } from "../Compositor/CampoDeTags";
 import { MENSAGEM_TAG_PENDENTE } from "../Compositor/CompositorDeGasto";
 import { SeletorDeCategoria } from "../Compositor/SeletorDeCategoria";
 import { Icone } from "../Icone/Icone";
+import { EditorDeDestinacoes, LINHA_INICIAL } from "../Investimentos/EditorDeDestinacoes";
+import { EditorDeDivisao, LINHAS_INICIAIS_DA_DIVISAO } from "./EditorDeDivisao";
+import { Badge } from "../Badge/Badge";
+import { Botao } from "../Botao/Botao";
+import { GrupoDeChips } from "../Compositor/GrupoDeChips";
+import { ControleSegmentado } from "../ControleSegmentado/ControleSegmentado";
+import { Titulo } from "../Titulo/Titulo";
+import { Caixa } from "../Campo/Caixa";
+import { RevisaoDaBolsa } from "../Investimentos/RevisaoDaBolsa";
 import estilos from "./Importadas.module.css";
+import { TextoDeConta } from "../Contas/TextoDeConta";
 
 const EXPLICACAO_DO_DESCARTE =
   "Parece pagamento de fatura, transferência entre suas contas ou estorno, e não um gasto nem uma renda de verdade.";
@@ -18,16 +46,27 @@ const EXPLICACAO_DO_DUPLICADO =
   "Já existe um gasto ou ganho seu da mesma conta, no mesmo dia e com o mesmo valor.";
 
 export const MENSAGEM_ESCOLHA_A_CATEGORIA = "Escolha a categoria para aceitar como gasto.";
+const MENSAGEM_ESCOLHA_UMA_CATEGORIA = "Escolha uma categoria";
+
+type ModoDoCartao = "padrao" | "transferencia" | "investimento";
 
 type Propriedades = {
   transacao: TransacaoImportada;
   nomeDaConta: string;
   categorias: readonly Categoria[] | undefined;
   sugestoesDeTags: readonly string[];
+  /** As posições de GET /investimentos, para o aporte; `undefined` enquanto não chegam. */
+  investimentos?: readonly Investimento[];
+  /** Quando a transação está marcada para aceitar em lote. */
+  selecionada?: boolean;
+  /** Presente só nas saídas: marca ou desmarca a transação para o lote. */
+  aoAlternarSelecao?: (id: string) => void;
   /** Depois de aceitar ou ignorar: a tela avisa, leva o foco adiante e a transação sai da fila. */
   aoTratar: (mensagem: string, id: string) => void;
   /** Falha de rede (sem resposta): a tela pisca o olho e avisa. */
   aoFalhar: (erro: unknown) => void;
+  /** Aviso de sucesso da Revisão da bolsa aberta pelo cartão da liquidação. */
+  aoAvisar?: (texto: string) => void;
 };
 
 /** O valor com o sinal do sentido: menos na saída, mais na entrada. */
@@ -62,20 +101,50 @@ function mensagemDoErro(erro: unknown): string | null {
 /**
  * Uma transação do banco esperando a decisão: valor, dia, conta, os avisos de "provavelmente
  * ignorar" e "possível duplicado" (sempre em texto) e as ações. Saída vira gasto (pede
- * categoria; tags são opcionais); entrada vira ganho. Ignorar descarta sem criar nada.
+ * categoria; tags são opcionais) ou operação de investimento; entrada vira ganho ou operação de investimento.
+ * A saída que parece a emissão de uma posição abre como aporte dela. Ignorar descarta sem criar nada.
  */
 export function CartaoDeImportada({
   transacao,
   nomeDaConta,
   categorias,
   sugestoesDeTags,
+  investimentos,
+  selecionada = false,
+  aoAlternarSelecao,
   aoTratar,
   aoFalhar,
+  aoAvisar,
 }: Propriedades) {
+  // A liquidação da bolsa não é gasto nem ganho: liga-se às operações na Revisão da bolsa (069, D6).
+  const liquidacao = transacao.liquidacao_de_bolsa === true;
+  const [revisando, definirRevisando] = useState(false);
+  // Uma transferência já classificada com uma ponta só, que esta transação completa (069, R5).
+  const transferenciaSugerida = transacao.transferencia_sugerida_id ?? null;
+  const completar = useCompletarParDaTransferencia();
+  // A saída que parece a emissão de uma posição já abre como aporte dela (a pessoa confirma).
+  const sugerido = transacao.investimento_sugerido_id ?? null;
+  const [comoInvestimento, definirComoInvestimento] = useState(sugerido !== null || transacao.tipo_de_movimento_sugerido != null);
+  const tipoPadrao = transacao.sentido === "saida" ? "aporte" : "resgate";
+  const [tipoDeMovimento, definirTipoDeMovimento] = useState<TipoDeMovimento>(transacao.tipo_de_movimento_sugerido ?? tipoPadrao);
+  const [relacionado, definirRelacionado] = useState("");
+  const especial = tipoDeMovimento !== "aporte" && tipoDeMovimento !== "resgate";
+  const [investimentoId, definirInvestimentoId] = useState(sugerido ?? "");
+  const [linhas, definirLinhas] = useState<LinhaDeDestinacao[]>(
+    sugerido !== null ? [{ ...LINHA_INICIAL }] : [],
+  );
+  const posicaoEscolhida = (investimentos ?? []).find((i) => i.id === investimentoId);
+  const semCaixinhas =
+    tipoDeMovimento === "resgate" && posicaoEscolhida !== undefined && posicaoSemCaixinhas(posicaoEscolhida);
+  const [transferindo, definirTransferindo] = useState(false);
+  const [dividindo, definirDividindo] = useState(false);
+  const [partes, definirPartes] = useState<LinhaDaDivisao[]>([...LINHAS_INICIAIS_DA_DIVISAO]);
+  const dividir = useDividirTransacaoImportada();
   const [categoria, definirCategoria] = useState<string | null>(null);
   const [tags, definirTags] = useState<string[]>([]);
   const [textoDaTag, definirTextoDaTag] = useState("");
   const [tagsAbertas, definirTagsAbertas] = useState(false);
+  const [tentou, definirTentou] = useState(false);
   const aceitar = useAceitarTransacaoImportada();
   const ignorar = useIgnorarTransacaoImportada();
   const id = useId();
@@ -93,58 +162,148 @@ export function CartaoDeImportada({
   useEffect(() => {
     if (ignorar.erro !== null) avisarFalha.current(ignorar.erro);
   }, [ignorar.erro]);
+  useEffect(() => {
+    if (dividir.erro !== null) avisarFalha.current(dividir.erro);
+  }, [dividir.erro]);
 
   const saida = transacao.sentido === "saida";
   const descarte = transacao.sugerir_descarte;
-  const ocupado = aceitar.pendente || ignorar.pendente;
+  const ocupado = aceitar.pendente || ignorar.pendente || dividir.pendente;
   const motivos: string[] = [];
-  if (saida && categoria === null) motivos.push(MENSAGEM_ESCOLHA_A_CATEGORIA);
-  if (normalizarTag(textoDaTag) !== "") motivos.push(MENSAGEM_TAG_PENDENTE);
-  const erro = mensagemDoErro(aceitar.erro) ?? mensagemDoErro(ignorar.erro);
+  if (dividindo) {
+    const motivo = motivoDaDivisao(partes, saida);
+    if (motivo !== null) motivos.push(motivo);
+  } else if (comoInvestimento) {
+    const motivoDoAporte = especial
+      ? investimentoId === "" ? "Escolha o investimento." : tipoDeMovimento !== "rendimento" && !relacionado ? "Escolha a operação relacionada ao custo." : null
+      : investimentoId === "" || semCaixinhas ? null : motivoDasDestinacoes(linhas);
+    if (motivoDoAporte !== null) motivos.push(motivoDoAporte);
+  } else {
+    if (saida && categoria === null) motivos.push(MENSAGEM_ESCOLHA_UMA_CATEGORIA);
+    if (normalizarTag(textoDaTag) !== "") motivos.push(MENSAGEM_TAG_PENDENTE);
+  }
+  const nomeDoAporte = tipoDeMovimento;
+  const erro =
+    mensagemDoErro(aceitar.erro) ?? mensagemDoErro(dividir.erro) ?? mensagemDoErro(ignorar.erro);
 
   async function aceitarTransacao(): Promise<void> {
-    if (motivos.length > 0 || ocupado) return;
-    const aceite = await aceitar.executar({
-      id: transacao.id,
-      dados: { ...(saida && categoria !== null ? { categoria } : {}), tags },
-    });
-    if (aceite) aoTratar(aceite.tipo === "gasto" ? "Gasto criado." : "Ganho criado.", transacao.id);
+    if (ocupado) return;
+    if (motivos.length > 0) {
+      // Gasto/ganho: o botão não desabilita; o que falta aparece junto aos campos.
+      definirTentou(true);
+      return;
+    }
+    if (dividindo) {
+      const feita = await dividir.executar({
+        id: transacao.id,
+        divisao: { partes: partesParaEnvio(partes, saida) },
+      });
+      if (feita) {
+        const n = feita.criados.length;
+        aoTratar(
+          `Transação dividida em ${n} ${n === 1 ? "lançamento" : "lançamentos"}.`,
+          transacao.id,
+        );
+      }
+      return;
+    }
+    const dados = comoInvestimento
+      ? {
+          como_investimento: true,
+          ...(especial ? { tipo_de_movimento: tipoDeMovimento } : {}),
+          ...(relacionado && especial ? { movimento_relacionado_id: relacionado } : {}),
+          tags: [],
+          ...(investimentoId === ""
+            ? {}
+            : { investimento_id: investimentoId, destinacoes: especial || semCaixinhas ? [] : destinacoesParaEnvio(linhas) }),
+        }
+      : { ...(saida && categoria !== null ? { categoria } : {}), tags };
+    const aceite = await aceitar.executar({ id: transacao.id, dados });
+    if (aceite) {
+      const textos = {
+        gasto: "Gasto criado.",
+        ganho: "Ganho criado.",
+        aporte: "Aporte registrado.",
+        resgate: "Resgate registrado.",
+        rendimento: "Rendimento registrado no investimento.",
+        custo: "Custo do investimento registrado.",
+        imposto: "Imposto do investimento registrado.",
+      };
+      aoTratar(textos[aceite.tipo], transacao.id);
+    }
   }
 
+  function alternarAporte(ligado: boolean): void {
+    definirComoInvestimento(ligado);
+    if (ligado && linhas.length === 0) definirLinhas([{ ...LINHA_INICIAL }]);
+  }
+
+  const modo: ModoDoCartao = transferindo ? "transferencia" : comoInvestimento ? "investimento" : "padrao";
+  function mudarModo(novo: ModoDoCartao): void {
+    if (novo === modo) return;
+    definirTransferindo(novo === "transferencia");
+    if (novo === "investimento" || comoInvestimento) alternarAporte(novo === "investimento");
+    definirTentou(false);
+  }
+  const opcoesDoModo = [
+    { valor: "padrao", rotulo: saida ? "Gasto" : "Ganho" },
+    { valor: "transferencia", rotulo: "Transferência" },
+    { valor: "investimento", rotulo: saida ? "Aporte" : "Resgate" },
+  ] as const;
+
+  const nomeDoSugerido =
+    sugerido !== null && comoInvestimento && investimentoId === sugerido
+      ? investimentos?.find((investimento) => investimento.id === sugerido)?.nome
+      : undefined;
+
+  // Na aba Transferência, ignorar guarda o motivo: a transação é entre as próprias contas.
   async function ignorarTransacao(): Promise<void> {
     if (ocupado) return;
-    if (await ignorar.executar(transacao.id)) aoTratar("Transação ignorada.", transacao.id);
+    const entrada = modo === "transferencia" ? { id: transacao.id, motivo: "transferencia_entre_contas" as const } : transacao.id;
+    if (await ignorar.executar(entrada)) aoTratar("Transação ignorada.", transacao.id);
   }
 
   const idTitulo = `${id}-titulo`;
   const idMotivos = `${id}-motivos`;
 
+  // Os editores de divisão e de destinações explicam o que falta junto aos próprios campos; em
+  // gasto/ganho o botão fica ativo e o que falta aparece depois de tentar aceitar.
+  const mostraMotivos = !dividindo && !comoInvestimento;
+  const desabilitaPorMotivos = motivos.length > 0 && !mostraMotivos;
+  const motivoDaCategoria = tentou && motivos.includes(MENSAGEM_ESCOLHA_UMA_CATEGORIA) ? MENSAGEM_ESCOLHA_UMA_CATEGORIA : undefined;
+  const motivoDaTag = tentou && motivos.includes(MENSAGEM_TAG_PENDENTE) ? MENSAGEM_TAG_PENDENTE : null;
+  const textoDoBotao = comoInvestimento
+    ? `Aceitar como ${nomeDoAporte}`
+    : saida
+      ? "Aceitar como gasto"
+      : "Aceitar como ganho";
   const botaoDeAceitar = (
-    <button
+    <Botao
       key="aceitar"
-      type="button"
-      className={descarte ? estilos.secundario : estilos.primario}
+      variante={descarte ? "secundario" : "primario"}
       data-principal={descarte ? undefined : "true"}
-      disabled={motivos.length > 0 || ocupado}
-      aria-describedby={motivos.length > 0 ? idMotivos : undefined}
-      aria-label={`${saida ? "Aceitar como gasto" : "Aceitar como ganho"}: ${transacao.descricao}`}
+      className={descarte ? undefined : estilos.principal}
+      disabled={desabilitaPorMotivos || ocupado}
+      aria-describedby={motivoDaTag !== null ? idMotivos : undefined}
+      aria-label={`${textoDoBotao}: ${transacao.descricao}`}
       onClick={() => void aceitarTransacao()}
     >
-      {aceitar.pendente ? "Criando…" : saida ? "Aceitar como gasto" : "Aceitar como ganho"}
-    </button>
+      {aceitar.pendente ? "Criando…" : textoDoBotao}
+    </Botao>
   );
+
   const botaoDeIgnorar = (
-    <button
+    <Botao
       key="ignorar"
-      type="button"
-      className={descarte ? estilos.primario : estilos.secundario}
+      variante={descarte ? "primario" : "secundario"}
       data-principal={descarte ? "true" : undefined}
+      className={descarte ? estilos.principal : undefined}
       disabled={ocupado}
       aria-label={`Ignorar: ${transacao.descricao}`}
       onClick={() => void ignorarTransacao()}
     >
       {ignorar.pendente ? "Ignorando…" : "Ignorar"}
-    </button>
+    </Botao>
   );
 
   return (
@@ -154,18 +313,29 @@ export function CartaoDeImportada({
       data-transacao={transacao.id}
       data-sentido={transacao.sentido}
       data-descarte={descarte}
+      data-selecionada={selecionada || undefined}
+      data-sugestao={nomeDoSugerido !== undefined || undefined}
     >
       <div className={estilos.topo}>
+        {aoAlternarSelecao && !liquidacao && (
+          <Caixa
+            rotulo={<span className="visualmente-oculto">Selecionar para aceitar em lote: {transacao.descricao}</span>}
+            marcada={selecionada}
+            aoMudar={() => aoAlternarSelecao(transacao.id)}
+            aria-label={`Selecionar para aceitar em lote: ${transacao.descricao}`}
+          />
+        )}
         <span className={estilos.sentido} aria-hidden="true">
           <Icone nome={saida ? "saida" : "entrada"} tamanho={18} />
         </span>
         <div className={estilos.identificacao}>
-          <h3 id={idTitulo} className={estilos.nome}>
+          <Titulo nivel="cartao" como="h3" id={idTitulo} className={estilos.nome} title={transacao.descricao}>
             {transacao.descricao}
-          </h3>
+          </Titulo>
           <p className={estilos.detalhe}>
-            {rotuloDoDia(transacao.data)} · {nomeDaConta || "conta removida"} ·{" "}
-            {saida ? "Saída" : "Entrada"}
+            <span>{rotuloDoDia(transacao.data)}</span>
+            {nomeDaConta ? <TextoDeConta texto={nomeDaConta} /> : <span>conta removida</span>}
+            <span>{saida ? "Saída" : "Entrada"}</span>
           </p>
         </div>
         <span className={`valor ${estilos.valor}`}>{valorComSinal(transacao)}</span>
@@ -173,67 +343,151 @@ export function CartaoDeImportada({
       {(descarte || transacao.possivel_duplicado) && (
         <div className={estilos.etiquetas}>
           {descarte && (
-            <span
-              className={estilos.etiqueta}
-              data-etiqueta="descarte"
-              title={EXPLICACAO_DO_DESCARTE}
-            >
-              <Icone nome="alerta" tamanho={14} />
-              <span>Provavelmente ignorar</span>
-              <span className={estilos.somenteLeitor}>. {EXPLICACAO_DO_DESCARTE}</span>
+            <span data-etiqueta="descarte" title={EXPLICACAO_DO_DESCARTE}>
+              <Badge tom="atencao" icone={<Icone nome="alerta" tamanho={14} />}>
+                Provavelmente ignorar
+                <span className={estilos.somenteLeitor}>. {EXPLICACAO_DO_DESCARTE}</span>
+              </Badge>
             </span>
           )}
           {transacao.possivel_duplicado && (
-            <span
-              className={estilos.etiqueta}
-              data-etiqueta="duplicado"
-              title={EXPLICACAO_DO_DUPLICADO}
-            >
-              <Icone nome="alerta" tamanho={14} />
-              <span>Possível duplicado</span>
-              <span className={estilos.somenteLeitor}>. {EXPLICACAO_DO_DUPLICADO}</span>
+            <span data-etiqueta="duplicado" title={EXPLICACAO_DO_DUPLICADO}>
+              <Badge tom="atencao" icone={<Icone nome="alerta" tamanho={14} />}>
+                Possível duplicado
+                <span className={estilos.somenteLeitor}>. {EXPLICACAO_DO_DUPLICADO}</span>
+              </Badge>
             </span>
           )}
         </div>
       )}
 
-      {saida && (
-        <SeletorDeCategoria categorias={categorias} valor={categoria} aoMudar={definirCategoria} />
+      {transferenciaSugerida !== null && !liquidacao && (
+        <div className={estilos.sugestao} data-sugestao-de-transferencia="">
+          <p>Esta transação parece a outra ponta de uma transferência entre suas contas que você já classificou.</p>
+          {mensagemDoErro(completar.erro) && <p role="alert" className={estilos.erro}>{mensagemDoErro(completar.erro)}</p>}
+          <Botao variante="secundario" disabled={completar.pendente} aria-label={`Completar a transferência: ${transacao.descricao}`}
+            onClick={async () => { if (await completar.executar({ id: transferenciaSugerida, transacao_id: transacao.id })) aoTratar("Transferência completada.", transacao.id); }}>
+            {completar.pendente ? "Completando…" : "Completar a transferência"}
+          </Botao>
+        </div>
       )}
-      {tagsAbertas ? (
-        <CampoDeTags
-          ref={campoDeTags}
-          tags={tags}
-          aoMudar={definirTags}
-          aoMudarTexto={definirTextoDaTag}
-          sugestoes={sugestoesDeTags}
+      {liquidacao && (
+        <>
+          <p className={estilos.sugestao}>Esta liquidação da bolsa não é gasto nem ganho: ligue-a às operações da corretora na Revisão da bolsa, para o mesmo dinheiro não contar duas vezes.</p>
+          {erro && <p role="alert" className={estilos.erro}>{erro}</p>}
+          <div className={estilos.acoes}>
+            <Botao variante="primario" data-principal="true" className={estilos.principal} aria-label={`Revisar na bolsa: ${transacao.descricao}`} onClick={() => definirRevisando(true)}>Revisar na bolsa</Botao>
+            {botaoDeIgnorar}
+          </div>
+          {revisando && <RevisaoDaBolsa aoAvisar={(texto) => aoAvisar?.(texto)} aoFechar={() => definirRevisando(false)} />}
+        </>
+      )}
+      {!liquidacao && !dividindo && (
+        <ControleSegmentado
+          nome={`Tipo da transação: ${transacao.descricao}`}
+          opcoes={opcoesDoModo}
+          valor={modo}
+          aoMudar={mudarModo}
+        />
+      )}
+      {liquidacao ? null : modo === "transferencia" ? (
+        <PainelDaTransferencia
+          transacao={transacao}
+          aoConcluir={() => aoTratar("Transferência classificada entre suas contas.", transacao.id)}
+          ignorar={botaoDeIgnorar}
         />
       ) : (
-        <button
-          type="button"
-          className={estilos.adicionarTags}
-          onClick={() => definirTagsAbertas(true)}
-        >
-          Adicionar tags
-        </button>
-      )}
+        <>
+          {modo === "padrao" && saida && !dividindo && (
+            <SeletorDeCategoria categorias={categorias} valor={categoria} aoMudar={definirCategoria} erro={motivoDaCategoria} />
+          )}
+          {modo === "investimento" && !dividindo && (
+            <GrupoDeChips
+              rotulo="Natureza do movimento"
+              opcoes={saida
+                ? [{ valor: "aporte", nome: "Compra ou aplicação" }, { valor: "custo", nome: "Custo de negociação" }, { valor: "imposto", nome: "Imposto" }]
+                : [{ valor: "resgate", nome: "Venda ou resgate" }, { valor: "rendimento", nome: "Rendimento" }]}
+              valor={tipoDeMovimento}
+              aoMudar={v => { definirTipoDeMovimento(v as TipoDeMovimento); definirRelacionado(""); }}
+            />
+          )}
+          {nomeDoSugerido !== undefined && !dividindo && (
+            <p className={estilos.sugestao}>{tipoDeMovimento === "aporte" ? "Parece o aporte de" : "Parece uma operação de"} «{nomeDoSugerido}»</p>
+          )}
+          {dividindo ? (
+            <EditorDeDivisao
+              categorias={categorias}
+              linhas={partes}
+              aoMudarLinhas={definirPartes}
+              valor={transacao.valor}
+              saida={saida}
+              investimentos={investimentos}
+              podeSalvar={motivos.length === 0}
+              salvando={dividir.pendente}
+              nomeDoSalvar={`Salvar divisão: ${transacao.descricao}`}
+              aoSalvar={() => void aceitarTransacao()}
+              aoCancelar={() => definirDividindo(false)}
+              aoNaoDividir={() => {
+                definirPartes([...LINHAS_INICIAIS_DA_DIVISAO]);
+                definirDividindo(false);
+              }}
+            />
+          ) : modo === "investimento" && especial ? (
+            <EditorDeOperacaoDoInvestimento tipo={tipoDeMovimento} investimentos={investimentos ?? []}
+              investimentoId={investimentoId} aoMudarInvestimento={id => { definirInvestimentoId(id); definirRelacionado(""); }}
+              relacionado={relacionado} aoMudarRelacionado={definirRelacionado} />
+          ) : modo === "investimento" ? (
+            <EditorDeDestinacoes
+              investimentos={investimentos}
+              investimentoId={investimentoId}
+              aoMudarInvestimento={definirInvestimentoId}
+              linhas={linhas}
+              aoMudarLinhas={definirLinhas}
+              valor={saida ? transacao.valor : undefined}
+              semCaixinhas={semCaixinhas}
+            />
+          ) : tagsAbertas ? (
+            <CampoDeTags
+              ref={campoDeTags}
+              tags={tags}
+              aoMudar={definirTags}
+              aoMudarTexto={definirTextoDaTag}
+              sugestoes={sugestoesDeTags}
+            />
+          ) : null}
+          {modo === "padrao" && !dividindo && (
+            <div className={estilos.secundarias}>
+              {!tagsAbertas && (
+                <Botao variante="terciario" icone="tags" className={estilos.secundaria} aria-label="Adicionar tags" onClick={() => definirTagsAbertas(true)}>
+                  Tags
+                </Botao>
+              )}
+              <Botao variante="terciario" icone="dividir" className={estilos.secundaria} aria-label="Dividir em partes" onClick={() => definirDividindo(true)}>
+                Dividir
+              </Botao>
+            </div>
+          )}
 
-      {erro && (
-        <p role="alert" className={estilos.erro}>
-          {erro}
-        </p>
-      )}
-      {motivos.length > 0 && (
-        <ul id={idMotivos} className={estilos.motivos}>
-          {motivos.map((motivo) => (
-            <li key={motivo}>{motivo}</li>
-          ))}
-        </ul>
-      )}
+          {erro && (
+            <p role="alert" className={estilos.erro}>
+              {erro}
+            </p>
+          )}
+          {motivoDaTag !== null && (
+            <p id={idMotivos} className={estilos.erro}>
+              {motivoDaTag}
+            </p>
+          )}
 
-      <div className={estilos.acoes}>
-        {descarte ? [botaoDeIgnorar, botaoDeAceitar] : [botaoDeAceitar, botaoDeIgnorar]}
-      </div>
+          <div className={estilos.acoes}>
+            {dividindo
+              ? [botaoDeIgnorar]
+              : descarte
+                ? [botaoDeIgnorar, botaoDeAceitar]
+                : [botaoDeAceitar, botaoDeIgnorar]}
+          </div>
+        </>
+      )}
     </li>
   );
 }
